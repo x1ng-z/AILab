@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context" xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                    http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+                    http://www.springframework.org/schema/tx
+                    http://www.springframework.org/schema/tx/spring-tx-4.0.xsd
+                    http://www.springframework.org/schema/aop
+                    http://www.springframework.org/schema/aop/spring-aop-4.0.xsd
+                    http://www.springframework.org/schema/context
+                    http://www.springframework.org/schema/context/spring-context-4.0.xsd
+                    http://www.springframework.org/schema/cache
+                    http://www.springframework.org/schema/cache/spring-cache-4.0.xsd
+                    http://www.springframework.org/schema/jms
+                    http://www.springframework.org/schema/jms/spring-jms-4.0.xsd
+                    http://cxf.apache.org/jaxws http://cxf.apache.org/schemas/jaxws.xsd " default-init-method="selfinit"
+       default-destroy-method="selfclose">
+
+
+
+
+    <context:annotation-config />
+    <context:component-scan base-package="hs">
+    </context:component-scan>
+    <bean id="annotationPropertyConfigurerNetty"
+          class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+        <property name="ignoreUnresolvablePlaceholders" value="true" />
+        <property name="locations">
+            <array>
+                <value>classpath:bind.properties</value>
+                <value>classpath:db.properties</value>
+                <value>classpath:opcConfig.properties</value>
+            </array>
+        </property>
+    </bean>
+
+
+    <bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource" destroy-method="close">
+        <property name="driverClass" value="${jdbc.driverClassName}"></property>
+        <property name="jdbcUrl" value="${jdbc.url}"></property>
+        <property name="user" value="${jdbc.username}"></property>
+        <property name="password" value="${jdbc.password}"></property>
+        <property name="checkoutTimeout" value="0"></property>
+        <property name="acquireIncrement" value="3"></property>
+        <property name="idleConnectionTestPeriod" value="60"></property>
+        <property name="initialPoolSize" value="3"></property>
+        <property name="maxPoolSize" value="9"></property>
+        <property name="minPoolSize" value="3"></property>
+        <!--<property name="maxStatements">200</property>-->
+        <property name="preferredTestQuery" value="SELECT count(*) FROM device;"></property>
+        <property name="maxIdleTime" value="1800"></property>
+        <property name="acquireRetryAttempts" value="10"></property>
+    </bean>
+
+    <!-- (事务管理)transaction manager, use JtaTransactionManager for global tx -->
+    <bean id="transactionManager"
+          class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource"/>
+    </bean>
+    <tx:annotation-driven transaction-manager="transactionManager"/>
+
+    <!--<bean id="server_netty" class="hs.service.connect.DeviceConnect" destroy-method="destory">-->
+        <!--<constructor-arg type="int" value="${port}"/>-->
+    <!--</bean>-->
+
+    <!-- 配置mybatis的sqlSessionFactory -->
+    <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <property name="dataSource" ref="dataSource"/>
+        <!-- 自动扫描mappers.xml文件 -->
+        <!--<property name="mapperLocations" value="classpath:root/DAO/Mapper/*.xml"></property>-->
+        <!-- mybatis配置文件 -->
+        <property name="configLocation" value="classpath:mybaties_configuration.xml"></property>
+    </bean>
+
+    <!-- DAO接口所在包名，Spring会自动查找其下的类 -->
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <property name="basePackage" value="classpath:root.DAO"/>
+        <!--<property name="annotationClass" value="org.springframework.stereotype.Repository"/>-->
+        <property name="sqlSessionFactoryBeanName" value="sqlSessionFactory"/>
+    </bean>
+
+
+    <bean id="opcconninfo" class="OpcConfigure" factory-method="createInstance">
+        <constructor-arg value="${opchost}" index="0"/>
+        <constructor-arg value="${opcdomain}" index="1"/>
+        <constructor-arg value="${opcusername}" index="2"/>
+        <constructor-arg value="${opcpassword}" index="3"/>
+        <constructor-arg value="${opcclsid}" index="4"/>
+    </bean>
+
+
+
+</beans>
