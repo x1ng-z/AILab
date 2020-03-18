@@ -1,3 +1,4 @@
+package hs.Opc;
 import org.openscada.opc.lib.common.ConnectionInformation;
 
 import java.io.IOException;
@@ -10,7 +11,6 @@ import java.util.Properties;
  */
 
 public class OpcConfigure {
-
     public static ConnectionInformation createInstance(String host,String domain,String username,String password,String clsid){
         ConnectionInformation ci=new ConnectionInformation();
         ci.setHost(host);

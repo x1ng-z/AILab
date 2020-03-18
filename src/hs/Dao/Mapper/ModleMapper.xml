@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="hs.Dao.ModleMapper">
+    <resultMap id="modleResult" type="hs.Bean.ControlModle">
+        <id property="modleId" column="modleid"/>
+        <result property="modleName" column="modleName"/>
+
+        <collection property="unhandleTag" ofType="hs.Bean.ModleTag">
+            <id property="modletagId" column="modletagId"/>
+            <result property="modleId" column="refrencemodleId"/>
+            <result property="iotype" column="iotype"/>
+            <result property="limitHigh" column="limitHigh"/>
+            <result property="limitLow" column="limitLow"/>
+            <result property="limitHighRes" column="limitHighRes"/>
+            <result property="limitLowRes" column="limitLowRes"/>
+            <result property="stepRespJson" column="stepRespJson"/>
+            <association property="tagclazz" javaType="hs.Bean.Tag" column="refrencetagId" select="selectTag"/>
+            <association property="pvTag" javaType="hs.Bean.Tag" column="PVTagrefrenceId" select="selectTag"/>
+            <discriminator javaType="string" column="iotype">
+                <case value="mv" resultType="hs.Bean.MVModleTag"/>
+                <case value="ff" resultType="hs.Bean.FeedFordwardModleTag"/>
+                <case value="sp" resultType="hs.Bean.SPModleTag"/>
+            </discriminator>
+        </collection>
+
+    </resultMap>
+
+
+
+
+    <select id="getModles" resultMap="modleResult" >
+      select * from modle LEFT JOIN  modletag ON modle.modleId=modletag.refrencemodleId
+    </select>
+
+
+    <select id="selectTag" resultType="hs.Bean.Tag">
+        select * from tag where tagId=#{id}
+    </select>
+
+    <!--<select id="getMaterialName" resultType="hs.modle.MaterialName" >-->
+        <!--select * from materialname-->
+    <!--</select>-->
+
+    <!--<select id="getCommonnVechel" resultType="java.lang.String">-->
+        <!--select * from comvechel limit 0,8-->
+    <!--</select>-->
+
+</mapper>

@@ -17,12 +17,10 @@
                     http://cxf.apache.org/jaxws http://cxf.apache.org/schemas/jaxws.xsd " default-init-method="selfinit"
        default-destroy-method="selfclose">
 
-
-
-
     <context:annotation-config />
-    <context:component-scan base-package="hs">
-    </context:component-scan>
+    <context:component-scan base-package="hs"/>
+
+
     <bean id="annotationPropertyConfigurerNetty"
           class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
         <property name="ignoreUnresolvablePlaceholders" value="true" />
@@ -60,28 +58,25 @@
     </bean>
     <tx:annotation-driven transaction-manager="transactionManager"/>
 
-    <!--<bean id="server_netty" class="hs.service.connect.DeviceConnect" destroy-method="destory">-->
-        <!--<constructor-arg type="int" value="${port}"/>-->
-    <!--</bean>-->
 
     <!-- 配置mybatis的sqlSessionFactory -->
     <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
         <property name="dataSource" ref="dataSource"/>
         <!-- 自动扫描mappers.xml文件 -->
-        <!--<property name="mapperLocations" value="classpath:root/DAO/Mapper/*.xml"></property>-->
+        <property name="mapperLocations" value="classpath:hs/Dao/Mapper/*.xml"></property>
         <!-- mybatis配置文件 -->
         <property name="configLocation" value="classpath:mybaties_configuration.xml"></property>
     </bean>
 
     <!-- DAO接口所在包名，Spring会自动查找其下的类 -->
     <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
-        <property name="basePackage" value="classpath:root.DAO"/>
+        <property name="basePackage" value="hs.Dao"/>
         <!--<property name="annotationClass" value="org.springframework.stereotype.Repository"/>-->
         <property name="sqlSessionFactoryBeanName" value="sqlSessionFactory"/>
     </bean>
 
 
-    <bean id="opcconninfo" class="OpcConfigure" factory-method="createInstance">
+    <bean id="opcconninfo" class="hs.Opc.OpcConfigure" factory-method="createInstance">
         <constructor-arg value="${opchost}" index="0"/>
         <constructor-arg value="${opcdomain}" index="1"/>
         <constructor-arg value="${opcusername}" index="2"/>
