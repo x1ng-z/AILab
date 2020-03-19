@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link href="../css/main.css" rel="stylesheet" type="text/css" />
+
+    <title>APC模拟</title>
+</head>
+<body id="mainbody" onload="chart_flush()">
+<div id="leftup_box">
+
+</div>
+<div id="rightup_box">
+
+</div>
+<div id="down_box">
+    <form id="pram_box">
+        <div id="base_pram">
+        <span class="pram_text">二阶参数</span><br>
+        <span>参数1：</span><input type="text" name="1_pram1"/><br>
+        <span>参数2：</span><input type="text" name="2_pram2"/><br>
+        <span>参数3：</span><input type="text" name="3_pram3"/><br>
+        <span>参数4：</span><input type="text" name="4_pram4"/><br>
+        <span>参数5：</span><input type="text" name="5_pram5"/>
+        </div>
+        <div id="goal_pram">
+            <span>MV：</span><br>
+        <select id="MV_pram">
+            <option value="mv1">MV1</option>
+            <option value="mv2">MV2</option>
+            <option value="mv3">MV3</option>
+            <option value="mv4">MV4</option>
+        </select><br>
+            <span>QK：</span><br>
+        <select id="QK_pram">
+            <option value="qk1">QK1</option>
+            <option value="qk2">QK2</option>
+            <option value="qk3">QK3</option>
+            <option value="qk4">QK4</option>
+        </select><br>
+            <span>CV：</span><br>
+        <select id="CV_pram">
+            <option value="cv1">CV1</option>
+            <option value="cv2">CV2</option>
+            <option value="cv3">CV3</option>
+            <option value="cv4">CV4</option>
+        </select>
+        <input class="submit" type="submit" value="提交"/>
+        </div>
+    </form>
+
+</div>
+
+<script type="text/javascript" src="../js/echarts.min.js"></script>
+<script type="text/javascript" src="../js/jquery-3.0.0.js"></script>
+<script type="text/javascript" src="../js/datachart.js"></script>
+</body>
+</html>
