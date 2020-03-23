@@ -1,11 +1,13 @@
 package hs.Bean;
 
+import java.util.Map;
+
 /**
  * @author zzx
  * @version 1.0
  * @date 2020/3/18 8:28
  */
-public interface ModleTag {
+public interface ModleTag extends Comparable<ModleTag> {
 
     public int getModletagId() ;
 
@@ -45,4 +47,14 @@ public interface ModleTag {
     public Tag getTagclazz() ;
 
     public void setTagclazz(Tag tagclazz) ;
+
+
+    public Double[] getResponTimeSeries();
+
+    public void setResponTimeSeries(Double[] responTimeSeries);
+
+    public Tag getBackValueTag() ;
+
+    public void setBackValueTag(Tag backValueTag) ;
+
 }

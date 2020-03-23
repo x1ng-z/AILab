@@ -1,13 +1,13 @@
 package hs.Servlet;
 
-import hs.Bean.ControlModle;
-import hs.Dao.Service.ModleServe;
+import hs.ApcAlgorithm.ExecutePythonBridge;
+import hs.Bean.ModleConstainer;
+import hs.Opc.OPCserver;
 import org.apache.log4j.Logger;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.servlet.DispatcherServlet;
 
 import javax.servlet.ServletException;
-import java.util.List;
 
 /**
  * @author zzx
@@ -19,10 +19,25 @@ public class BootstatServlet extends DispatcherServlet {
     @Override
     protected void initFrameworkServlet() throws ServletException {
         super.initFrameworkServlet();
-        logger.error("init complet");
+        logger.info("init complet");
         ApplicationContext applicationContext =getWebApplicationContext();
-        ModleServe modleServe=applicationContext.getBean(ModleServe.class);
-        List<ControlModle> modles=modleServe.findAllModle();
-        logger.info("modle size is: "+modles.size());
+
+        OPCserver OPCserver =applicationContext.getBean(OPCserver.class);
+        Thread opcthread=new Thread(OPCserver);
+        opcthread.setDaemon(true);
+        opcthread.start();
+
+        ModleConstainer  modleConstainer=applicationContext.getBean(ModleConstainer.class);
+//        List<ControlModle> modles=modleServe.getAllModle();
+        logger.info("modle size is: "+modleConstainer.getModules().size());
+        for(Integer key:modleConstainer.getModules().keySet()){
+            String pythonhome="python.exe";
+            String pythonjs="E:\\LinkAPC.py";
+            String[] aa=new String[]{pythonhome,pythonjs,"http://localhost:8080/python/modlebuild/"+key+".do"};
+            ExecutePythonBridge executePythonBridge=new ExecutePythonBridge();
+            modleConstainer.getModules().get(key).setExecutePythonBridge(executePythonBridge);
+            //executePythonBridge.execute(new LinkedBlockingQueue<>(),aa);
+        }
+
     }
 }

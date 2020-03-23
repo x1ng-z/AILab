@@ -2,6 +2,7 @@
   <library name="lib">
     <CLASSES>
       <root url="file://$PROJECT_DIR$/lib" />
+      <root url="jar://$MAVEN_REPOSITORY$/json/fastjson-1.2.38.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />

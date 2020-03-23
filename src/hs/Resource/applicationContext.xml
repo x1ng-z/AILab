@@ -17,8 +17,10 @@
                     http://cxf.apache.org/jaxws http://cxf.apache.org/schemas/jaxws.xsd " default-init-method="selfinit"
        default-destroy-method="selfclose">
 
-    <context:annotation-config />
-    <context:component-scan base-package="hs"/>
+    <!--<context:annotation-config />-->
+    <context:component-scan base-package="hs">
+        <context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
+    </context:component-scan>
 
 
     <bean id="annotationPropertyConfigurerNetty"
@@ -83,6 +85,14 @@
         <constructor-arg value="${opcpassword}" index="3"/>
         <constructor-arg value="${opcclsid}" index="4"/>
     </bean>
+
+    <bean id="opcserve" class="org.openscada.opc.lib.da.Server">
+        <constructor-arg ref="opcconninfo" index="0"/>
+        <constructor-arg value="#{T(java.util.concurrent.Executors).newSingleThreadScheduledExecutor()}"/>
+    </bean>
+    <!--<bean id="reconneccopc" class="org.openscada.opc.lib.da.AutoReconnectController" init-method="connect" destroy-method="disconnect">-->
+        <!--<constructor-arg ref="opcserve" index="0"/>-->
+    <!--</bean>-->
 
 
 

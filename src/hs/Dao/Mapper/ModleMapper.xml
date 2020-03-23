@@ -16,12 +16,14 @@
             <result property="limitHighRes" column="limitHighRes"/>
             <result property="limitLowRes" column="limitLowRes"/>
             <result property="stepRespJson" column="stepRespJson"/>
-            <association property="tagclazz" javaType="hs.Bean.Tag" column="refrencetagId" select="selectTag"/>
-            <association property="pvTag" javaType="hs.Bean.Tag" column="PVTagrefrenceId" select="selectTag"/>
+            <association property="tagclazz" javaType="hs.Bean.Tag" column="refrencetagId" select="findtag"/>
+            <association property="pvTag" javaType="hs.Bean.Tag" column="PVTagrefrenceId" select="findtag"/>
+            <association property="backValueTag" javaType="hs.Bean.Tag" column="backValue" select="findtag"/>
             <discriminator javaType="string" column="iotype">
                 <case value="mv" resultType="hs.Bean.MVModleTag"/>
-                <case value="ff" resultType="hs.Bean.FeedFordwardModleTag"/>
+                <case value="ff" resultType="hs.Bean.FFModleTag"/>
                 <case value="sp" resultType="hs.Bean.SPModleTag"/>
+                <case value="pv" resultType="hs.Bean.PVModleTag"/>
             </discriminator>
         </collection>
 
@@ -35,8 +37,16 @@
     </select>
 
 
-    <select id="selectTag" resultType="hs.Bean.Tag">
+    <select id="findTagById" resultType="hs.Bean.Tag">
         select * from tag where tagId=#{id}
+    </select>
+
+    <select id="findtag" resultType="hs.Bean.Tag">
+        select * from tag where tagId=#{id}
+    </select>
+
+    <select id="getAllTags" resultType="hs.Bean.Tag">
+        select * from tag
     </select>
 
     <!--<select id="getMaterialName" resultType="hs.modle.MaterialName" >-->

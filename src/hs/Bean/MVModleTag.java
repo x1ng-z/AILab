@@ -1,13 +1,15 @@
 package hs.Bean;
 
+import java.util.Map;
+
 /**
  * @author zzx
  * @version 1.0
  * @date 2020/3/18 8:44
  */
 public class MVModleTag implements ModleTag {
-    private int modletagId;
 
+    private int modletagId;//这个指示表示数据库那一行的id，和真正的tagid无关，tag在tagclazz这个里面
     private int modleId;
     private String iotype;
     private  Tag pvTag;
@@ -17,6 +19,21 @@ public class MVModleTag implements ModleTag {
     private String limitLowRes;
     private String stepRespJson;
     private Tag tagclazz;
+    private Tag backValueTag;
+    private Double[] responTimeSeries;
+
+    @Override
+    public int compareTo(ModleTag o) {
+        if(this.tagclazz.getTagId()>o.getTagclazz().getTagId()){
+            return 1;
+        }else{
+            if(this.tagclazz.getTagId()<o.getTagclazz().getTagId()){
+                return -1;
+            }else {
+                return 0;
+            }
+        }
+    }
 
     public int getModletagId() {
         return modletagId;
@@ -97,5 +114,22 @@ public class MVModleTag implements ModleTag {
 
     public void setPvTag(Tag pvTag) {
         this.pvTag = pvTag;
+    }
+
+
+    public Double[] getResponTimeSeries() {
+        return responTimeSeries;
+    }
+
+    public void setResponTimeSeries(Double[] responTimeSeries) {
+        this.responTimeSeries = responTimeSeries;
+    }
+
+    public Tag getBackValueTag() {
+        return backValueTag;
+    }
+
+    public void setBackValueTag(Tag backValueTag) {
+        this.backValueTag = backValueTag;
     }
 }

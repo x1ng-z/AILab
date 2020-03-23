@@ -5,9 +5,9 @@ import java.util.Map;
 /**
  * @author zzx
  * @version 1.0
- * @date 2020/3/18 10:30
+ * @date 2020/3/18 9:06
  */
-public class SPModleTag implements ModleTag{
+public class FFModleTag implements ModleTag {
     private int modletagId;//这个指示表示数据库那一行的id，和真正的tagid无关，tag在tagclazz这个里面
     private int modleId;
     private String iotype;
@@ -20,6 +20,7 @@ public class SPModleTag implements ModleTag{
     private Tag tagclazz;
     private Tag backValueTag;
     private Double[] responTimeSeries;
+
 
     @Override
     public int compareTo(ModleTag o) {
@@ -57,7 +58,6 @@ public class SPModleTag implements ModleTag{
     public void setIotype(String iotype) {
         this.iotype = iotype;
     }
-
 
 
     public String getLimitHigh() {
@@ -115,7 +115,6 @@ public class SPModleTag implements ModleTag{
     public void setPvTag(Tag pvTag) {
         this.pvTag = pvTag;
     }
-
 
     public Double[] getResponTimeSeries() {
         return responTimeSeries;
