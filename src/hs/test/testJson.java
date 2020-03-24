@@ -3,7 +3,7 @@ package hs.test;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import hs.Configuartion.SpringAnnotationConfigure;
-import hs.Opc.OPCserver;
+import hs.Opc.OPCService;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
 import java.util.*;
@@ -16,11 +16,11 @@ import java.util.*;
 public class testJson {
 
     public static void main(String[] args) {
-
+        System.out.println(Math.exp(2));;
         AnnotationConfigApplicationContext applicationContext =new AnnotationConfigApplicationContext(SpringAnnotationConfigure.class);
 
 
-        OPCserver server=applicationContext.getBean(OPCserver.class);
+        OPCService server=applicationContext.getBean(OPCService.class);
         server.run();
         Set<Integer> ss=new LinkedHashSet<>();
         ss.add(2);

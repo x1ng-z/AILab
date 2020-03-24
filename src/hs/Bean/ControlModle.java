@@ -2,7 +2,7 @@ package hs.Bean;
 
 import com.alibaba.fastjson.JSONObject;
 import hs.ApcAlgorithm.ExecutePythonBridge;
-import hs.Opc.OPCserver;
+import hs.Opc.OPCService;
 
 import java.util.*;
 
@@ -12,7 +12,7 @@ import java.util.*;
  * @date 2020/3/18 8:24
  */
 public class ControlModle {
-    private OPCserver OPCserver;
+    private OPCService OPCserver;
     private ExecutePythonBridge executePythonBridge;
     private int modleId;
     private String modleName;
@@ -407,7 +407,7 @@ public class ControlModle {
     }
 
 
-    public void setOPCserver(OPCserver OPCserver) {
+    public void setOPCserver(OPCService OPCserver) {
         this.OPCserver = OPCserver;
     }
 

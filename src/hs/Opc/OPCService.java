@@ -21,9 +21,9 @@ import java.util.concurrent.TimeUnit;
  * @version 1.0
  * @date 2020/3/23 12:10
  */
-@Component("opcservice")
-public class OPCServer implements Runnable{
-    private static final Logger logger=Logger.getLogger(OPCServer.class);
+@Component()
+public class OPCService implements Runnable{
+    private static final Logger logger=Logger.getLogger(OPCService.class);
     private Server server;
     private ModleMapper modleMapper;
     private Map<Integer,Tag> opctags;
@@ -31,7 +31,7 @@ public class OPCServer implements Runnable{
     private Map<Integer,Item> itemLists=new ConcurrentHashMap<>();
 
     @Autowired
-    public OPCServer(Server server,ModleMapper modleMapper) {
+    public OPCService(Server server, ModleMapper modleMapper) {
         this.server=server;
         this.modleMapper=modleMapper;
     }
@@ -89,7 +89,15 @@ public class OPCServer implements Runnable{
                 try {
                     logger.debug("update"+integerItemEntry.getKey());
                     Tag uptag=opctags.get(integerItemEntry.getKey());
-                    uptag.updateValue(Double.valueOf(integerItemEntry.getValue().read(false).getValue().getObject().toString()));
+                    String stringvalue=integerItemEntry.getValue().read(false).getValue().getObject().toString();
+                    logger.info(stringvalue);
+                    if(stringvalue.equals("true")){
+                        stringvalue=1+"";
+                    }
+                    if(stringvalue.equals("false")){
+                        stringvalue=0+"";
+                    }
+                    uptag.updateValue(Double.valueOf(stringvalue));
                     logger.debug(uptag.getTagName()+uptag.getNewvalue());
                 } catch (JIException e) {
                     logger.error(e);

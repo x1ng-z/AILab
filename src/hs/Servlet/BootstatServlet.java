@@ -2,7 +2,7 @@ package hs.Servlet;
 
 import hs.ApcAlgorithm.ExecutePythonBridge;
 import hs.Bean.ModleConstainer;
-import hs.Opc.OPCserver;
+import hs.Opc.OPCService;
 import org.apache.log4j.Logger;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.servlet.DispatcherServlet;
@@ -22,7 +22,7 @@ public class BootstatServlet extends DispatcherServlet {
         logger.info("init complet");
         ApplicationContext applicationContext =getWebApplicationContext();
 
-        OPCserver OPCserver =applicationContext.getBean(OPCserver.class);
+        OPCService OPCserver =applicationContext.getBean(OPCService.class);
         Thread opcthread=new Thread(OPCserver);
         opcthread.setDaemon(true);
         opcthread.start();

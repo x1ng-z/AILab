@@ -1,7 +1,7 @@
 package hs.Bean;
 
 import hs.Dao.Service.ModleServe;
-import hs.Opc.OPCserver;
+import hs.Opc.OPCService;
 import hs.Utils.ResponComput;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -18,12 +18,12 @@ import java.util.Map;
 @Component("apcmodles")
 public class ModleConstainer {
 
-    private OPCserver OPCserver;
+    private OPCService OPCserver;
     private Map<Integer,ControlModle> Modules;
     private ModleServe modleServe;
 
     @Autowired
-    public ModleConstainer(OPCserver OPCserver, ModleServe modleServe) {
+    public ModleConstainer(OPCService OPCserver, ModleServe modleServe) {
         this.OPCserver = OPCserver;
         this.modleServe=modleServe;
 
@@ -32,7 +32,7 @@ public class ModleConstainer {
         for(ControlModle controlModle:controlModleList){
             controlModle.setOPCserver(OPCserver);
             for(ModleTag modleTag:controlModle.getUnhandleTag()){
-                modleTag.setResponTimeSeries(ResponComput.responTimeSeries(modleTag.getStepRespJson()));
+                modleTag.setResponTimeSeries(ResponComput.responOneTimeSeries(modleTag.getStepRespJson()));
             }
             controlModle.realizeModle();
 
