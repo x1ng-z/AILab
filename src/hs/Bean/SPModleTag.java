@@ -8,6 +8,7 @@ import java.util.Map;
  * @date 2020/3/18 10:30
  */
 public class SPModleTag implements ModleTag{
+    private int sample_step;
     private int modletagId;//这个指示表示数据库那一行的id，和真正的tagid无关，tag在tagclazz这个里面
     private int modleId;
     private String iotype;
@@ -131,5 +132,13 @@ public class SPModleTag implements ModleTag{
 
     public void setBackValueTag(Tag backValueTag) {
         this.backValueTag = backValueTag;
+    }
+
+    public int getSample_step() {
+        return sample_step;
+    }
+
+    public void setSample_step(int sample_step) {
+        this.sample_step = sample_step;
     }
 }

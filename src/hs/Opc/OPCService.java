@@ -119,7 +119,7 @@ public class OPCService implements Runnable{
 
 
     public Double readTagDeltaValue(Integer tagid){
-        return opctags.get(tagid).getNewvalue()-opctags.get(tagid).getOldvalue();
+        return opctags.get(tagid).diffBetweenSample();
     }
 
     public boolean writeTagvalue(Integer tagid,Double value){

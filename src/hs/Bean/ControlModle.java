@@ -30,6 +30,7 @@ public class ControlModle {
     private Integer inputpoints=0;//可控制输入数量
     private Integer feedforwardpoints=0;//前馈数量
     private Integer timeserisN=40;
+    private Integer sampleStep=0;
 
     private List<PVModleTag> categoryPVmodletag=new ArrayList<>();
     private List<SPModleTag> categorySPmodletag=new ArrayList<>();
@@ -74,6 +75,7 @@ public class ControlModle {
             if(tag instanceof MVModleTag){
                 categoryMVmodletag.add((MVModleTag)tag);
                 mvsort.add(tag.getTagclazz().getTagId());
+                sampleStep=tag.getSample_step();
 
                 if(OPCserver.getOpctags().get(tag.getTagclazz().getTagId()).getMaxlimit()==null){
                     TagLimit tagMaxLimit=new TagLimit();
@@ -159,21 +161,34 @@ public class ControlModle {
         for(PVModleTag pvModleTag:categoryPVmodletag){
             int mvi=0;
             //输入响应
-            for(MVModleTag mvModleTag:categoryMVmodletag){
-                if((pvModleTag.getTagclazz().getTagId()==mvModleTag.getPvTag().getTagId())&&(mvModleTag.getTagclazz().getTagId()==new ArrayList<Integer>(mvsort).get(mvi))){
-                    mvtimeserise[pvi][mvi]=mvModleTag.getResponTimeSeries();
-                    mvi++;
-                }
+            for(int i=0;i<categoryMVmodletag.size();i++){
+                for(MVModleTag mvModleTag:categoryMVmodletag){
+                    if((pvModleTag.getTagclazz().getTagId()==mvModleTag.getPvTag().getTagId())&&(mvModleTag.getTagclazz().getTagId()==new ArrayList<Integer>(mvsort).get(mvi))){
+                        mvtimeserise[pvi][mvi]=mvModleTag.getResponTimeSeries();
+                        mvi++;
+                    }
 
+                }
+                if(mvi==categoryMVmodletag.size()){
+                    break;
+                }
             }
+
+
+
             int ffi=0;
-            for(FFModleTag ffModleTag:categoryFFmodletag){
-                if((pvModleTag.getTagclazz().getTagId()==ffModleTag.getTagclazz().getTagId())&&(ffModleTag.getPvTag().getTagId()==new ArrayList<Integer>(ffsort).get(ffi))){
-                    fftimeserise[pvi][ffi]=ffModleTag.getResponTimeSeries();
-                    ffi++;
+            for(int i=0;i<categoryFFmodletag.size();i++){
+                for(FFModleTag ffModleTag:categoryFFmodletag){
+                    if((pvModleTag.getTagclazz().getTagId()==ffModleTag.getPvTag().getTagId())&&(ffModleTag.getTagclazz().getTagId()==new ArrayList<Integer>(ffsort).get(ffi))){
+                        fftimeserise[pvi][ffi]=ffModleTag.getResponTimeSeries();
+                        ffi++;
+                    }
                 }
-
+                if (ffi==categoryFFmodletag.size()){
+                    break;
+                }
             }
+
             pvi++;
 
         }
@@ -292,7 +307,7 @@ public class ControlModle {
         if(ffsort.size()!=0){
             Double[] deltff=new Double[ffsort.size()];
             for(Integer tagid:ffsort){
-                deltff[loop]= OPCserver.readTagDeltaValue(tagid);
+                deltff[loop]=OPCserver.readTagDeltaValue(tagid);
                 loop++;
             }
 
@@ -442,5 +457,9 @@ public class ControlModle {
 
     public ExecutePythonBridge getExecutePythonBridge() {
         return executePythonBridge;
+    }
+
+    public Integer getSampleStep() {
+        return sampleStep;
     }
 }

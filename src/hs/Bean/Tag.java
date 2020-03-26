@@ -1,6 +1,8 @@
 package hs.Bean;
 
 import java.time.Instant;
+import java.util.LinkedList;
+
 
 /**
  * @author zzx
@@ -14,9 +16,11 @@ public class Tag {
     private String tag;
     private Instant updateTime;
     private Double newvalue=0d;
-    private Double oldvalue=0d;
+    private LinkedList<Double> oldvalueStack =new LinkedList<>();
+    private int stackSize=100;
     private TagLimit maxlimit=null;
     private TagLimit minlimit=null;
+    private int sampleStep;
 
 
     public int getTagId() {
@@ -67,15 +71,19 @@ public class Tag {
         this.newvalue = newvalue;
     }
 
-    public Double getOldvalue() {
-        return oldvalue;
-    }
-
-    public void setOldvalue(Double oldvalue) {
-        this.oldvalue = oldvalue;
+    public double diffBetweenSample(){
+        if(oldvalueStack.size()<sampleStep){
+            return 0d;
+        }
+        return oldvalueStack.get(0)- oldvalueStack.get(sampleStep-1);
     }
     public void updateValue(double value){
-        oldvalue=newvalue;
+        if(oldvalueStack.size()<stackSize){
+            oldvalueStack.addFirst(newvalue);
+        }else {
+            oldvalueStack.removeLast();
+        }
+
         newvalue=value;
         updateTime=Instant.now();
     }
@@ -94,5 +102,13 @@ public class Tag {
 
     public void setMinlimit(TagLimit minlimit) {
         this.minlimit = minlimit;
+    }
+
+    public int getSampleStep() {
+        return sampleStep;
+    }
+
+    public void setSampleStep(int sampleStep) {
+        this.sampleStep = sampleStep;
     }
 }

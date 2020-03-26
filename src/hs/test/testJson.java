@@ -16,6 +16,9 @@ import java.util.*;
 public class testJson {
 
     public static void main(String[] args) {
+        int aaaa=1;
+        int bbbbb=2;
+        int c=1/2;
         System.out.println(Math.exp(2));;
         AnnotationConfigApplicationContext applicationContext =new AnnotationConfigApplicationContext(SpringAnnotationConfigure.class);
 

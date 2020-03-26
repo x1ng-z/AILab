@@ -57,4 +57,7 @@ public interface ModleTag extends Comparable<ModleTag> {
 
     public void setBackValueTag(Tag backValueTag) ;
 
+    public int getSample_step() ;
+
+    public void setSample_step(int sample_step) ;
 }
