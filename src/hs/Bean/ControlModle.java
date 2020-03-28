@@ -16,6 +16,7 @@ public class ControlModle {
     private ExecutePythonBridge executePythonBridge;
     private int modleId;
     private String modleName;
+    private int outstep;
 
     private List<ModleTag> unhandleTag;
     private List<FFModleTag> feedForwards=new ArrayList<>();//FF前馈feedforward
@@ -461,5 +462,13 @@ public class ControlModle {
 
     public Integer getSampleStep() {
         return sampleStep;
+    }
+
+    public int getOutstep() {
+        return outstep;
+    }
+
+    public void setOutstep(int outstep) {
+        this.outstep = outstep;
     }
 }

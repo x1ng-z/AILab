@@ -6,6 +6,7 @@
     <resultMap id="modleResult" type="hs.Bean.ControlModle">
         <id property="modleId" column="modleid"/>
         <result property="modleName" column="modleName"/>
+        <result property="outstep" column="outstep"/>
 
         <collection property="unhandleTag" ofType="hs.Bean.ModleTag">
             <id property="modletagId" column="modletagId"/>

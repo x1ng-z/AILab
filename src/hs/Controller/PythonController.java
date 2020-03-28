@@ -44,6 +44,7 @@ public class PythonController {
         jsonObject.put("N", modle.getTimeserisN());
         jsonObject.put("f", modle.getFeedforwardpoints());
         jsonObject.put("S",modle.getSampleStep());
+        jsonObject.put("outstep",modle.getOutstep());
 
 
         /**
