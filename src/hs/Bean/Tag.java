@@ -12,7 +12,6 @@ import java.util.LinkedList;
 public class Tag {
     private int tagId;
     private String TagName;
-    private int refrencedeviceId;
     private String tag;
     private Instant updateTime;
     private Double newvalue=0d;
@@ -21,6 +20,7 @@ public class Tag {
     private TagLimit maxlimit=null;
     private TagLimit minlimit=null;
     private int sampleStep;
+    private String filterMethod;
 
 
     public int getTagId() {
@@ -37,14 +37,6 @@ public class Tag {
 
     public void setTagName(String tagName) {
         TagName = tagName;
-    }
-
-    public int getRefrencedeviceId() {
-        return refrencedeviceId;
-    }
-
-    public void setRefrencedeviceId(int refrencedeviceId) {
-        this.refrencedeviceId = refrencedeviceId;
     }
 
     public String getTag() {
@@ -110,5 +102,13 @@ public class Tag {
 
     public void setSampleStep(int sampleStep) {
         this.sampleStep = sampleStep;
+    }
+
+    public String getFilterMethod() {
+        return filterMethod;
+    }
+
+    public void setFilterMethod(String filterMethod) {
+        this.filterMethod = filterMethod;
     }
 }

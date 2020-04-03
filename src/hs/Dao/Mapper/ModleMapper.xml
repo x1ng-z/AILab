@@ -4,37 +4,44 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="hs.Dao.ModleMapper">
     <resultMap id="modleResult" type="hs.Bean.ControlModle">
-        <id property="modleId" column="modleid"/>
+        <id property="modleId" column="modleId"/>
         <result property="modleName" column="modleName"/>
-        <result property="outstep" column="outstep"/>
+        <result property="predicttime_P" column="predicttime_P"/>
+        <result property="controlAPCOutCycle" column="controlAPCOutCycle"/>
+        <result property="timeserise_N" column="timeserise_N"/>
+        <result property="controltime_M" column="controltime_M"/>
+        <result property="enable" column="enable"/>
 
-        <collection property="unhandleTag" ofType="hs.Bean.ModleTag">
-            <id property="modletagId" column="modletagId"/>
-            <result property="modleId" column="refrencemodleId"/>
-            <result property="iotype" column="iotype"/>
-            <result property="limitHigh" column="limitHigh"/>
-            <result property="limitLow" column="limitLow"/>
-            <result property="limitHighRes" column="limitHighRes"/>
-            <result property="limitLowRes" column="limitLowRes"/>
-            <result property="stepRespJson" column="stepRespJson"/>
-            <association property="tagclazz" javaType="hs.Bean.Tag" column="refrencetagId" select="findtag"/>
-            <association property="pvTag" javaType="hs.Bean.Tag" column="PVTagrefrenceId" select="findtag"/>
-            <association property="backValueTag" javaType="hs.Bean.Tag" column="backValue" select="findtag"/>
-            <discriminator javaType="string" column="iotype">
-                <case value="mv" resultType="hs.Bean.MVModleTag"/>
-                <case value="ff" resultType="hs.Bean.FFModleTag"/>
-                <case value="sp" resultType="hs.Bean.SPModleTag"/>
-                <case value="pv" resultType="hs.Bean.PVModleTag"/>
-            </discriminator>
-        </collection>
+        <collection property="modlePins" column="modleId" ofType="hs.Bean.ModlePin" select="findModlePins"/>
+        <collection property="responTimeSerises" column="modleId" ofType="hs.Bean.ResponTimeSerise"
+                    select="findModleRespon"/>
 
+        <!--<collection property="unhandleTag" ofType="hs.Bean.ModleTag">-->
+        <!--<id property="modletagId" column="modletagId"/>-->
+        <!--<result property="modleId" column="refrencemodleId"/>-->
+        <!--<result property="iotype" column="iotype"/>-->
+        <!--<result property="limitHigh" column="limitHigh"/>-->
+        <!--<result property="limitLow" column="limitLow"/>-->
+        <!--<result property="limitHighRes" column="limitHighRes"/>-->
+        <!--<result property="limitLowRes" column="limitLowRes"/>-->
+        <!--<result property="stepRespJson" column="stepRespJson"/>-->
+        <!--<result property="Q" column="Q"/>-->
+        <!--<result property="R" column="R"/>-->
+        <!--<association property="tagclazz" javaType="hs.Bean.ModlePin column="{id=refrencetagId,modleId=refrencemodleId}" select="findModlePins"/>-->
+        <!--<association property="pvTag" javaType="hs.Bean.ModlePin column="{id=PVTagrefrenceId,modleId=refrencemodleId}" select="findModlePins"/>-->
+        <!--<association property="backValueTag" javaType="hs.Bean.ModlePin column="{id=backValue,modleId=refrencemodleId}" select="findModlePins"/>-->
+        <!--<discriminator javaType="string" column="iotype">-->
+        <!--<case value="mv" resultType="hs.Bean.MVModleTag"/>-->
+        <!--<case value="ff" resultType="hs.Bean.FFModleTag"/>-->
+        <!--<case value="sp" resultType="hs.Bean.SPModleTag"/>-->
+        <!--<case value="pv" resultType="hs.Bean.PVModleTag"/>-->
+        <!--</discriminator>-->
+        <!--</collection>-->
     </resultMap>
 
 
-
-
-    <select id="getModles" resultMap="modleResult" >
-      select * from modle LEFT JOIN  modletag ON modle.modleId=modletag.refrencemodleId
+    <select id="getModles" resultMap="modleResult">
+      select * from modle
     </select>
 
 
@@ -42,20 +49,45 @@
         select * from tag where tagId=#{id}
     </select>
 
-    <select id="findtag" resultType="hs.Bean.Tag">
-        select * from tag where tagId=#{id}
+    <select id="findModlePin" parameterType="java.util.Map" resultType="hs.Bean.ModlePin">
+        select * from modlepins where modlepinsId=#{id} and reference_modleId=#{modleId}
     </select>
 
-    <select id="getAllTags" resultType="hs.Bean.Tag">
-        select * from tag
+    <select id="findModlePins" resultType="hs.Bean.ModlePin">
+        select * from modlepins where reference_modleId=#{modleId}
     </select>
 
-    <!--<select id="getMaterialName" resultType="hs.modle.MaterialName" >-->
-        <!--select * from materialname-->
-    <!--</select>-->
+    <select id="findModleRespon" resultType="hs.Bean.ResponTimeSerise">
+        select * from modlerespon where refrencemodleId=#{modleId}
+    </select>
 
-    <!--<select id="getCommonnVechel" resultType="java.lang.String">-->
-        <!--select * from comvechel limit 0,8-->
-    <!--</select>-->
+    <select id="getBaseConf" resultType="hs.Bean.BaseConf">
+        select * from company
+    </select>
+
+    <insert id="insertModlePins" parameterType="hs.Bean.ControlModle" useGeneratedKeys="true">
+        insert into modlepins(reference_modleId, modleOpcTag, filterMethod, modlePinName, opcTagName, resource, Q, R)
+        values
+        <foreach collection="controlModle.modlePins" item="pin" separator=",">
+            (#{pin.reference_modleId}, #{pin.modleOpcTag}, #{pin.filterMethod}, #{pin.modlePinName}, #{pin.opcTagName},
+            #{pin.resource}, #{pin.Q}, #{pin.R})
+        </foreach>
+
+    </insert>
+
+
+    <insert id="insertModle" parameterType="hs.Bean.ControlModle" useGeneratedKeys="true" keyColumn="modleId"
+            keyProperty="modleId">
+        insert into modle(modleName, controlAPCOutCycle, predicttime_P, timeserise_N, controltime_M, enable) values
+        (#{controlModle.modleName},#{controlModle.controlAPCOutCycle},#{controlModle.predicttime_P},#{controlModle.timeserise_N},#{controlModle.controltime_M},0)
+    </insert>
+
+    <insert id="insertModleResp" useGeneratedKeys="true" keyColumn="modletagId" keyProperty="modletagId">
+        insert into modlerespon(refrencemodleId, stepRespJson, inputPins, outputPins) values
+        <foreach collection="responTimeSerises" item="resp" separator=",">
+            (#{resp.refrencemodleId}, #{resp.stepRespJson}, #{resp.inputPins}, #{resp.outputPins})
+        </foreach>
+    </insert>
+
 
 </mapper>

@@ -1,8 +1,10 @@
 package hs.Configuartion;
+import hs.Bean.BaseConf;
 import hs.Dao.Service.ModleServe;
 import org.apache.log4j.Logger;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.ImportResource;
 
@@ -18,6 +20,11 @@ public class SpringAnnotationConfigure {
 
     @Autowired
     private ModleServe modleServe;
+
+    @Bean
+    public BaseConf BaseConf(){
+        return modleServe.getBaseConf();
+    }
 
 
 

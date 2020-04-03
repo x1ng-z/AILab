@@ -1,6 +1,6 @@
 package hs.Opc;
 
-import hs.Bean.Tag;
+import hs.Bean.ModlePin;
 import hs.Dao.ModleMapper;
 import org.apache.log4j.Logger;
 import org.jinterop.dcom.common.JIException;
@@ -12,6 +12,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -22,21 +24,21 @@ import java.util.concurrent.TimeUnit;
  * @date 2020/3/23 12:10
  */
 @Component()
-public class OPCService implements Runnable{
-    private static final Logger logger=Logger.getLogger(OPCService.class);
+public class OPCService implements Runnable {
+    private static final Logger logger = Logger.getLogger(OPCService.class);
     private Server server;
     private ModleMapper modleMapper;
-    private Map<Integer,Tag> opctags;
-    private Group group=null;
-    private Map<Integer,Item> itemLists=new ConcurrentHashMap<>();
+    private Map<String, List<ModlePin>> opctags = new ConcurrentHashMap();//key=标签,value=引脚s
+    private Group group = null;
+    private Map<String, Item> itemLists = new ConcurrentHashMap<>();
 
     @Autowired
     public OPCService(Server server, ModleMapper modleMapper) {
-        this.server=server;
-        this.modleMapper=modleMapper;
+        this.server = server;
+        this.modleMapper = modleMapper;
     }
 
-    public void selfinit(){
+    public void selfinit() {
         try {
             server.connect();
         } catch (UnknownHostException e) {
@@ -46,13 +48,10 @@ public class OPCService implements Runnable{
         } catch (AlreadyConnectedException e) {
             logger.error(e);
         }
-        opctags=modleMapper.getAllTags();
-        for(Integer tagid:opctags.keySet()){
-            logger.debug(opctags.get(tagid).getTagName()+opctags.get(tagid).getTagId());
-        }
-        logger.debug("opc selfinit"+opctags.size());
+
+        logger.debug("opc selfinit" + opctags.size());
         try {
-            group =server.addGroup("opc");
+            group = server.addGroup("opc");
         } catch (UnknownHostException e) {
             logger.error(e);
         } catch (NotConnectedException e) {
@@ -62,12 +61,12 @@ public class OPCService implements Runnable{
         } catch (DuplicateGroupException e) {
             logger.error(e);
         }
-        if(group!=null){
+        if (group != null) {
             logger.debug("group no null");
-            for(Tag tag:opctags.values()){
+            for (String tag : opctags.keySet()) {
                 try {
-                    itemLists.put(tag.getTagId(),group.addItem(tag.getTag()));
-                    logger.debug("register "+tag.getTagId()+" "+tag.getTagName()+" success");
+                    itemLists.put(tag, group.addItem(tag));
+                    logger.debug("register " + tag + " success");
                 } catch (JIException e) {
                     logger.error(e);
                 } catch (AddFailedException e) {
@@ -80,26 +79,62 @@ public class OPCService implements Runnable{
 
     }
 
+
+    public Boolean register(ModlePin modlePins) {
+        List<ModlePin> modlePinsList = opctags.get(modlePins.getModleOpcTag());
+        if (modlePinsList != null) {
+            modlePinsList.add(modlePins);
+            return true;
+        } else {
+            try {
+                /***
+                 *加入到opc获取数据group
+                 * */
+                itemLists.put(modlePins.getModleOpcTag(), group.addItem(modlePins.getModleOpcTag()));
+                modlePinsList = new ArrayList<>();
+                /**
+                 * 注册
+                 * */
+                modlePinsList.add(modlePins);
+                opctags.put(modlePins.getModleOpcTag(), modlePinsList);
+
+                return true;
+            } catch (JIException e) {
+                logger.error(e);
+                return false;
+            } catch (AddFailedException e) {
+                logger.error(e);
+                return false;
+            }
+
+        }
+
+
+    }
+
     @Override
     public void run() {
-        while (!Thread.currentThread().isInterrupted()){
-            logger.debug("opc serve run"+itemLists.size());
+        while (!Thread.currentThread().isInterrupted()) {
+            logger.debug("opc serve run" + itemLists.size());
 
-            for(Map.Entry<Integer, Item> integerItemEntry:itemLists.entrySet()){
+            for (Map.Entry<String, Item> integerItemEntry : itemLists.entrySet()) {
                 try {
-                    logger.debug("update"+integerItemEntry.getKey());
-                    Tag uptag=opctags.get(integerItemEntry.getKey());
-                    String stringvalue=integerItemEntry.getValue().read(false).getValue().getObject().toString();
-                    logger.info(stringvalue);
-                    if(stringvalue.equals("true")){
-                        stringvalue=1+"";
+
+                    List<ModlePin> pins = opctags.get(integerItemEntry.getKey());
+                    String stringvalue = integerItemEntry.getValue().read(false).getValue().getObject().toString();
+                    logger.debug("update" + integerItemEntry.getKey()+"value: "+stringvalue);
+                    if (stringvalue.equals("true")) {
+                        stringvalue = 1 + "";
                     }
-                    if(stringvalue.equals("false")){
-                        stringvalue=0+"";
+                    if (stringvalue.equals("false")) {
+                        stringvalue = 0 + "";
                     }
-                    uptag.updateValue(Double.valueOf(stringvalue));
-                    logger.debug(uptag.getTagName()+uptag.getNewvalue());
+                    for(ModlePin pin:pins){
+                        pin.opcUpdateValue(Double.valueOf(stringvalue));
+                    }
                 } catch (JIException e) {
+                    logger.error(e);
+                }catch (Exception e){
                     logger.error(e);
                 }
             }
@@ -113,31 +148,24 @@ public class OPCService implements Runnable{
 
     }
 
-    public Double readTagvalue(Integer tagid){
-        return opctags.get(tagid).getNewvalue();
-    }
 
-
-    public Double readTagDeltaValue(Integer tagid){
-        return opctags.get(tagid).diffBetweenSample();
-    }
-
-    public boolean writeTagvalue(Integer tagid,Double value){
-        Item item=itemLists.get(tagid);
-        if(item!=null){
+    public boolean writeTagvalue(String tag, Double value) {
+        Item item = itemLists.get(tag);
+        if (item != null) {
             try {
-                item.write( new JIVariant(value,false));
+                item.write(new JIVariant(value, false));
+                return true;
             } catch (JIException e) {
                 logger.error(e);
                 return false;
             }
-            return true;
+
         }
         return false;
 
     }
 
-    public Map<Integer, Tag> getOpctags() {
+    public Map<String, List<ModlePin>> getOpctags() {
         return opctags;
     }
 }

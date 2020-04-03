@@ -3,6 +3,8 @@
     <CLASSES>
       <root url="file://$PROJECT_DIR$/lib" />
       <root url="jar://$MAVEN_REPOSITORY$/json/fastjson-1.2.38.jar!/" />
+      <root url="jar://E:/Program Files/apache-tomcat-9.0.14/webapps/examples/WEB-INF/lib/taglibs-standard-impl-1.2.5.jar!/" />
+      <root url="jar://E:/Program Files/apache-tomcat-9.0.14/webapps/examples/WEB-INF/lib/taglibs-standard-spec-1.2.5.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />

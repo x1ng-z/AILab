@@ -21,22 +21,20 @@ public class ModleConstainer {
     private OPCService OPCserver;
     private Map<Integer,ControlModle> Modules;
     private ModleServe modleServe;
+    private BaseConf baseConf;
 
     @Autowired
-    public ModleConstainer(OPCService OPCserver, ModleServe modleServe) {
+    public ModleConstainer(OPCService OPCserver, ModleServe modleServe,BaseConf baseConf) {
         this.OPCserver = OPCserver;
         this.modleServe=modleServe;
+        this.baseConf=baseConf;
 
         Modules=new HashMap<>();
         List<ControlModle> controlModleList=modleServe.getAllModle();
         for(ControlModle controlModle:controlModleList){
             controlModle.setOPCserver(OPCserver);
-            for(ModleTag modleTag:controlModle.getUnhandleTag()){
-                modleTag.setResponTimeSeries(ResponComput.responOneTimeSeries(modleTag.getStepRespJson()));
-                modleTag.setSample_step(ResponComput.getSampleStep(modleTag.getStepRespJson()));
-                OPCserver.getOpctags().get(modleTag.getTagclazz().getTagId()).setSampleStep(modleTag.getSample_step());
-            }
-            controlModle.realizeModle();
+            controlModle.setBaseConf(baseConf);
+            controlModle.modleBuild();
 
             Modules.put(controlModle.getModleId(),controlModle);
         }

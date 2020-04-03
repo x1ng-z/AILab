@@ -3,7 +3,6 @@ package hs.Controller;
 import com.alibaba.fastjson.JSONObject;
 import hs.Bean.ControlModle;
 import hs.Bean.ModleConstainer;
-import hs.Bean.ModleTag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Controller;
@@ -11,9 +10,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
-
-import java.util.List;
-import java.util.Map;
+import org.springframework.web.servlet.ModelAndView;
 
 /**
  * @author zzx
@@ -24,8 +21,6 @@ import java.util.Map;
 @RequestMapping("/python")
 public class PythonController {
     private ModleConstainer modleConstainer;
-
-
     @RequestMapping("/modlebuild/{id}")
     @ResponseBody
     public String ModelBuild(@PathVariable("id") int id) {
@@ -37,32 +32,31 @@ public class PythonController {
         /**
          * mv
          * */
-        jsonObject.put("m", modle.getInputpoints());
-        jsonObject.put("p", modle.getOutpoints());
-        jsonObject.put("M", modle.getControltime());
-        jsonObject.put("P", modle.getPredicttime());
-        jsonObject.put("N", modle.getTimeserisN());
-        jsonObject.put("f", modle.getFeedforwardpoints());
-        jsonObject.put("S",modle.getSampleStep());
-        jsonObject.put("outstep",modle.getOutstep());
+        jsonObject.put("m", modle.getInputpoints_m());
+        jsonObject.put("p", modle.getOutpoints_p());
+        jsonObject.put("M", modle.getControltime_M());
+        jsonObject.put("P", modle.getPredicttime_P());
+        jsonObject.put("N", modle.getTimeserise_N());
+        jsonObject.put("f", modle.getFeedforwardpoints_v());
+        jsonObject.put("APCOutCycle",modle.getControlAPCOutCycle());
 
 
         /**
          *mv
          * */
-        if (modle.getMvsort().size() != 0) {
-            jsonObject.put("mv", modle.getMvtimeserise());
+        if (modle.getCategoryMVmodletag().size() != 0) {
+            jsonObject.put("A", modle.getA_timeseriseMatrix());
         }
 
         /**
          *ff
          */
-        if (modle.getFfsort().size() != 0) {
-            jsonObject.put("ff", modle.getFftimeserise());
-            //jsonObject.put("deltaff",modle);
+        if (modle.getCategoryFFmodletag().size() != 0) {
+            jsonObject.put("B", modle.getB_timeseriseMatrix());
         }
 
-
+        jsonObject.put("Q", modle.getQ());
+        jsonObject.put("R",modle.getR());
         return jsonObject.toJSONString();
     }
 
@@ -78,14 +72,14 @@ public class PythonController {
     @ResponseBody
     public String ModelWriteData(@RequestParam("id") int id,@RequestParam("U") Double[] u) {
         ControlModle controlModle=modleConstainer.getModules().get(id);
-        int loop=0;
-        for(Integer tgid:controlModle.getMvsort()){
-            if(!controlModle.writeData(tgid,u[loop++])){
+            if(!controlModle.writeData(u)){
                 return "false";
             }
-        }
+
         return "true";
     }
+
+
 
 
     @Autowired

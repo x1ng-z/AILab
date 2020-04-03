@@ -1,6 +1,7 @@
 package hs.test;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import hs.Configuartion.SpringAnnotationConfigure;
 import hs.Opc.OPCService;
@@ -16,6 +17,18 @@ import java.util.*;
 public class testJson {
 
     public static void main(String[] args) {
+
+
+
+        JSONObject jsonObject=JSONArray.parseObject("[{\"pv7\":\"\",\"pv6\":\"\",\"pv8\":\"\",\"mv\":\"mv1\",\"pv1\":\"\",\"pv3\":\"\",\"pv2\":\"\",\"pv5\":\"\",\"pv4\":\"\",\"LAY_TABLE_INDEX\":0},{\"pv7\":\"\",\"pv6\":\"\",\"pv8\":\"\",\"mv\":\"mv2\",\"pv1\":\"\",\"pv3\":\"\",\"pv2\":\"\",\"pv5\":\"\",\"pv4\":\"\",\"LAY_TABLE_INDEX\":1},{\"pv7\":\"\",\"pv6\":\"\",\"pv8\":\"\",\"mv\":\"mv3\",\"pv1\":\"\",\"pv3\":\"\",\"pv2\":\"\",\"pv5\":\"\",\"pv4\":\"\",\"LAY_TABLE_INDEX\":2},{\"pv7\":\"\",\"pv6\":\"\",\"pv8\":\"\",\"mv\":\"mv4\",\"pv1\":\"\",\"pv3\":\"\",\"pv2\":\"\",\"pv5\":\"\",\"pv4\":\"\",\"LAY_TABLE_INDEX\":3},{\"pv7\":\"\",\"pv6\":\"\",\"pv8\":\"\",\"mv\":\"mv5\",\"pv1\":\"\",\"pv3\":\"\",\"pv2\":\"\",\"pv5\":\"\",\"pv4\":\"\",\"LAY_TABLE_INDEX\":4},{\"pv7\":\"\",\"pv6\":\"\",\"pv8\":\"\",\"mv\":\"mv6\",\"pv1\":\"\",\"pv3\":\"\",\"pv2\":\"\",\"pv5\":\"\",\"pv4\":\"\",\"LAY_TABLE_INDEX\":5},{\"pv7\":\"\",\"pv6\":\"\",\"pv8\":\"\",\"mv\":\"mv7\",\"pv1\":\"\",\"pv3\":\"\",\"pv2\":\"\",\"pv5\":\"\",\"pv4\":\"\",\"LAY_TABLE_INDEX\":6},{\"pv7\":\"\",\"pv6\":\"\",\"pv8\":\"\",\"mv\":\"mv8\",\"pv1\":\"\",\"pv3\":\"\",\"pv2\":\"\",\"pv5\":\"\",\"pv4\":\"\",\"LAY_TABLE_INDEX\":7}]");
+
+//        for(JSONObject jsonObject1:jsonObject.values()){
+//
+//        }
+
+        //ffresp: [{"ff":"ff1","pv7":"","pv6":"","pv8":"","pv1":"{\"k\":10,\"t\":180,\"tao\":200}","pv3":"","pv2":"","pv5":"","pv4":"","LAY_TABLE_INDEX":0},{"ff":"ff2","pv7":"","pv6":"","pv8":"","pv1":"","pv3":"","pv2":"","pv5":"","pv4":"","LAY_TABLE_INDEX":1},{"ff":"ff3","pv7":"","pv6":"","pv8":"","pv1":"","pv3":"","pv2":"","pv5":"","pv4":"","LAY_TABLE_INDEX":2},{"ff":"ff4","pv7":"","pv6":"","pv8":"","pv1":"","pv3":"","pv2":"","pv5":"","pv4":"","LAY_TABLE_INDEX":3},{"ff":"ff5","pv7":"","pv6":"","pv8":"","pv1":"","pv3":"","pv2":"","pv5":"","pv4":"","LAY_TABLE_INDEX":4},{"ff":"ff6","pv7":"","pv6":"","pv8":"","pv1":"","pv3":"","pv2":"","pv5":"","pv4":"","LAY_TABLE_INDEX":5},{"ff":"ff7","pv7":"","pv6":"","pv8":"","pv1":"","pv3":"","pv2":"","pv5":"","pv4":"","LAY_TABLE_INDEX":6},{"ff":"ff8","pv7":"","pv6":"","pv8":"","pv1":"","pv3":"","pv2":"","pv5":"","pv4":"","LAY_TABLE_INDEX":7}]
+        Map<String,String> aa=new HashMap<>();
+        String aa1=aa.get("aa");
         int aaaa=1;
         int bbbbb=2;
         int c=1/2;

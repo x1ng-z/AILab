@@ -48,7 +48,7 @@
         <property name="maxPoolSize" value="9"></property>
         <property name="minPoolSize" value="3"></property>
         <!--<property name="maxStatements">200</property>-->
-        <property name="preferredTestQuery" value="SELECT count(*) FROM device;"></property>
+        <property name="preferredTestQuery" value="SELECT count(*) FROM modle;"></property>
         <property name="maxIdleTime" value="1800"></property>
         <property name="acquireRetryAttempts" value="10"></property>
     </bean>

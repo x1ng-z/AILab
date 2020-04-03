@@ -1,7 +1,6 @@
 package hs.Dao;
 
-import hs.Bean.ControlModle;
-import hs.Bean.Tag;
+import hs.Bean.*;
 import org.apache.ibatis.annotations.MapKey;
 import org.apache.ibatis.annotations.Param;
 
@@ -17,8 +16,18 @@ public interface ModleMapper {
 
     List<ControlModle> getModles();
 
-    @MapKey("tagId")
-    Map<Integer,Tag> getAllTags();
+    BaseConf getBaseConf();
 
-    Tag findTagById(@Param("id")int id);
+    void insertModle(@Param("controlModle") ControlModle controlModle);
+
+    void insertModlePins( @Param("controlModle") ControlModle controlModle);
+
+    void insertModleResp( @Param("responTimeSerises")List<ResponTimeSerise> responTimeSerises);
+
+
+//    List<ModleTag> getModle(@Param("modleidid")int modleid);
+//
+//    void insertmodleTag(@Param("modleTag")List<ModleTag> modleTag);
+//    void modifyModleTag(ModleTag modleTag);
+//    void deleteModleTag(@Param("modleidid")int modleid);
 }

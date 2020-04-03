@@ -1,7 +1,10 @@
 package hs.Dao.Service;
 
+import hs.Bean.BaseConf;
 import hs.Bean.ControlModle;
+import hs.Bean.ResponTimeSerise;
 import hs.Bean.Tag;
+import hs.Controller.ModleController;
 import hs.Dao.ModleMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -27,15 +30,28 @@ public class ModleServe {
         return modleMapper.getModles();
     }
 
+
     @Transactional(isolation = Isolation.READ_COMMITTED)
-    public Map<Integer,Tag> getAllTag(){
-        return modleMapper.getAllTags();
+    public BaseConf getBaseConf(){
+        return modleMapper.getBaseConf();
     }
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
-    public Tag findTag(int tagId){
-        return modleMapper.findTagById(tagId);
+    public void insertModle(ControlModle controller){
+        modleMapper.insertModle(controller);
     }
+
+
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    public void insertModlePins(ControlModle controller){
+        modleMapper.insertModlePins(controller);
+    }
+
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    public void insertModleResp(List<ResponTimeSerise> responTimeSerises){
+        modleMapper.insertModleResp(responTimeSerises);
+    }
+
 
 
     @Autowired
