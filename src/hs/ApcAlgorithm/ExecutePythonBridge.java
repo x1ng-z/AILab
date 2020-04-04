@@ -7,27 +7,44 @@ import java.util.concurrent.LinkedBlockingQueue;
 public class ExecutePythonBridge {
     private org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(ExecutePythonBridge.class);
     public  Process p=null;
-    public  void destory(){
+    public String pythonhome="python.exe";
+    private String pythonjs="E:\\LinkAPC.py";
+    private String url;//new String[]{pythonhome,pythonjs,"http://localhost:8080/python/modlebuild/"+key+".do"};
+    private String modleid;
+    Thread result=null;
+    Thread error=null;
+
+    public ExecutePythonBridge( String pythonjs, String url,String modleid) {
+        this.pythonhome = pythonhome;
+        this.pythonjs = pythonjs;
+        this.url = url;
+        this.modleid=modleid;
+    }
+
+    public  void stop(){
         if(p!=null){
             p.destroy();
+            result.interrupt();
+            error.interrupt();
         }
         p=null;
     }
 
-    public  void execute(LinkedBlockingQueue<String> linkedBlockingQueue,String[] cmd, String... encoding) {
+    public  void execute() {
         if(p!=null){
             return;
         }
+        //LinkedBlockingQueue<String> linkedBlockingQueue=new LinkedBlockingQueue();
         BufferedReader bReader = null;
         InputStreamReader sReader = null;
         try {
-            p = Runtime.getRuntime().exec(cmd);
-            Thread result= new Thread(new InputStreamRunnable(p.getInputStream(),"Result",linkedBlockingQueue));
+            p = Runtime.getRuntime().exec(new String[]{pythonjs, url,modleid});
+             result= new Thread(new InputStreamRunnable(p.getInputStream(),"Result",null));
             result.setDaemon(true);
             result.start();
 
             /* 为"错误输出流"单独开一个线程读取之,否则会造成标准输出流的阻塞 */
-            Thread error = new Thread(new InputStreamRunnable(p.getErrorStream(), "ErrorStream",null));
+             error = new Thread(new InputStreamRunnable(p.getErrorStream(), "ErrorStream",null));
             error.setDaemon(true);
             error.start();
 

@@ -44,6 +44,10 @@
       select * from modle
     </select>
 
+    <select id="getModle" resultMap="modleResult">
+        select * from modle where modleId=#{modleid}
+    </select>
+
 
     <select id="findTagById" resultType="hs.Bean.Tag">
         select * from tag where tagId=#{id}
@@ -82,12 +86,36 @@
         (#{controlModle.modleName},#{controlModle.controlAPCOutCycle},#{controlModle.predicttime_P},#{controlModle.timeserise_N},#{controlModle.controltime_M},0)
     </insert>
 
+    <update id="modifymodle">
+        update modle set modleName=#{controlModle.modleName}, controlAPCOutCycle=#{controlModle.controlAPCOutCycle}, predicttime_P=#{controlModle.predicttime_P}, timeserise_N=#{controlModle.timeserise_N}, controltime_M=#{controlModle.controltime_M}
+        where modleId=#{modleid}
+    </update>
+
+    <update id="modifymodleEnable">
+        update modle set enable=#{enable}
+        where modleId=#{modleid}
+    </update>
+
+    <delete id="deleteModlePins">
+        delete from modlepins where reference_modleId=#{modleid}
+    </delete>
+
     <insert id="insertModleResp" useGeneratedKeys="true" keyColumn="modletagId" keyProperty="modletagId">
         insert into modlerespon(refrencemodleId, stepRespJson, inputPins, outputPins) values
         <foreach collection="responTimeSerises" item="resp" separator=",">
             (#{resp.refrencemodleId}, #{resp.stepRespJson}, #{resp.inputPins}, #{resp.outputPins})
         </foreach>
     </insert>
+
+    <delete id="deleteModleResp">
+        delete from modlerespon where refrencemodleId=#{modleid}
+    </delete>
+
+    <delete id="deleteModle">
+        delete from modle where modleId=#{modleid}
+    </delete>
+
+
 
 
 </mapper>

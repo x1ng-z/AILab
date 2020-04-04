@@ -1,8 +1,8 @@
 package hs.Bean;
 
+import hs.ApcAlgorithm.ExecutePythonBridge;
 import hs.Dao.Service.ModleServe;
 import hs.Opc.OPCService;
-import hs.Utils.ResponComput;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -41,9 +41,24 @@ public class ModleConstainer {
 
     }
 
+    public void registerModle(ControlModle controlModle){
+        controlModle.setOPCserver(OPCserver);
+        controlModle.setBaseConf(baseConf);
+        controlModle.modleBuild();
+        Modules.put(controlModle.getModleId(),controlModle);
+
+        ExecutePythonBridge executePythonBridge=new ExecutePythonBridge(
+                "C:\\Program Files\\apache-tomcat-9.0.14\\webapps\\AILab\\LinkAPC.exe",
+                "http://localhost:8080/AILab/python/modlebuild/"+controlModle.getModleId()+".do",controlModle.getModleId()+"");
+        controlModle.setExecutePythonBridge(executePythonBridge);
+        if(controlModle.getEnable()==1){
+            executePythonBridge.execute();
+        }
+
+    }
     public  void selfclose(){
         for(ControlModle controlModle:Modules.values()){
-            controlModle.getExecutePythonBridge().destory();
+            controlModle.getExecutePythonBridge().stop();
         }
     }
 

@@ -19,12 +19,19 @@ public interface ModleMapper {
     BaseConf getBaseConf();
 
     void insertModle(@Param("controlModle") ControlModle controlModle);
+     void modifymodle(@Param("modleid") int modleid, @Param("controlModle") ControlModle controlModle);
 
     void insertModlePins( @Param("controlModle") ControlModle controlModle);
+    void deleteModlePins( @Param("modleid") int modleid);
 
     void insertModleResp( @Param("responTimeSerises")List<ResponTimeSerise> responTimeSerises);
 
+    void deleteModleResp( @Param("modleid") int modleid);
 
+    void deleteModle(@Param("modleid") int modleid);
+
+    void modifymodleEnable(@Param("modleid") int modleid,@Param("enable") int enable);
+    ControlModle getModle(@Param("modleid") int modleid);
 //    List<ModleTag> getModle(@Param("modleidid")int modleid);
 //
 //    void insertmodleTag(@Param("modleTag")List<ModleTag> modleTag);

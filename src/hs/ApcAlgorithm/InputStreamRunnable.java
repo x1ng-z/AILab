@@ -21,7 +21,7 @@ public class InputStreamRunnable implements Runnable {
             this._type=_type;
             bReader = new BufferedReader(new InputStreamReader((is), "UTF-8"));
         } catch (Exception ex) {
-            ex.printStackTrace();
+            log.error(ex);
         }
     }
     public void run() {
@@ -40,7 +40,7 @@ public class InputStreamRunnable implements Runnable {
             log.info("end "+_type);
             bReader.close();
         } catch (Exception ex) {
-            ex.printStackTrace();
+            log.error(ex);
 
         }
     }

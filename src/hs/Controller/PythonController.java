@@ -39,6 +39,7 @@ public class PythonController {
         jsonObject.put("N", modle.getTimeserise_N());
         jsonObject.put("f", modle.getFeedforwardpoints_v());
         jsonObject.put("APCOutCycle",modle.getControlAPCOutCycle());
+        jsonObject.put("enable",modle.getEnable());
 
 
         /**

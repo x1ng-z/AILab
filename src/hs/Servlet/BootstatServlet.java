@@ -8,6 +8,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.web.servlet.DispatcherServlet;
 
 import javax.servlet.ServletException;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * @author zzx
@@ -31,12 +32,16 @@ public class BootstatServlet extends DispatcherServlet {
 //        List<ControlModle> modles=modleServe.getAllModle();
         logger.info("modle size is: "+modleConstainer.getModules().size());
         for(Integer key:modleConstainer.getModules().keySet()){
-            String pythonhome="python.exe";
-            String pythonjs="E:\\LinkAPC.py";
-            String[] aa=new String[]{pythonhome,pythonjs,"http://localhost:8080/python/modlebuild/"+key+".do"};
-            ExecutePythonBridge executePythonBridge=new ExecutePythonBridge();
+
+            ExecutePythonBridge executePythonBridge=new ExecutePythonBridge(
+            "C:\\Program Files\\apache-tomcat-9.0.14\\webapps\\AILab\\LinkAPC.exe",
+            "http://localhost:8080/AILab/python/modlebuild/"+key+".do",key+"");
             modleConstainer.getModules().get(key).setExecutePythonBridge(executePythonBridge);
-            //executePythonBridge.execute(new LinkedBlockingQueue<>(),aa);
+            if(modleConstainer.getModules().get(key).getEnable()==1){
+                executePythonBridge.execute();
+            }
+
+
         }
 
     }

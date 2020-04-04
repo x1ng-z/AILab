@@ -3,10 +3,7 @@ package hs.Controller;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
-import hs.Bean.BaseConf;
-import hs.Bean.ControlModle;
-import hs.Bean.ModlePin;
-import hs.Bean.ResponTimeSerise;
+import hs.Bean.*;
 import hs.Dao.Service.ModleServe;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -32,6 +29,76 @@ public class ModleController {
     private BaseConf baseConf;
     @Autowired
     private ModleServe modleServe;
+    @Autowired
+    private ModleConstainer modleConstainer;
+
+
+    @RequestMapping("/modlestatus")
+    public ModelAndView modelStatus(){
+
+        ModelAndView mv=new ModelAndView();
+        mv.setViewName("index");
+        mv.addObject("modles",modleConstainer.getModules().values());
+        mv.addObject("basedata",baseConf);
+        return mv;
+    }
+
+
+    @RequestMapping("/stopModle")
+    public ModelAndView stopModel(@RequestParam("modleid") String modleid){
+
+        ControlModle controlModle=modleConstainer.getModules().get(Integer.valueOf(modleid.trim()));
+        if(controlModle!=null){
+            if(controlModle.getEnable()==1){
+                controlModle.getExecutePythonBridge().stop();
+                controlModle.setEnable(0);
+                modleServe.modifymodleEnable(controlModle.getModleId(),0);
+            }
+        }
+        ModelAndView mv=new ModelAndView();
+        mv.setViewName("redirect:modlestatus.do");
+        return mv;
+//        return mv;
+    }
+
+    @RequestMapping("/runModle")
+    public ModelAndView runModel(@RequestParam("modleid") String modleid){
+
+        ControlModle controlModle=modleConstainer.getModules().get(Integer.valueOf(modleid.trim()));
+        if(controlModle!=null){
+            if(controlModle.getEnable()==0){
+                controlModle.getExecutePythonBridge().execute();
+                controlModle.setEnable(1);
+                modleServe.modifymodleEnable(controlModle.getModleId(),1);
+            }
+        }
+        ModelAndView mv=new ModelAndView();
+        mv.setViewName("redirect:modlestatus.do");
+        return mv;
+//        return "/modle/modlestatus.do";
+    }
+
+    @RequestMapping("/deleteModle")
+    public ModelAndView deleteModel(@RequestParam("modleid") String modleid){
+
+        ControlModle controlModle=modleConstainer.getModules().get(Integer.valueOf(modleid.trim()));
+        if(controlModle!=null){
+            if(controlModle.getEnable()==1){
+                controlModle.getExecutePythonBridge().stop();
+            }
+            modleServe.deleteModleResp(controlModle.getModleId());
+            modleServe.deleteModlePins(controlModle.getModleId());
+            modleServe.deleteModle(controlModle.getModleId());
+            modleConstainer.getModules().remove(Integer.valueOf(modleid.trim()));
+
+        }
+        ModelAndView mv=new ModelAndView();
+        mv.setViewName("redirect:modlestatus.do");
+        return mv;
+//        return "/modle/modlestatus.do";
+    }
+
+
 
     @RequestMapping("/newmodle")
     public ModelAndView newModel(){
@@ -82,6 +149,227 @@ public class ModleController {
         return mv;
     }
 
+
+
+
+    @RequestMapping("/modifymodle")
+    public ModelAndView modifyModel(@RequestParam("modleid") int modleid){
+
+        ControlModle controlModle=modleConstainer.getModules().get(modleid);
+
+        ModelAndView mv=new ModelAndView();
+        mv.setViewName("modifyModle");
+        JSONArray mvrespon= new JSONArray();
+        JSONArray ffrespon= new JSONArray();
+
+        List<String> pvlist=new ArrayList<>();
+        for(int i=1;i<=baseConf.getPv();++i){
+            ModlePin modlePin=controlModle.getStringmodlePinsMap().get("pv"+i);
+            if(modlePin==null){
+                pvlist.add("");
+            }else {
+                pvlist.add(modlePin.getModleOpcTag());
+            }
+        }
+
+        List<String> qlist=new ArrayList<>();
+        for(int i=1;i<=baseConf.getPv();++i){
+            ModlePin modlePin=controlModle.getStringmodlePinsMap().get("pv"+i);
+            if(modlePin==null){
+                qlist.add("");
+            }else {
+                qlist.add(modlePin.getQ()+"");
+            }
+        }
+
+
+
+        List<String> splist=new ArrayList<>();
+        for(int i=1;i<=baseConf.getPv();++i){
+            ModlePin modlePin=controlModle.getStringmodlePinsMap().get("sp"+i);
+
+            if(modlePin==null){
+                splist.add("");
+            }else {
+                splist.add(modlePin.getModleOpcTag());
+            }
+
+        }
+
+
+        List<String> mvlist=new ArrayList<>();
+        for(int i=1;i<=baseConf.getMv();++i){
+            ModlePin modlePin=controlModle.getStringmodlePinsMap().get("mv"+i);
+
+            if(modlePin==null){
+                mvlist.add("");
+            }else {
+                mvlist.add(modlePin.getModleOpcTag());
+            }
+
+        }
+
+
+        List<String> rlist=new ArrayList<>();
+        for(int i=1;i<=baseConf.getMv();++i){
+            ModlePin modlePin=controlModle.getStringmodlePinsMap().get("mv"+i);
+            if(modlePin==null){
+                rlist.add("");
+            }else {
+                rlist.add(modlePin.getR()+"");
+            }
+
+        }
+
+
+        List<ModlePin> mvuplist=new ArrayList<>();
+        for(int i=1;i<=baseConf.getMv();++i){
+            ModlePin modlePin=controlModle.getStringmodlePinsMap().get("mvup"+i);
+
+            if(modlePin==null){
+                mvuplist.add(new ModlePin() );
+            }else {
+                mvuplist.add(modlePin);
+            }
+
+        }
+
+        List<ModlePin> mvdownlist=new ArrayList<>();
+        for(int i=1;i<=baseConf.getMv();++i){
+            ModlePin modlePin=controlModle.getStringmodlePinsMap().get("mvdown"+i);
+
+            if(modlePin==null){
+                mvdownlist.add(new ModlePin() );
+            }else {
+                mvdownlist.add(modlePin);
+            }
+
+        }
+
+
+        List<String> mvfblist=new ArrayList<>();
+        for(int i=1;i<=baseConf.getMv();++i){
+            ModlePin modlePin=controlModle.getStringmodlePinsMap().get("mvfb"+i);
+
+            if(modlePin==null){
+                mvfblist.add("");
+            }else {
+                mvfblist.add(modlePin.getModleOpcTag());
+            }
+
+        }
+
+        List<String> fflist=new ArrayList<>();
+        for(int i=1;i<=baseConf.getFf();++i){
+            ModlePin modlePin=controlModle.getStringmodlePinsMap().get("ff"+i);
+
+            if(modlePin==null){
+                fflist.add("");
+            }else {
+                fflist.add(modlePin.getModleOpcTag());
+            }
+
+        }
+
+
+        List<ModlePin> ffuplist=new ArrayList<>();
+        for(int i=1;i<=baseConf.getFf();++i){
+            ModlePin modlePin=controlModle.getStringmodlePinsMap().get("ffup"+i);
+
+            if(modlePin==null){
+                ffuplist.add(new ModlePin());
+            }else {
+                ffuplist.add(modlePin);
+            }
+
+        }
+
+        List<ModlePin> ffdownlist=new ArrayList<>();
+        for(int i=1;i<=baseConf.getFf();++i){
+            ModlePin modlePin=controlModle.getStringmodlePinsMap().get("ffdown"+i);
+
+            if(modlePin==null){
+                ffdownlist.add(new ModlePin());
+            }else {
+                ffdownlist.add(modlePin);
+            }
+
+        }
+
+        //A
+
+        for(int i=1;i<=baseConf.getMv();++i){
+
+            JSONObject mvjson=new JSONObject();
+            mvjson.put("mv","mv"+i);
+            for(int j=1;j<=baseConf.getPv();++j){
+
+                boolean isfind=false;
+                for(ResponTimeSerise responTimeSerise:controlModle.getResponTimeSerises()){
+                    if(responTimeSerise.getInputPins().equals("mv"+i)&&responTimeSerise.getOutputPins().equals("pv"+j)){
+                        mvjson.put("pv"+j,responTimeSerise.getStepRespJson());
+                        isfind=true;
+                    }
+                }
+                if(!isfind){
+                    mvjson.put("pv"+j,"");
+                }
+
+            }
+
+            mvrespon.add(mvjson);
+
+        }
+
+
+
+        //B
+
+        for(int i=1;i<=baseConf.getFf();++i){
+
+            JSONObject ffjson=new JSONObject();
+            ffjson.put("ff","ff"+i);
+            for(int j=1;j<=baseConf.getPv();++j){
+
+                boolean isfind=false;
+                for(ResponTimeSerise responTimeSerise:controlModle.getResponTimeSerises()){
+                    if(responTimeSerise.getInputPins().equals("ff"+i)&&responTimeSerise.getOutputPins().equals("pv"+j)){
+                        ffjson.put("pv"+j,responTimeSerise.getStepRespJson());
+                        isfind=true;
+                    }
+                }
+                if(!isfind){
+                    ffjson.put("pv"+j,"");
+                }
+
+            }
+            ffrespon.add(ffjson);
+        }
+
+        mv.addObject("modle",controlModle);
+        mv.addObject("pvlist",pvlist);
+        mv.addObject("qlist",qlist);
+
+        mv.addObject("splist",splist);
+        mv.addObject("mvlist",mvlist);
+        mv.addObject("rlist",rlist);
+        mv.addObject("mvuplist",mvuplist);
+        mv.addObject("mvdownlist",mvdownlist);
+        mv.addObject("mvfblist",mvfblist);
+
+        mv.addObject("fflist",fflist);
+        mv.addObject("ffuplist",ffuplist);
+        mv.addObject("ffdownlist",ffdownlist);
+
+        mv.addObject("mvresp",mvrespon.toJSONString());
+        mv.addObject("ffresp",ffrespon.toJSONString());
+
+        return mv;
+    }
+
+
+
+
     @RequestMapping("/savemodle")
     @ResponseBody
     public String saveModel(@RequestParam("modle")String modle,@RequestParam("mvresp") String mvresp,@RequestParam("ffresp") String ffresp){//
@@ -94,7 +382,14 @@ public class ModleController {
         controlModle.setControltime_M(Integer.valueOf(modlejsonObject.getString("M")));
         controlModle.setTimeserise_N(Integer.valueOf(modlejsonObject.getString("N")));
         controlModle.setControlAPCOutCycle(Integer.valueOf(modlejsonObject.getString("O")));
-        modleServe.insertModle(controlModle);
+
+        if (modlejsonObject.getString("modleid").trim().equals("")){
+            modleServe.insertModle(controlModle);
+        }else {
+            modleServe.modifymodle(Integer.valueOf(modlejsonObject.getString("modleid").trim()),controlModle);
+            controlModle.setModleId(Integer.valueOf(modlejsonObject.getString("modleid").trim()));
+        }
+
         controlModle.setModlePins(new ArrayList<ModlePin>());
         for(int i=1;i<= baseConf.getPv();i++){
 
@@ -207,7 +502,14 @@ public class ModleController {
         }
 
         if(controlModle.getModlePins().size()!=0){
-            modleServe.insertModlePins(controlModle);
+
+            if (modlejsonObject.getString("modleid").trim().equals("")){
+                modleServe.insertModlePins(controlModle);
+            }else {
+                modleServe.deleteModlePins(Integer.valueOf(modlejsonObject.getString("modleid").trim()));
+                modleServe.insertModlePins(controlModle);
+            }
+
         }
 
         List<ResponTimeSerise> responTimeSeriseArrayList=new ArrayList<>();
@@ -248,19 +550,35 @@ public class ModleController {
         }
 
         if(responTimeSeriseArrayList.size()!=0){
-            modleServe.insertModleResp(responTimeSeriseArrayList);
+
+
+            if(controlModle.getModlePins().size()!=0){
+
+                if (modlejsonObject.getString("modleid").trim().equals("")){
+                    modleServe.insertModleResp(responTimeSeriseArrayList);
+                }else {
+                    modleServe.deleteModleResp(Integer.valueOf(modlejsonObject.getString("modleid").trim()));
+                    modleServe.insertModleResp(responTimeSeriseArrayList);
+                }
+
+            }
+        }
+        if(modlejsonObject.getString("modleid").trim().equals("")){
+            ControlModle controlModle1=modleServe.getModle(controlModle.getModleId());
+            modleConstainer.registerModle(controlModle1);
+        }else {
+            ControlModle controlModle1=modleConstainer.getModules().get(Integer.valueOf(modlejsonObject.getString("modleid").trim()));
+            controlModle1.getExecutePythonBridge().stop();
+            modleConstainer.getModules().remove(Integer.valueOf(modlejsonObject.getString("modleid").trim()));
+            ControlModle newcontrolModle2=modleServe.getModle(controlModle.getModleId());
+            modleConstainer.registerModle(newcontrolModle2);
         }
 
-//        for(:mvrespjsonObject.values())
-//        modleServe.insertModleResp();
 
-//        String mvresp,@RequestParam("ffresp") String ffresp
-
-
-
-
-
-        return "/modle/newmodle.do";
+        ModelAndView mv=new ModelAndView();
+        mv.setViewName("redirect:modlestatus.do");
+//        return mv;
+        return "modlestatus.do";
     }
 
 

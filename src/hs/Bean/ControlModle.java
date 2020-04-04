@@ -48,6 +48,10 @@ public class ControlModle {
     private Double[] Q = null;
     private Double[] R = null;
 
+    public Map<String, ModlePin> getStringmodlePinsMap() {
+        return stringmodlePinsMap;
+    }
+
     private Map<String, ModlePin> stringmodlePinsMap = new HashMap<>();//方便引脚索引
 
     //   public  void  selfinit(){
@@ -58,9 +62,9 @@ public class ControlModle {
         for (ModlePin modlePins : modlePins) {
             stringmodlePinsMap.put(modlePins.getModlePinName(), modlePins);
             if (modlePins!=null&&modlePins.getResource().equals("opc")) {
-//                if (!OPCserver.register(modlePins)) {
-//                    return false;
-//                }
+                if (!OPCserver.register(modlePins)) {
+                    return false;
+                }
             }
         }
         /**
@@ -326,6 +330,8 @@ public class ControlModle {
             jsonObject.put("FFLmt", fflmt);
 
         }
+
+        jsonObject.put("enable",getEnable());
 
         return jsonObject;
 

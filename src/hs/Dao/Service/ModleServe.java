@@ -43,6 +43,41 @@ public class ModleServe {
 
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
+    public void deleteModlePins(int modleid){
+        modleMapper.deleteModlePins(modleid);
+    }
+
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    public void modifymodleEnable(int modleid,int enable){
+        modleMapper.modifymodleEnable(modleid,enable);
+    }
+
+
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    public void deleteModle(int modleid){
+        modleMapper.deleteModle(modleid);
+    }
+
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    public ControlModle getModle(int modleid){
+        return modleMapper.getModle(modleid);
+    }
+
+
+
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    public void deleteModleResp(int modleid){
+        modleMapper.deleteModleResp(modleid);
+    }
+
+
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    public void modifymodle(int modleid,ControlModle controlModle){
+        modleMapper.modifymodle(modleid, controlModle);
+    }
+
+
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public void insertModlePins(ControlModle controller){
         modleMapper.insertModlePins(controller);
     }

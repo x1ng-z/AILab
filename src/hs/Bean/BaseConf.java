@@ -12,6 +12,7 @@ public class BaseConf {
     private int ff;
     private int mv;
     private int pv;
+    private String verification;
 
 
     public int getOmpanyId() {
@@ -60,5 +61,13 @@ public class BaseConf {
 
     public void setPv(int pv) {
         this.pv = pv;
+    }
+
+    public String getVerification() {
+        return verification;
+    }
+
+    public void setVerification(String verification) {
+        this.verification = verification;
     }
 }
