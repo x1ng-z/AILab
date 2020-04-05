@@ -15,7 +15,6 @@ public class ExecutePythonBridge {
     Thread error=null;
 
     public ExecutePythonBridge( String pythonjs, String url,String modleid) {
-        this.pythonhome = pythonhome;
         this.pythonjs = pythonjs;
         this.url = url;
         this.modleid=modleid;

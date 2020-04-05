@@ -38,14 +38,14 @@
             </c:otherwise>
         </c:choose>
 
-        <a href="${pageContext.request.contextPath}/modle/deleteModle.do?modleid=${modle.modleId}" class="layui-btn">删除</a>
+        <a href="${pageContext.request.contextPath}/modle/deleteModle.do?modleid=${modle.modleId}" class="layui-btn" onclick="return confirm('确定删除？')">删除</a>
         <a href="${pageContext.request.contextPath}/modle/modifymodle.do?modleid=${modle.modleId}" class="layui-btn">编辑</a>
         <c:choose>
             <c:when test="${modle.enable eq 1}">
-                <a href="${pageContext.request.contextPath}/modle/stopModle.do?modleid=${modle.modleId}" class="layui-btn">停止</a>
+                <a href="${pageContext.request.contextPath}/modle/stopModle.do?modleid=${modle.modleId}" class="layui-btn" onclick="return confirm('确定停止？')">停止</a>
             </c:when>
             <c:otherwise>
-                <a href="${pageContext.request.contextPath}/modle/runModle.do?modleid=${modle.modleId}" class="layui-btn">运行</a>
+                <a href="${pageContext.request.contextPath}/modle/runModle.do?modleid=${modle.modleId}" class="layui-btn" onclick="return confirm('确定运行？')">运行</a>
             </c:otherwise>
         </c:choose>
     </div>
