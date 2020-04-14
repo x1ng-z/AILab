@@ -21,6 +21,8 @@ public class ModlePin {
     private ModlePin feedBack;
     private Double Q;
     private Double R;
+    private Double deadZone;//死区时间
+    private Double funelinitValue;//漏洞初始值
 
     private Double newValue;//opc更新的新值
     private Double oldValue;//opc更新旧值
@@ -172,5 +174,21 @@ public class ModlePin {
 
     public void setR(Double r) {
         R = r;
+    }
+
+    public Double getDeadZone() {
+        return deadZone;
+    }
+
+    public void setDeadZone(Double deadZone) {
+        this.deadZone = deadZone;
+    }
+
+    public Double getFunelinitValue() {
+        return funelinitValue;
+    }
+
+    public void setFunelinitValue(Double funelinitValue) {
+        this.funelinitValue = funelinitValue;
     }
 }

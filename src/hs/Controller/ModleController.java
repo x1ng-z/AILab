@@ -346,6 +346,37 @@ public class ModleController {
             ffrespon.add(ffjson);
         }
 
+
+        //deadZone
+
+        List<String> deadZnoelist=new ArrayList<>();
+        for(int i=1;i<=baseConf.getPv();++i){
+            ModlePin modlePin=controlModle.getStringmodlePinsMap().get("pv"+i);
+            if(modlePin==null){
+                deadZnoelist.add("");
+            }else {
+                deadZnoelist.add(modlePin.getDeadZone()+"");
+            }
+        }
+
+
+
+
+        //funelInitvalue
+
+
+
+        List<String> funelInitValuelist=new ArrayList<>();
+        for(int i=1;i<=baseConf.getPv();++i){
+            ModlePin modlePin=controlModle.getStringmodlePinsMap().get("pv"+i);
+            if(modlePin==null){
+                funelInitValuelist.add("");
+            }else {
+                funelInitValuelist.add(modlePin.getFunelinitValue()+"");
+            }
+        }
+
+
         mv.addObject("modle",controlModle);
         mv.addObject("pvlist",pvlist);
         mv.addObject("qlist",qlist);
@@ -363,6 +394,9 @@ public class ModleController {
 
         mv.addObject("mvresp",mvrespon.toJSONString());
         mv.addObject("ffresp",ffrespon.toJSONString());
+
+        mv.addObject("pvDeadZones",deadZnoelist);
+        mv.addObject("pvFunelInitValues",funelInitValuelist);
 
         return mv;
     }
@@ -396,8 +430,10 @@ public class ModleController {
             String pvTag=modlejsonObject.getString("pv"+i);
             String QTag=modlejsonObject.getString("q"+i);
             String spTag=modlejsonObject.getString("sp"+i);
+            String spDeadZone=modlejsonObject.getString("pv"+i+"DeadZone");
+            String spFunelInitValue=modlejsonObject.getString("pv"+i+"FunelInitValue");
           //pvTag!=null&&pvTag.trim()!=""
-            if((pvTag!=null&&!pvTag.trim().equals(""))&&(QTag!=null&&!QTag.trim().equals(""))&&(spTag!=null&&!spTag.trim().equals(""))){
+            if((pvTag!=null&&!pvTag.trim().equals(""))&&(QTag!=null&&!QTag.trim().equals(""))&&(spTag!=null&&!spTag.trim().equals(""))&&(spDeadZone!=null&&!spDeadZone.trim().equals(""))&&(spFunelInitValue!=null&&!spFunelInitValue.trim().equals(""))){
 
                 ModlePin pvpin=new ModlePin();
                 pvpin.setResource("opc");
@@ -405,7 +441,11 @@ public class ModleController {
                 pvpin.setQ(Double.valueOf(QTag));
                 pvpin.setReference_modleId(controlModle.getModleId());
                 pvpin.setModlePinName("pv"+i);
+                pvpin.setDeadZone(Double.valueOf(spDeadZone));
+                pvpin.setFunelinitValue(Double.valueOf(spFunelInitValue));
                 controlModle.getModlePins().add(pvpin);
+
+
 
                 ModlePin sppin=new ModlePin();
                 sppin.setModleOpcTag(spTag);

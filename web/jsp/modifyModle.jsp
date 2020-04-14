@@ -90,6 +90,40 @@
         </c:forEach>
     </div>
 
+
+
+
+    <fieldset class="layui-elem-field layui-field-title" style="margin-top: 20px;">
+        <legend>PV死区设置</legend>
+    </fieldset>
+    <div class="layui-form-item">
+        <c:forEach var="pv" items="${pvDeadZones}" varStatus="Count">
+            <div class="layui-inline">
+                <label class="layui-form-label">pv${Count.count}死区</label>
+                <div class="layui-input-inline">
+                    <input type="text" name="pv${Count.count}DeadZone" autocomplete="off" class="layui-input" value="${pv}"  placeholder="pv${Count.count}的死区">
+                </div>
+            </div>
+        </c:forEach>
+    </div>
+
+
+
+    <fieldset class="layui-elem-field layui-field-title" style="margin-top: 20px;">
+        <legend>PV漏斗初始值设置</legend>
+    </fieldset>
+    <div class="layui-form-item">
+        <c:forEach var="pv" items="${pvFunelInitValues}" varStatus="Count">
+            <div class="layui-inline">
+                <label class="layui-form-label">pv${Count.count}漏斗初始值</label>
+                <div class="layui-input-inline">
+                    <input type="text" name="pv${Count.count}FunelInitValue" autocomplete="off" class="layui-input" value="${pv}"  placeholder="pv${Count.count}的漏斗值">
+                </div>
+            </div>
+        </c:forEach>
+    </div>
+
+
     <fieldset class="layui-elem-field layui-field-title" style="margin-top: 20px;">
         <legend>Q设置:影响反馈与目标值的偏差度，Q越大算法则要求PV与设定值相差越小</legend>
     </fieldset>
@@ -459,6 +493,8 @@
 
         });
     });
+
+
 
 
 </script>

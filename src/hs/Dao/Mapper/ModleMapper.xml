@@ -70,11 +70,11 @@
     </select>
 
     <insert id="insertModlePins" parameterType="hs.Bean.ControlModle" useGeneratedKeys="true">
-        insert into modlepins(reference_modleId, modleOpcTag, filterMethod, modlePinName, opcTagName, resource, Q, R)
+        insert into modlepins(reference_modleId, modleOpcTag, filterMethod, modlePinName, opcTagName, resource, Q, R,deadZone,funelinitValue)
         values
         <foreach collection="controlModle.modlePins" item="pin" separator=",">
             (#{pin.reference_modleId}, #{pin.modleOpcTag}, #{pin.filterMethod}, #{pin.modlePinName}, #{pin.opcTagName},
-            #{pin.resource}, #{pin.Q}, #{pin.R})
+            #{pin.resource}, #{pin.Q}, #{pin.R},#{pin.deadZone},#{pin.funelinitValue})
         </foreach>
 
     </insert>

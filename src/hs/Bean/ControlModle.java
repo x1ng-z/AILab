@@ -48,6 +48,9 @@ public class ControlModle {
     private Double[] Q = null;
     private Double[] R = null;
 
+    private Double[] deadZones = null;
+    private Double[] funelinitvalues = null;
+
     public Map<String, ModlePin> getStringmodlePinsMap() {
         return stringmodlePinsMap;
     }
@@ -61,7 +64,7 @@ public class ControlModle {
 
         for (ModlePin modlePins : modlePins) {
             stringmodlePinsMap.put(modlePins.getModlePinName(), modlePins);
-            if (modlePins!=null&&modlePins.getResource().equals("opc")) {
+            if (modlePins != null && modlePins.getResource().equals("opc")) {
                 if (!OPCserver.register(modlePins)) {
                     return false;
                 }
@@ -211,6 +214,19 @@ public class ControlModle {
             R[loop++] = mvpin.getR();
         }
 
+        /***
+         * 死区时间和漏洞初始值
+         * */
+
+        deadZones = new Double[categoryPVmodletag.size()];
+        funelinitvalues = new Double[categoryPVmodletag.size()];
+        loop=0;
+        for (ModlePin modlePin : categoryPVmodletag) {
+            deadZones[loop]=modlePin.getDeadZone();
+            funelinitvalues[loop]=modlePin.getFunelinitValue();
+            ++loop;
+        }
+
         outpoints_p = categoryPVmodletag.size();
         feedforwardpoints_v = categoryFFmodletag.size();
         inputpoints_m = categoryMVmodletag.size();
@@ -317,10 +333,10 @@ public class ControlModle {
                     }
                 }
 
-                if ((ffLow<=ffpin.modleGetReal())&&(ffHigh>=ffpin.modleGetReal())){
-                    fflmt[loop] =1d;
-                }else {
-                    fflmt[loop] =0d;
+                if ((ffLow <= ffpin.modleGetReal()) && (ffHigh >= ffpin.modleGetReal())) {
+                    fflmt[loop] = 1d;
+                } else {
+                    fflmt[loop] = 0d;
                 }
 
                 loop++;
@@ -331,7 +347,16 @@ public class ControlModle {
 
         }
 
-        jsonObject.put("enable",getEnable());
+        jsonObject.put("enable", getEnable());
+
+
+        /**
+         *死区时间和漏斗初始值
+         * */
+        jsonObject.put("deadZones",deadZones);
+        jsonObject.put("funelInitValues",funelinitvalues);
+
+
 
         return jsonObject;
 
@@ -503,8 +528,8 @@ public class ControlModle {
 
     public void setBaseConf(BaseConf baseConf) {
         this.baseConf = baseConf;
-        totalFf=baseConf.getFf();
-        totalMv=baseConf.getMv();
-        totalPv=baseConf.getPv();
+        totalFf = baseConf.getFf();
+        totalMv = baseConf.getMv();
+        totalPv = baseConf.getPv();
     }
 }
