@@ -1,5 +1,7 @@
 package hs.Bean;
 
+import hs.Filter.Filter;
+
 import java.time.Instant;
 import java.util.LinkedList;
 
@@ -12,25 +14,28 @@ public class ModlePin {
     private int modlepinsId;
     private int reference_modleId;
     private String modleOpcTag;
-    private String filterMethod;
-    private String modlePinName;//引脚名称
+    private String modlePinName;//引脚名称 pv1,sp1...
     private String opcTagName;
     private String resource;
-    private ModlePin upLmt;
-    private ModlePin downLmt;
-    private ModlePin feedBack;
+    private ModlePin upLmt;//高限
+    private ModlePin downLmt;//低限
+    private ModlePin feedBack;//反馈
     private Double Q;
     private Double R;
     private Double deadZone;//死区时间
     private Double funelinitValue;//漏洞初始值
-
-    private Double newValue;//opc更新的新值
-    private Double oldValue;//opc更新旧值
+    private Double writeValue;
+    private Double newReadValue;//opc更新的新值
+    private Double oldReadValue;//opc更新旧值
     private Double lastTimeValue;//上一次客户端算法进行读取
     private Instant updateOpcTime;
     private LinkedList<Double> oldvalueStack = new LinkedList<>();
     private int stackSize = 100;
     private Boolean isFristTimeModle =true;
+    private Double dmvHigh;
+    private Double dmvLow;
+    private Filter filter=null;//滤波器
+    private Double referTrajectoryCoef;//pv的柔化系数(参考轨迹参数)
 
 
     public void opcUpdateValue(double value) {
@@ -39,23 +44,27 @@ public class ModlePin {
 //        }else {
 //            oldvalueStack.removeLast();
 //        }
-        oldValue = newValue;
-        newValue = value;
+        oldReadValue = newReadValue;
+        newReadValue = value;
         updateOpcTime = Instant.now();
     }
 
     public double modleGetReal() {
-        return newValue;
+        if(filter==null){
+            return  (newReadValue==null?0:newReadValue);
+        }else {
+            return filter.getLastfilterdata();
+        }
     }
 
     public double modleGetDiff() {
         Double diffif=0d;
         if(!isFristTimeModle){
-            diffif= newValue - lastTimeValue;
-            lastTimeValue = newValue;
+            diffif= newReadValue - lastTimeValue;
+            lastTimeValue = newReadValue;
 
         }else{
-            lastTimeValue=newValue;
+            lastTimeValue= newReadValue;
             isFristTimeModle =false;
 
         }
@@ -85,14 +94,6 @@ public class ModlePin {
 
     public void setModleOpcTag(String modleOpcTag) {
         this.modleOpcTag = modleOpcTag;
-    }
-
-    public String getFilterMethod() {
-        return filterMethod;
-    }
-
-    public void setFilterMethod(String filterMethod) {
-        this.filterMethod = filterMethod;
     }
 
     public String getModlePinName() {
@@ -144,12 +145,12 @@ public class ModlePin {
     }
 
 
-    public Double getOldValue() {
-        return oldValue;
+    public Double getOldReadValue() {
+        return oldReadValue;
     }
 
-    public void setOldValue(Double oldValue) {
-        this.oldValue = oldValue;
+    public void setOldReadValue(Double oldReadValue) {
+        this.oldReadValue = oldReadValue;
     }
 
     public Instant getUpdateOpcTime() {
@@ -190,5 +191,45 @@ public class ModlePin {
 
     public void setFunelinitValue(Double funelinitValue) {
         this.funelinitValue = funelinitValue;
+    }
+
+    public Double getWriteValue() {
+        return writeValue==null?0:writeValue;
+    }
+
+    public void setWriteValue(Double writeValue) {
+        this.writeValue = writeValue;
+    }
+
+    public Double getDmvHigh() {
+        return dmvHigh;
+    }
+
+    public void setDmvHigh(Double dmvHigh) {
+        this.dmvHigh = dmvHigh;
+    }
+
+    public Double getDmvLow() {
+        return dmvLow;
+    }
+
+    public void setDmvLow(Double dmvLow) {
+        this.dmvLow = dmvLow;
+    }
+
+    public Filter getFilter() {
+        return filter;
+    }
+
+    public void setFilter(Filter filter) {
+        this.filter = filter;
+    }
+
+    public Double getReferTrajectoryCoef() {
+        return referTrajectoryCoef;
+    }
+
+    public void setReferTrajectoryCoef(Double referTrajectoryCoef) {
+        this.referTrajectoryCoef = referTrajectoryCoef;
     }
 }

@@ -10,9 +10,10 @@
         <result property="controlAPCOutCycle" column="controlAPCOutCycle"/>
         <result property="timeserise_N" column="timeserise_N"/>
         <result property="controltime_M" column="controltime_M"/>
-        <result property="enable" column="enable"/>
+        <result property="modleEnable" column="modleEnable"/>
 
         <collection property="modlePins" column="modleId" ofType="hs.Bean.ModlePin" select="findModlePins"/>
+
         <collection property="responTimeSerises" column="modleId" ofType="hs.Bean.ResponTimeSerise"
                     select="findModleRespon"/>
 
@@ -40,6 +41,41 @@
     </resultMap>
 
 
+
+
+    <resultMap id="pinResult" type="hs.Bean.ModlePin">
+        <id property="modlepinsId" column="modlepinsId"/>
+        <result property="reference_modleId" column="reference_modleId"/>
+        <result property="modleOpcTag" column="modleOpcTag"/>
+        <result property="modlePinName" column="modlePinName"/>
+        <result property="opcTagName" column="opcTagName"/>
+        <result property="resource" column="resource"/>
+        <result property="Q" column="Q"/>
+        <result property="dmvHigh" column="dmvHigh"/>
+        <result property="deadZone" column="deadZone"/>
+        <result property="funelinitValue" column="funelinitValue"/>
+        <result property="R" column="R"/>
+        <result property="dmvLow" column="dmvLow"/>
+        <result property="referTrajectoryCoef" column="referTrajectoryCoef"/>
+        <association property="filter" javaType="hs.Filter.Filter" column="modlepinsId" select="findfilterByid"/>
+    </resultMap>
+    
+    <resultMap id="filterResult" type="hs.Filter.Filter">
+        <id property="pk_filterid" column="pk_filterid"/>
+        <result property="pk_pinid" column="pk_pinid"/>
+        <result property="backToDCSTag" column="backToDCSTag"/>
+        <result property="filtername" column="filtername"/>
+        <discriminator javaType="string" column="filtername">
+            <case value="mvav" resultType="hs.Filter.MoveAverageFilter">
+                <result property="capacity" column="filter_time"/>
+            </case>
+            <case value="fodl" resultType="hs.Filter.FirstOrderLagFilter">
+                <result property="filter_alphe" column="filter_alphe"/>
+            </case>
+        </discriminator>
+    </resultMap>
+
+
     <select id="getModles" resultMap="modleResult">
       select * from modle
     </select>
@@ -57,9 +93,11 @@
         select * from modlepins where modlepinsId=#{id} and reference_modleId=#{modleId}
     </select>
 
-    <select id="findModlePins" resultType="hs.Bean.ModlePin">
+    <select id="findModlePins" resultMap="pinResult">
         select * from modlepins where reference_modleId=#{modleId}
     </select>
+
+
 
     <select id="findModleRespon" resultType="hs.Bean.ResponTimeSerise">
         select * from modlerespon where refrencemodleId=#{modleId}
@@ -69,12 +107,12 @@
         select * from company
     </select>
 
-    <insert id="insertModlePins" parameterType="hs.Bean.ControlModle" useGeneratedKeys="true">
-        insert into modlepins(reference_modleId, modleOpcTag, filterMethod, modlePinName, opcTagName, resource, Q, R,deadZone,funelinitValue)
+    <insert id="insertModlePins" parameterType="hs.Bean.ModlePin" useGeneratedKeys="true" keyProperty="modlepinsId">
+        insert into modlepins(reference_modleId, modleOpcTag, modlePinName, opcTagName, resource, Q, R,deadZone,funelinitValue,dmvHigh,dmvLow,referTrajectoryCoef)
         values
-        <foreach collection="controlModle.modlePins" item="pin" separator=",">
-            (#{pin.reference_modleId}, #{pin.modleOpcTag}, #{pin.filterMethod}, #{pin.modlePinName}, #{pin.opcTagName},
-            #{pin.resource}, #{pin.Q}, #{pin.R},#{pin.deadZone},#{pin.funelinitValue})
+        <foreach collection="modlePins" item="pin" separator=",">
+            (#{pin.reference_modleId}, #{pin.modleOpcTag},  #{pin.modlePinName}, #{pin.opcTagName},
+            #{pin.resource}, #{pin.Q}, #{pin.R},#{pin.deadZone},#{pin.funelinitValue},#{pin.dmvHigh},#{pin.dmvLow},#{pin.referTrajectoryCoef})
         </foreach>
 
     </insert>
@@ -82,7 +120,7 @@
 
     <insert id="insertModle" parameterType="hs.Bean.ControlModle" useGeneratedKeys="true" keyColumn="modleId"
             keyProperty="modleId">
-        insert into modle(modleName, controlAPCOutCycle, predicttime_P, timeserise_N, controltime_M, enable) values
+        insert into modle(modleName, controlAPCOutCycle, predicttime_P, timeserise_N, controltime_M, modleEnable) values
         (#{controlModle.modleName},#{controlModle.controlAPCOutCycle},#{controlModle.predicttime_P},#{controlModle.timeserise_N},#{controlModle.controltime_M},0)
     </insert>
 
@@ -92,7 +130,7 @@
     </update>
 
     <update id="modifymodleEnable">
-        update modle set enable=#{enable}
+        update modle set modleEnable=#{enable}
         where modleId=#{modleid}
     </update>
 
@@ -115,7 +153,24 @@
         delete from modle where modleId=#{modleid}
     </delete>
 
+    <insert id="insertPinsFODLFilter" parameterType="hs.Filter.FirstOrderLagFilter" useGeneratedKeys="true" keyProperty="pk_filterid">
+        insert into filter(filtername, filter_alphe, pk_pinid,backToDCSTag)
+        values (#{filter.filtername},#{filter.filter_alphe},#{filter.pk_pinid},#{filter.backToDCSTag})
+    </insert>
 
+    <insert id="insertPinsMVAVFilter" parameterType="hs.Filter.MoveAverageFilter" useGeneratedKeys="true" keyProperty="pk_filterid">
+        insert into filter(filtername, filter_time, pk_pinid,backToDCSTag)
+        values (#{filter.filtername},#{filter.capacity},#{filter.pk_pinid},#{filter.backToDCSTag})
+    </insert>
+
+    <select id="findfilterByid" resultMap="filterResult">
+        select * from filter where pk_pinid=#{modlepinsId}
+    </select>
+
+
+    <delete id="deletePinsFilter">
+        delete from filter where pk_pinid=#{modlepinsId}
+    </delete>
 
 
 </mapper>

@@ -2,13 +2,13 @@ package hs.Servlet;
 
 import hs.ApcAlgorithm.ExecutePythonBridge;
 import hs.Bean.ModleConstainer;
+import hs.Filter.FilterService;
 import hs.Opc.OPCService;
 import org.apache.log4j.Logger;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.servlet.DispatcherServlet;
 
 import javax.servlet.ServletException;
-import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * @author zzx
@@ -28,21 +28,27 @@ public class BootstatServlet extends DispatcherServlet {
         opcthread.setDaemon(true);
         opcthread.start();
 
-        ModleConstainer  modleConstainer=applicationContext.getBean(ModleConstainer.class);
-//        List<ControlModle> modles=modleServe.getAllModle();
-        logger.info("modle size is: "+modleConstainer.getModules().size());
-        for(Integer key:modleConstainer.getModules().keySet()){
 
-            ExecutePythonBridge executePythonBridge=new ExecutePythonBridge(
-            "C:\\Program Files\\apache-tomcat-9.0.14\\webapps\\AILab\\LinkAPC.exe",
-            "http://localhost:8080/AILab/python/modlebuild/"+key+".do",key+"");
-            modleConstainer.getModules().get(key).setExecutePythonBridge(executePythonBridge);
-            if(modleConstainer.getModules().get(key).getEnable()==1){
-                executePythonBridge.execute();
-            }
+        FilterService filterService =applicationContext.getBean(FilterService.class);
+        Thread filterServicethread=new Thread(filterService);
+        filterServicethread.setDaemon(true);
+        filterServicethread.start();
+
+//        ModleConstainer  modleConstainer=applicationContext.getBean(ModleConstainer.class);
+////        List<ControlModle> modles=modleServe.getAllModle();
+//        logger.info("modle size is: "+modleConstainer.getModules().size());
+//        for(Integer key:modleConstainer.getModules().keySet()){
+//
+//            ExecutePythonBridge executePythonBridge=new ExecutePythonBridge(
+//            "C:\\Program Files\\apache-tomcat-9.0.14\\webapps\\AILab\\LinkAPC.exe",
+//            "http://localhost:8080/AILab/python/modlebuild/"+key+".do",key+"");
+//            modleConstainer.getModules().get(key).setExecutePythonBridge(executePythonBridge);
+//            if(modleConstainer.getModules().get(key).getModleEnable()==1){
+//                executePythonBridge.execute();
+//            }
 
 
-        }
+//        }
 
     }
 }

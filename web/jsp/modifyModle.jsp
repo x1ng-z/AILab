@@ -9,12 +9,14 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <html>
 <head>
+    <link rel="shortcut icon"
+          href="../img/favicon.ico" type="image/x-icon" />
     <meta charset="utf-8">
-    <title>Layui</title>
+    <title>modifymodle</title>
     <meta name="renderer" content="webkit">
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/layui/css/layui.css" media="all">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/js/layui/css/layui.css" media="all">
 </head>
 
 
@@ -70,6 +72,13 @@
             <div class="layui-input-inline">
                 <input type="text" name="O" lay-verify="required|number" autocomplete="off" class="layui-input"
                        value="${modle.controlAPCOutCycle}">
+            </div>
+        </div>
+
+        <div class="layui-inline">
+            <label class="layui-form-label">手自动位号</label>
+            <div class="layui-input-inline">
+                <input type="text" name="autoTag" lay-verify="required" autocomplete="off" class="layui-input" value="${modle.autoEnbalePin.modleOpcTag}">
             </div>
         </div>
     </div>
@@ -141,6 +150,73 @@
 
 
     <fieldset class="layui-elem-field layui-field-title" style="margin-top: 20px;">
+        <legend>柔化系数(0&ltalphe&lt1):PV值与SP值有差值时，沿着平稳的参考轨迹接近sp还是陡峭的参考轨迹接近sp。柔化系数越大，路线越平稳</legend>
+    </fieldset>
+    <div class="layui-form-item">
+        <c:forEach var="pv" items="${alphelist}" varStatus="Count">
+            <div class="layui-inline">
+                <label class="layui-form-label">pv${Count.count}的柔化系数</label>
+                <div class="layui-input-inline">
+                    <input type="text" name="tracoef${Count.count}" autocomplete="off" class="layui-input" value="${pv}" placeholder="pv${Count.count}的柔化系数">
+                </div>
+            </div>
+        </c:forEach>
+    </div>
+
+
+
+    <fieldset class="layui-elem-field layui-field-title" style="margin-top: 20px;">
+        <legend>PV滤波器设置:一阶滤波(滤波系数0&ltalphe&lt1，数值越小滤波越强)和移动平均滤波(滤波系数0&ltalphe的整数，数值越大滤波越强)</legend>
+    </fieldset>
+    <div class="layui-form-item">
+        <c:forEach var="pv" items="${filterpvlist}" varStatus="Count">
+
+            <div class="layui-inline">
+                <label class="layui-form-label">pv${Count.count}滤波算法选择</label>
+                <div class="layui-input-inline">
+                    <select name="filternamepv${Count.count}">
+                        <option value="">滤波选择</option>
+
+                        <c:choose>
+                            <c:when test="${pv.filtername eq 'mvav'}">
+                                <option value="mvav" selected>移动平均</option>
+                            </c:when>
+                            <c:otherwise>
+                                <option value="mvav">移动平均</option>
+                            </c:otherwise>
+                        </c:choose>
+
+                        <c:choose>
+                            <c:when test="${pv.filtername eq 'fodl'}">
+                                <option value="fodl" selected>一阶滤波</option>
+                            </c:when>
+                            <c:otherwise>
+                                <option value="fodl">一阶滤波</option>
+                            </c:otherwise>
+                        </c:choose>
+                    </select>
+                </div>
+            </div>
+
+            <div class="layui-inline">
+                <label class="layui-form-label">pv${Count.count}滤波系数</label>
+                <div class="layui-input-inline">
+                    <input type="number" name="filtercoefpv${Count.count}" autocomplete="off" class="layui-input" value="${pv.getcoeff()}" placeholder="pv${Count.count}滤波系数">
+                </div>
+            </div>
+
+            <div class="layui-inline">
+                <label class="layui-form-label">pv${Count.count}滤波输出OPC位号</label>
+                <div class="layui-input-inline">
+                    <input type="text" name="filteropctagpv${Count.count}" autocomplete="off" class="layui-input" value="${pv.backToDCSTag}" placeholder="pv${Count.count}滤波输出opc位号">
+                </div>
+            </div>
+        </c:forEach>
+    </div>
+
+
+
+    <fieldset class="layui-elem-field layui-field-title" style="margin-top: 20px;">
         <legend>SP设置</legend>
     </fieldset>
     <div class="layui-form-item">
@@ -182,6 +258,39 @@
                 <div class="layui-input-inline">
                     <input type="text" name="r${Count.count}" autocomplete="off" class="layui-input"
                            placeholder="mv${Count.count}的R" value="${r}">
+                </div>
+            </div>
+        </c:forEach>
+    </div>
+
+
+
+    <fieldset class="layui-elem-field layui-field-title" style="margin-top: 20px;">
+        <legend>dmv高限</legend>
+    </fieldset>
+    <div class="layui-form-item">
+        <c:forEach var="dmv" items="${dmvHighlist}" varStatus="Count">
+            <div class="layui-inline">
+                <label class="layui-form-label">dmv${Count.count}High</label>
+                <div class="layui-input-inline">
+                    <input type="text" name="dmv${Count.count}High" autocomplete="off" class="layui-input" placeholder="dmv${Count.count}High" value="${dmv}">
+                </div>
+            </div>
+        </c:forEach>
+    </div>
+
+
+
+
+    <fieldset class="layui-elem-field layui-field-title" style="margin-top: 20px;">
+        <legend>dmv低限(低于此不进行调节)</legend>
+    </fieldset>
+    <div class="layui-form-item">
+        <c:forEach var="dmv" items="${dmvLowlist}" varStatus="Count">
+            <div class="layui-inline">
+                <label class="layui-form-label">dmv${Count.count}Low</label>
+                <div class="layui-input-inline">
+                    <input type="text" name="dmv${Count.count}Low" autocomplete="off" class="layui-input" placeholder="dmv${Count.count}Low" value="${dmv}">
                 </div>
             </div>
         </c:forEach>
@@ -290,6 +399,56 @@
 
 
     <fieldset class="layui-elem-field layui-field-title" style="margin-top: 20px;">
+        <legend>MV反馈滤波器设置:一阶滤波(滤波系数0&ltalphe&lt1，数值越小滤波越强)和移动平均滤波(滤波系数0&ltalphe的整数，数值越大滤波越强)</legend>
+    </fieldset>
+    <div class="layui-form-item">
+        <c:forEach var="mv" items="${filtermvfblist}" varStatus="Count">
+
+            <div class="layui-inline">
+                <label class="layui-form-label">mvfb${Count.count}滤波算法选择</label>
+                <div class="layui-input-inline">
+                    <select name="filternamemv${Count.count}">
+                        <option value="">滤波选择</option>
+
+                        <c:choose>
+                            <c:when test="${mv.filtername eq 'mvav'}">
+                                <option value="mvav" selected>移动平均</option>
+                            </c:when>
+                            <c:otherwise>
+                                <option value="mvav">移动平均</option>
+                            </c:otherwise>
+                        </c:choose>
+
+                        <c:choose>
+                            <c:when test="${mv.filtername eq 'fodl'}">
+                                <option value="fodl" selected>一阶滤波</option>
+                            </c:when>
+                            <c:otherwise>
+                                <option value="fodl">一阶滤波</option>
+                            </c:otherwise>
+                        </c:choose>
+                    </select>
+                </div>
+            </div>
+
+            <div class="layui-inline">
+                <label class="layui-form-label">mvfb${Count.count}滤波系数</label>
+                <div class="layui-input-inline">
+                    <input type="number" name="filtercoefmv${Count.count}" autocomplete="off" class="layui-input" value="${mv.getcoeff()}" placeholder="mvfb${Count.count}滤波系数">
+                </div>
+            </div>
+
+            <div class="layui-inline">
+                <label class="layui-form-label">mvfb${Count.count}滤波输出OPC位号</label>
+                <div class="layui-input-inline">
+                    <input type="text" name="filteropctagmv${Count.count}" autocomplete="off" class="layui-input" value="${mv.backToDCSTag}" placeholder="mvfb${Count.count}滤波输出opc位号">
+                </div>
+            </div>
+        </c:forEach>
+    </div>
+
+
+    <fieldset class="layui-elem-field layui-field-title" style="margin-top: 20px;">
         <legend>FF(前馈)设置</legend>
     </fieldset>
     <div class="layui-form-item">
@@ -303,6 +462,59 @@
             </div>
         </c:forEach>
     </div>
+
+
+    <fieldset class="layui-elem-field layui-field-title" style="margin-top: 20px;">
+        <legend>FF前馈滤波器设置:一阶滤波(滤波系数0&ltalphe&lt1，数值越小滤波越强)和移动平均滤波(滤波系数0&ltalphe的整数，数值越大滤波越强)</legend>
+    </fieldset>
+    <div class="layui-form-item">
+        <c:forEach var="ff" items="${filterfflist}" varStatus="Count">
+
+            <div class="layui-inline">
+                <label class="layui-form-label">ff${Count.count}滤波算法选择</label>
+                <div class="layui-input-inline">
+                    <select name="filternameff${Count.count}">
+                        <option value="">滤波选择</option>
+
+                        <c:choose>
+                            <c:when test="${ff.filtername eq 'mvav'}">
+                                <option value="mvav" selected>移动平均</option>
+                            </c:when>
+                            <c:otherwise>
+                                <option value="mvav">移动平均</option>
+                            </c:otherwise>
+                        </c:choose>
+
+                        <c:choose>
+                            <c:when test="${ff.filtername eq 'fodl'}">
+                                <option value="fodl" selected>一阶滤波</option>
+                            </c:when>
+                            <c:otherwise>
+                                <option value="fodl">一阶滤波</option>
+                            </c:otherwise>
+                        </c:choose>
+                    </select>
+                </div>
+            </div>
+
+            <div class="layui-inline">
+                <label class="layui-form-label">ff${Count.count}滤波系数</label>
+                <div class="layui-input-inline">
+                    <input type="number" name="filtercoefff${Count.count}" autocomplete="off" class="layui-input" value="${ff.getcoeff()}" placeholder="ff${Count.count}滤波系数">
+                </div>
+            </div>
+
+            <div class="layui-inline">
+                <label class="layui-form-label">ff${Count.count}滤波输出OPC位号</label>
+                <div class="layui-input-inline">
+                    <input type="text" name="filteropctagff${Count.count}" autocomplete="off" class="layui-input" value="${ff.backToDCSTag}" placeholder="ff${Count.count}滤波输出opc位号">
+                </div>
+            </div>
+        </c:forEach>
+    </div>
+
+
+
 
     <fieldset class="layui-elem-field layui-field-title" style="margin-top: 20px;">
         <legend>FF(前馈)上限设置</legend>
@@ -388,6 +600,8 @@
     </div>
 
 
+
+
     <fieldset class="layui-elem-field layui-field-title" style="margin-top: 20px;">
         <legend>MV对PV的响应设置 形如{k:10,t:180,tao:200}  英文模式输入!</legend>
     </fieldset>
@@ -424,13 +638,14 @@
 
 </form>
 
-<script src="${pageContext.request.contextPath}/layui/layui.js"></script>
+<script src="${pageContext.request.contextPath}/js/layui/layui.js"></script>
 <script src="${pageContext.request.contextPath}/js/jquery-3.0.0.js"></script>
 <script>
     var table;
 
-    layui.use('form', function () {
-        var form = layui.form;
+    layui.use(['form','layer'], function () {
+        var form = layui.form,
+            layer = parent.layer === undefined ? layui.layer : parent.layer;
         form.render(); //更新全部
         form.render('select'); //刷新select选择框渲染
 
@@ -441,10 +656,7 @@
             // layer.alert(JSON.stringify(data.field), {
             //     title: '最终的提交信息'
             // })
-
-            console.log(table.cache);
-            console.log(typeof table.cache);
-
+            let index = layer.msg('修改中，请稍候',{icon: 16,time:false,shade:0.8});
             $.ajax({
                 url: "${pageContext.request.contextPath}/modle/savemodle.do" + "?" + Math.random(),
                 async: true,
@@ -456,7 +668,15 @@
                 type: "POST",
                 success: function (result) {
                     console.log(result);
-                    location.href=result;
+                    layer.close(index);
+                    let json=JSON.parse(result);
+                    if(json['msg']=="error"){
+                        layer.msg("修改失败！");
+                    }else{
+                        layer.msg("修改成功！");
+                        location.href='${pageContext.request.contextPath}'+json['go'];
+                       // newleft(json['modleName'],json['modleId'])
+                    }
                     //window.location.href("result")
                     // var json = JSON.parse(result);
                 }

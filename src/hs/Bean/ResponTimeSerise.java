@@ -58,13 +58,16 @@ public class ResponTimeSerise {
         }
         JSONObject json_test = JSON.parseObject(json);
         Double[] respon = new Double[timeserise_N];
-        for (int i = 0; i < timeserise_N; i++) {
-            if (i*controlAPCOutCycle < json_test.getFloat("tao")) {
+        /**
+         * 原先是从0开始的到timeserise_N，但是我们要的事从k+1到 N+1
+         * */
+        for (int i = 0; i < (timeserise_N); i++) {
+            if ((i+1)*controlAPCOutCycle < json_test.getFloat("tao")) {
                 respon[i] = 0d;
                 continue;
             }
 
-            respon[i] = json_test.getFloat("k") * (1 - Math.exp(-((i * controlAPCOutCycle) - json_test.getFloat("tao")) / json_test.getFloat("t")));
+            respon[i] = json_test.getFloat("k") * (1 - Math.exp(-(((i+1) * controlAPCOutCycle) - json_test.getFloat("tao")) / (json_test.getFloat("t")+0.0000001)));
 
         }
         return respon;

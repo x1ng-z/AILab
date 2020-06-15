@@ -15,19 +15,11 @@
         <property name="yearIsDateType" value="false" />
       </driver-properties>
     </data-source>
-    <data-source source="LOCAL" name="ailab@localhost" uuid="102ec286-0108-4b57-b734-e779b3fd859e">
+    <data-source source="LOCAL" name="ailab@192.168.198.210" uuid="102ec286-0108-4b57-b734-e779b3fd859e">
       <driver-ref>mysql</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>com.mysql.jdbc.Driver</jdbc-driver>
-      <jdbc-url>jdbc:mysql://localhost:3306/ailab</jdbc-url>
-      <driver-properties>
-        <property name="autoReconnect" value="true" />
-        <property name="zeroDateTimeBehavior" value="convertToNull" />
-        <property name="tinyInt1isBit" value="false" />
-        <property name="characterEncoding" value="utf8" />
-        <property name="characterSetResults" value="utf8" />
-        <property name="yearIsDateType" value="false" />
-      </driver-properties>
+      <jdbc-url>jdbc:mysql://192.168.198.210:3316/ailab</jdbc-url>
     </data-source>
     <data-source source="LOCAL" name="ailab@192.168.165.187" uuid="2ae2bb6b-4db4-4c7d-9b76-5b588ea7abf2">
       <driver-ref>mysql</driver-ref>
@@ -48,6 +40,24 @@
       <synchronize>true</synchronize>
       <jdbc-driver>com.mysql.cj.jdbc.Driver</jdbc-driver>
       <jdbc-url>jdbc:mysql://192.168.99.212:3306/ailab</jdbc-url>
+      <driver-properties>
+        <property name="serverTimezone" value="Asia/Shanghai" />
+      </driver-properties>
+    </data-source>
+    <data-source source="LOCAL" name="ailab@localhost" uuid="9a236cf1-8abe-4cfa-9612-f9ef868b2f15">
+      <driver-ref>mysql.8</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>com.mysql.cj.jdbc.Driver</jdbc-driver>
+      <jdbc-url>jdbc:mysql://localhost:3306/ailab</jdbc-url>
+      <driver-properties>
+        <property name="serverTimezone" value="Asia/Shanghai" />
+      </driver-properties>
+    </data-source>
+    <data-source source="LOCAL" name="ailab@192.168.156.27" uuid="28ad7919-dfe9-41b7-add7-02778335b928">
+      <driver-ref>mysql.8</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>com.mysql.cj.jdbc.Driver</jdbc-driver>
+      <jdbc-url>jdbc:mysql://192.168.156.27:3306/ailab</jdbc-url>
       <driver-properties>
         <property name="serverTimezone" value="Asia/Shanghai" />
       </driver-properties>

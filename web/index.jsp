@@ -8,9 +8,11 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <html>
   <head>
+    <link rel="shortcut icon"
+          href="/img/favicon.ico" type="image/x-icon" />
     <title>$Title$</title>
   </head>
   <body>
-  <jsp:forward page="/modle/modlestatus.do"/>
+  <jsp:forward page="/login/login.do"/>
   </body>
 </html>

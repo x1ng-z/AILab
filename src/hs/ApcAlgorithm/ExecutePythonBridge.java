@@ -49,6 +49,7 @@ public class ExecutePythonBridge {
 
         } catch (Exception e) {
            logger.error(e);
+           logger.error("jsdir"+pythonjs);
         }
     }
 

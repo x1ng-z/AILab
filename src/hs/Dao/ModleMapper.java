@@ -1,6 +1,9 @@
 package hs.Dao;
 
 import hs.Bean.*;
+import hs.Filter.Filter;
+import hs.Filter.FirstOrderLagFilter;
+import hs.Filter.MoveAverageFilter;
 import org.apache.ibatis.annotations.MapKey;
 import org.apache.ibatis.annotations.Param;
 
@@ -21,8 +24,16 @@ public interface ModleMapper {
     void insertModle(@Param("controlModle") ControlModle controlModle);
      void modifymodle(@Param("modleid") int modleid, @Param("controlModle") ControlModle controlModle);
 
-    void insertModlePins( @Param("controlModle") ControlModle controlModle);
+    void insertModlePins( @Param("modlePins") List<ModlePin> modlePins);
     void deleteModlePins( @Param("modleid") int modleid);
+
+
+    void insertPinsMVAVFilter( @Param("filter") MoveAverageFilter filter);
+    void insertPinsFODLFilter( @Param("filter") FirstOrderLagFilter filter);
+
+    void deletePinsFilter( @Param("modlepinsId") int modlepinsId);;
+
+
 
     void insertModleResp( @Param("responTimeSerises")List<ResponTimeSerise> responTimeSerises);
 

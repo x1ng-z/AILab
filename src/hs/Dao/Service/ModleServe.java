@@ -2,8 +2,12 @@ package hs.Dao.Service;
 
 import hs.Bean.BaseConf;
 import hs.Bean.ControlModle;
+import hs.Bean.ModlePin;
 import hs.Bean.ResponTimeSerise;
 import hs.Dao.ModleMapper;
+import hs.Filter.FirstOrderLagFilter;
+import hs.Filter.MoveAverageFilter;
+import org.apache.ibatis.annotations.Param;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Isolation;
@@ -73,9 +77,28 @@ public class ModleServe {
 
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
-    public void insertModlePins(ControlModle controller){
-        modleMapper.insertModlePins(controller);
+    public void insertModlePins(List<ModlePin> modlePins){
+        modleMapper.insertModlePins(modlePins);
     }
+
+
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    public void insertPinsMVAVFilter(MoveAverageFilter filter){
+        modleMapper.insertPinsMVAVFilter(filter);
+    }
+
+
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    public void insertPinsFODLFilter(FirstOrderLagFilter filter){
+        modleMapper.insertPinsFODLFilter(filter);
+    }
+
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    public void deletePinsFilter( int modlepinsId){
+        modleMapper.deletePinsFilter(modlepinsId);
+    }
+
+
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public void insertModleResp(List<ResponTimeSerise> responTimeSerises){
