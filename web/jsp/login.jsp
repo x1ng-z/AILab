@@ -6,9 +6,9 @@
 			  href="../img/favicon.ico" type="image/x-icon" />
 		<meta charset="UTF-8">
 		<meta http-equiv="X-UA-Compatible" content="ie=edge">
-		<title></title>
 		<link rel="stylesheet" href="${pageContext.request.contextPath}/js/layui/css/layui.css" />
 		<link rel="stylesheet" href="${pageContext.request.contextPath}/css/login.css" />
+		<title>${companyName}过程控制系统</title>
 	</head>
 	<body class="layui-layout-body" onkeydown="onEnter();">
 		<div class="layui-fluid" style="padding: 0px;">

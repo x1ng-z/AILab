@@ -8,6 +8,7 @@ import hs.Dao.Service.ModleServe;
 import hs.Filter.Filter;
 import hs.Filter.FirstOrderLagFilter;
 import hs.Filter.MoveAverageFilter;
+import hs.Utils.Tool;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -41,21 +42,17 @@ public class ModleController {
 
     @RequestMapping("/modlestatus/{modleId}")
     public ModelAndView modelStatus(@PathVariable("modleId") String modleid){
-
         ControlModle controlModle=modleConstainer.getModules().get(Integer.valueOf(modleid.trim()));
-
         ModelAndView mv=new ModelAndView();
         mv.setViewName("modleStatus");
         mv.addObject("modle",controlModle);
-
         return mv;
-//        return mv;
     }
 
 
     @RequestMapping("/modleRealStatus/{modleId}")
     @ResponseBody
-    public String modelRealStatus(@PathVariable("modleId") String modleid){
+    public String modelRealStatusforweb(@PathVariable("modleId") String modleid){
         int loop=0;
         ControlModle controlModle=modleConstainer.getModules().get(Integer.valueOf(modleid.trim()));
 
@@ -134,9 +131,9 @@ public class ModleController {
                 ModlePin sp=controlModle.getCategorySPmodletag().get(loop);
                ;
                 rowcontext.put("pvName",pv.getModleOpcTag());
-                rowcontext.put("pvValue",pv.modleGetReal());
-                rowcontext.put("spValue",sp.modleGetReal());
-                rowcontext.put("e", controlModle.getBackPVPredictionError()[loop]);
+                rowcontext.put("pvValue", Tool.getSpecalScale(3,pv.modleGetReal()));
+                rowcontext.put("spValue",Tool.getSpecalScale(3,sp.modleGetReal()));
+                rowcontext.put("e", Tool.getSpecalScale(3,controlModle.getBackPVPredictionError()[loop]));
             }
             rowcontext.put("modleName",controlModle.getModleName());
 
@@ -146,11 +143,11 @@ public class ModleController {
                 ModlePin mvDownLmt=mv.getDownLmt();
                 ModlePin mvUpLmt=mv.getUpLmt();
                 ModlePin mvFeedBack=mv.getFeedBack();
-                rowcontext.put("mvvalue",mv.modleGetReal());
-                rowcontext.put("mvDownLmt",mvDownLmt.modleGetReal());
-                rowcontext.put("mvUpLmt",mvUpLmt.modleGetReal());
-                rowcontext.put("mvFeedBack",mvFeedBack.modleGetReal());
-                rowcontext.put("dmv",new BigDecimal(controlModle.getBackDmvWrite()[loop]).setScale(3,BigDecimal.ROUND_HALF_UP).doubleValue());
+                rowcontext.put("mvvalue",Tool.getSpecalScale(3,mv.modleGetReal()));
+                rowcontext.put("mvDownLmt",Tool.getSpecalScale(3,mvDownLmt.modleGetReal()));
+                rowcontext.put("mvUpLmt",Tool.getSpecalScale(3,mvUpLmt.modleGetReal()));
+                rowcontext.put("mvFeedBack",Tool.getSpecalScale(3,mvFeedBack.modleGetReal()));
+                rowcontext.put("dmv",Tool.getSpecalScale(3,controlModle.getBackDmvWrite()[loop]));
             }
 
             rowcontext.put("auto",controlModle.getAutoEnbalePin()==null?"手动":(controlModle.getAutoEnbalePin().modleGetReal()==0?"手动":"自动"));

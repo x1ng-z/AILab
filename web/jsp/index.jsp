@@ -7,7 +7,7 @@
 			  href="../img/favicon.ico" type="image/x-icon" />
 		<meta charset="UTF-8"/>
 		<meta http-equiv="X-UA-Compatible" content="ie=edge,chrome=1">
-		<title></title>
+		<title>${companyName}过程控制系统</title>
 		<link rel="stylesheet" href="../js/layui/css/layui.css"/>
 		<link rel="stylesheet" href="../css/index.css"/>
 		<style>
