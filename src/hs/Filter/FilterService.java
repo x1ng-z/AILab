@@ -67,6 +67,8 @@ public class FilterService implements Runnable {
 
             } catch (InterruptedException e) {
                 logger.error(e);
+            }catch (Exception e){
+                logger.error(e);
             }
         }
 

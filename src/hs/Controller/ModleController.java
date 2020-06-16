@@ -1014,6 +1014,8 @@ public class ModleController {
                  * */
                 ControlModle controlModle1=modleConstainer.getModules().get(Integer.valueOf(modlejsonObject.getString("modleid").trim()));
                 controlModle1.getExecutePythonBridge().stop();
+                controlModle1.removeopctag();
+
                 modleConstainer.getModules().remove(Integer.valueOf(modlejsonObject.getString("modleid").trim()));
                 ControlModle newcontrolModle2=modleServe.getModle(controlModle.getModleId());
                 modleConstainer.registerModle(newcontrolModle2);

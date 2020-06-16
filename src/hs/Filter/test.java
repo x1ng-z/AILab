@@ -9,32 +9,46 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * @date 2020/6/12 15:38
  */
 public class test {
+
+
+    public static double prouctdata(int time){
+        return 10*Math.sin(2*3.14*time/100)+Math.random()*10;
+    }
     public static void main(String[] args) {
         Filter filter =new FirstOrderLagFilter();
         if(filter instanceof MoveAverageFilter){
             System.out.println("yes");
         }
 
-        ConcurrentLinkedQueue<Double> unfilterdata =new ConcurrentLinkedQueue();
-        unfilterdata.add(1d);
-        unfilterdata.add(2d);
-        unfilterdata.add(3d);
-        unfilterdata.add(4d);
 
-        Double[] a=new Double[1];
-        a=unfilterdata.toArray(a);
-        for(Double v:a){
-            System.out.println(v);
+        FirstOrderLagFilter firstOrderLagFilter=new FirstOrderLagFilter();
+        firstOrderLagFilter.setFilter_alphe(0.3);
+
+        for(int i=0;i<100;i++){
+            Double xn=prouctdata(i);
+            firstOrderLagFilter.setsampledata(xn);
+            firstOrderLagFilter.FirstOrderLagfilter(firstOrderLagFilter.getLastfilterdata(),xn);
+
         }
 
-        unfilterdata.poll();
 
 
-        Double[] b=new Double[1];
-        b=unfilterdata.toArray(b);
-        for(Double v:b){
-            System.out.println(v);
+
+
+
+        MoveAverageFilter moveAverageFilter=new MoveAverageFilter();
+        moveAverageFilter.setCapacity(5);
+
+
+
+        for(int i=0;i<100;i++){
+
+            moveAverageFilter.setsampledata(prouctdata(i));
+            moveAverageFilter.moveAveragefilter(moveAverageFilter.getUnfilterdatas());
+
         }
+
+
 
     }
 }

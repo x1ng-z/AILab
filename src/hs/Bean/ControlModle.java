@@ -472,6 +472,16 @@ public class ControlModle {
         return true;
     }
 
+    public void removeopctag(){
+        for(ModlePin pin:modlePins){
+            if((pin.getResource()!=null)&&(pin.getResource().equals("opc"))){
+                OPCserver.unregister(pin);
+            }
+
+        }
+
+    }
+
 
     public Integer getPredicttime_P() {
         return predicttime_P;

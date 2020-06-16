@@ -42,7 +42,7 @@ public class FirstOrderLagFilter implements Filter {
      * 仅仅是获取上一个滤波数据
      * */
     public  Double getLastfilterdata(){
-        Double[] temp=new Double[1];
+        Double[] temp=new Double[filterdataspool.size()];
         temp=filterdataspool.toArray(temp);
         return temp[temp.length-1];
     }

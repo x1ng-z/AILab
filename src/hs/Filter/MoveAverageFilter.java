@@ -1,5 +1,8 @@
 package hs.Filter;
 
+import hs.Opc.OPCService;
+import org.apache.log4j.Logger;
+
 import java.util.LinkedList;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -9,6 +12,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * @date 2020/6/12 8:02
  */
 public class MoveAverageFilter implements Filter {
+    private static final Logger logger = Logger.getLogger(MoveAverageFilter.class);
     private int pk_filterid;
     private int pk_pinid;
     private String backToDCSTag;//反写进dcs的位号
@@ -31,7 +35,7 @@ public class MoveAverageFilter implements Filter {
     }
 
     public  Double getLastfilterdata(){
-        Double[] temp=new Double[1];
+        Double[] temp=new Double[filterdataspool.size()];
         temp=filterdataspool.toArray(temp);
         return temp[temp.length-1];
     }
@@ -46,7 +50,7 @@ public class MoveAverageFilter implements Filter {
     }
 
     public  Double[] getUnfilterdatas(){
-        Double[] temp=new Double[1];
+        Double[] temp=new Double[unfilterdatapool.size()];
         unfilterdatapool.toArray(temp);
         return temp;
     }
