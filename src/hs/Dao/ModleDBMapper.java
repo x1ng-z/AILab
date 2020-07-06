@@ -15,7 +15,7 @@ import java.util.Map;
  * @version 1.0
  * @date 2020/2/29 11:12
  */
-public interface ModleMapper {
+public interface ModleDBMapper {
 
     List<ControlModle> getModles();
 

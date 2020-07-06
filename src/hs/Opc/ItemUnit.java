@@ -8,8 +8,8 @@ import org.openscada.opc.lib.da.Item;
  * @date 2020/6/15 11:51
  */
 public class ItemUnit {
-    private  Item item;
-    private int refrencecount=0;
+    private  Item item;//opc iterm
+    private volatile int refrencecount=0;//pin、filter的引用次数
 
     public Item getItem() {
         return item;
@@ -27,14 +27,14 @@ public class ItemUnit {
         this.refrencecount = refrencecount;
     }
 
-    public void addrefrencecount(){
+    public synchronized void  addrefrencecount(){
         refrencecount++;
     }
-    public void minsrefrencecount(){
+    public synchronized void minsrefrencecount(){
         refrencecount--;
     }
 
-    public  boolean isnorefrence(){
+    public  synchronized boolean isnorefrence(){
         if(refrencecount==0){
             return true;
         }else {

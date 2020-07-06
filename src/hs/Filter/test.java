@@ -1,6 +1,11 @@
 package hs.Filter;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
+import hs.Bean.ModlePin;
+
 import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
@@ -15,6 +20,19 @@ public class test {
         return 10*Math.sin(2*3.14*time/100)+Math.random()*10;
     }
     public static void main(String[] args) {
+
+
+        JSONObject jsonObject = new JSONObject();
+
+
+        System.out.println(jsonObject.toJSONString());;
+
+        List<ModlePin> pins=null;
+
+        for(ModlePin pin:pins){
+            System.out.println(pin);
+
+        }
         Filter filter =new FirstOrderLagFilter();
         if(filter instanceof MoveAverageFilter){
             System.out.println("yes");

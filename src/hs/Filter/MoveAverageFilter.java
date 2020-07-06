@@ -1,9 +1,7 @@
 package hs.Filter;
 
-import hs.Opc.OPCService;
 import org.apache.log4j.Logger;
 
-import java.util.LinkedList;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
@@ -16,6 +14,7 @@ public class MoveAverageFilter implements Filter {
     private int pk_filterid;
     private int pk_pinid;
     private String backToDCSTag;//反写进dcs的位号
+    private String opcresource;
     private ConcurrentLinkedQueue<Double> unfilterdatapool =new ConcurrentLinkedQueue();
     private ConcurrentLinkedQueue<Double> filterdataspool =new ConcurrentLinkedQueue();
     private Integer capacity;//队列容量移动平均滤波时间
@@ -125,4 +124,11 @@ public class MoveAverageFilter implements Filter {
         this.backToDCSTag = backToDCSTag;
     }
 
+    public String getOpcresource() {
+        return opcresource;
+    }
+
+    public void setOpcresource(String opcresource) {
+        this.opcresource = opcresource;
+    }
 }

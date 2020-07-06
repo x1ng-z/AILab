@@ -2,13 +2,14 @@ package hs.Controller;
 
 import hs.Bean.BaseConf;
 import hs.Bean.ModleConstainer;
-import hs.Dao.Service.ModleServe;
+import hs.Dao.Service.ModleDBServe;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.ModelAndView;
 
 /**
+ * web 前段试用的
  * @author zzx
  * @version 1.0
  * @date 2020/4/30 12:49
@@ -19,7 +20,7 @@ public class LoginController {
     @Autowired
     private BaseConf baseConf;
     @Autowired
-    private ModleServe modleServe;
+    private ModleDBServe modleDBServe;
     @Autowired
     private ModleConstainer modleConstainer;
 
@@ -38,7 +39,7 @@ public class LoginController {
         ModelAndView mv=new ModelAndView();
         mv.setViewName("index");
         mv.addObject("companyName",baseConf.getCommenName());
-        mv.addObject("modles",modleConstainer.getModules().values());
+        mv.addObject("modles",modleConstainer.getModulepool().values());
         return mv;
     }
 
@@ -48,7 +49,7 @@ public class LoginController {
 
         ModelAndView mv=new ModelAndView();
         mv.setViewName("home");
-        mv.addObject("modles",modleConstainer.getModules().values());
+        mv.addObject("modles",modleConstainer.getModulepool().values());
         mv.addObject("basedata",baseConf);
         return mv;
     }

@@ -4,10 +4,12 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import hs.Bean.*;
-import hs.Dao.Service.ModleServe;
+import hs.Dao.Service.ModleDBServe;
 import hs.Filter.Filter;
 import hs.Filter.FirstOrderLagFilter;
 import hs.Filter.MoveAverageFilter;
+import hs.Opc.OPCService;
+import hs.Opc.OpcServicConstainer;
 import hs.Utils.Tool;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,11 +20,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
 
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
+ *
+ * 对于模型的操作
  * @author zzx
  * @version 1.0
  * @date 2020/3/19 14:11
@@ -35,14 +38,17 @@ public class ModleController {
     @Autowired
     private BaseConf baseConf;
     @Autowired
-    private ModleServe modleServe;
+    private ModleDBServe modleDBServe;
     @Autowired
     private ModleConstainer modleConstainer;
+
+    @Autowired
+    private OpcServicConstainer opcServicConstainer;
 
 
     @RequestMapping("/modlestatus/{modleId}")
     public ModelAndView modelStatus(@PathVariable("modleId") String modleid){
-        ControlModle controlModle=modleConstainer.getModules().get(Integer.valueOf(modleid.trim()));
+        ControlModle controlModle=modleConstainer.getModulepool().get(Integer.valueOf(modleid.trim()));
         ModelAndView mv=new ModelAndView();
         mv.setViewName("modleStatus");
         mv.addObject("modle",controlModle);
@@ -54,7 +60,7 @@ public class ModleController {
     @ResponseBody
     public String modelRealStatusforweb(@PathVariable("modleId") String modleid){
         int loop=0;
-        ControlModle controlModle=modleConstainer.getModules().get(Integer.valueOf(modleid.trim()));
+        ControlModle controlModle=modleConstainer.getModulepool().get(Integer.valueOf(modleid.trim()));
 
         JSONObject result=new JSONObject();
 
@@ -167,12 +173,12 @@ public class ModleController {
     @ResponseBody
     public String stopModel(@RequestParam("modleid") String modleid){
 
-        ControlModle controlModle=modleConstainer.getModules().get(Integer.valueOf(modleid.trim()));
+        ControlModle controlModle=modleConstainer.getModulepool().get(Integer.valueOf(modleid.trim()));
         if(controlModle!=null){
             if(controlModle.getModleEnable()==1){
                 controlModle.getExecutePythonBridge().stop();
                 controlModle.setModleEnable(0);
-                modleServe.modifymodleEnable(controlModle.getModleId(),0);
+                modleDBServe.modifymodleEnable(controlModle.getModleId(),0);
                 return "success";
             }
         }else {
@@ -188,12 +194,12 @@ public class ModleController {
     @ResponseBody
     public String runModel(@RequestParam("modleid") String modleid){
 
-        ControlModle controlModle=modleConstainer.getModules().get(Integer.valueOf(modleid.trim()));
+        ControlModle controlModle=modleConstainer.getModulepool().get(Integer.valueOf(modleid.trim()));
         if(controlModle!=null){
             if(controlModle.getModleEnable()==0){
                 controlModle.getExecutePythonBridge().execute();
                 controlModle.setModleEnable(1);
-                modleServe.modifymodleEnable(controlModle.getModleId(),1);
+                modleDBServe.modifymodleEnable(controlModle.getModleId(),1);
                 return "success";
             }
         }else {
@@ -208,30 +214,36 @@ public class ModleController {
     @RequestMapping("/deleteModle")
     @ResponseBody
     public String deleteModel(@RequestParam("modleid") String modleid){
-
         try {
-            ControlModle controlModle=modleConstainer.getModules().get(Integer.valueOf(modleid.trim()));
+            ControlModle controlModle=modleConstainer.getModulepool().get(Integer.valueOf(modleid.trim()));
             if(controlModle!=null){
                 if(controlModle.getModleEnable()==1){
                     controlModle.getExecutePythonBridge().stop();
                 }
-                modleServe.deleteModleResp(controlModle.getModleId());
+                /**
+                 * 1、删除响应序列
+                 * 2、删除应交过滤器
+                 * 3、删除引脚
+                 * 4、移除opc点号
+                 * 4、删除模型
+                 * */
+                modleDBServe.deleteModleResp(controlModle.getModleId());
                 for(ModlePin modlePin:controlModle.getModlePins()){
                     if(modlePin.getFilter()!=null){
-                        modleServe.deletePinsFilter(modlePin.getFilter().getPk_pinid());
+                        modleDBServe.deletePinsFilter(modlePin.getFilter().getPk_pinid());
                     }
-
                 }
 
-                modleServe.deleteModlePins(controlModle.getModleId());
-                modleServe.deleteModle(controlModle.getModleId());
-                modleConstainer.getModules().remove(Integer.valueOf(modleid.trim()));
+                modleDBServe.deleteModlePins(controlModle.getModleId());
+                controlModle.unregisterpin();
+                modleDBServe.deleteModle(controlModle.getModleId());
+                modleConstainer.getModulepool().remove(Integer.valueOf(modleid.trim()));
                 return "success";
             }else{
                 return "error";
             }
         } catch (NumberFormatException e) {
-            logger.error(e);
+            logger.error(e.getMessage(),e);
             return "error";
         }
 //        ModelAndView mv=new ModelAndView();
@@ -258,14 +270,13 @@ public class ModleController {
             fflist.add(i);
 
             JSONObject mvjson=new JSONObject();
-            mvjson.put("ff","ff"+i);
+            mvjson.put(ModlePin.TYPE_PIN_FF,ModlePin.TYPE_PIN_FF+i);
             for(int j=1;j<=baseConf.getPv();++j){
-                mvjson.put("pv"+j,"");
+                mvjson.put(ModlePin.TYPE_PIN_PV+j,"");
             }
             ffrespon.add(mvjson);
 
         }
-
 
 
         List<Integer> mvlist=new ArrayList<>();
@@ -273,9 +284,9 @@ public class ModleController {
             mvlist.add(i);
 
             JSONObject mvjson=new JSONObject();
-            mvjson.put("mv","mv"+i);
+            mvjson.put(ModlePin.TYPE_PIN_MV,ModlePin.TYPE_PIN_MV+i);
             for(int j=1;j<=baseConf.getPv();++j){
-                mvjson.put("pv"+j,"");
+                mvjson.put(ModlePin.TYPE_PIN_PV+j,"");
             }
             mvrespon.add(mvjson);
 
@@ -286,6 +297,13 @@ public class ModleController {
         mv.addObject("mvlist",mvlist);
         mv.addObject("mvresp",mvrespon.toJSONString());
         mv.addObject("ffresp",ffrespon.toJSONString());
+        /**opc点号来源*/
+        List<String> opcresources=new ArrayList<>();
+        for(OPCService opcService:opcServicConstainer.getOpcservepool().values()){
+            opcresources.add("opc"+opcService.getOpcip());
+        }
+        opcresources.add("constant");
+        mv.addObject("opcresources",opcresources);
         return mv;
     }
 
@@ -295,7 +313,7 @@ public class ModleController {
     @RequestMapping("/modifymodle")
     public ModelAndView modifyModel(@RequestParam("modleid") int modleid){
 
-        ControlModle controlModle=modleConstainer.getModules().get(modleid);
+        ControlModle controlModle=modleConstainer.getModulepool().get(modleid);
 
         ModelAndView mv=new ModelAndView();
         mv.setViewName("modifyModle");
@@ -303,18 +321,21 @@ public class ModleController {
         JSONArray ffrespon= new JSONArray();
 
         List<String> pvlist=new ArrayList<>();
+        List<ModlePin> pvpinlist=new ArrayList<>();
         for(int i=1;i<=baseConf.getPv();++i){
-            ModlePin modlePin=controlModle.getStringmodlePinsMap().get("pv"+i);
+            ModlePin modlePin=controlModle.getStringmodlePinsMap().get(ModlePin.TYPE_PIN_PV+i);
             if(modlePin==null){
                 pvlist.add("");
+                pvpinlist.add(new ModlePin());
             }else {
                 pvlist.add(modlePin.getModleOpcTag());
+                pvpinlist.add(modlePin);
             }
         }
 
         List<String> qlist=new ArrayList<>();
         for(int i=1;i<=baseConf.getPv();++i){
-            ModlePin modlePin=controlModle.getStringmodlePinsMap().get("pv"+i);
+            ModlePin modlePin=controlModle.getStringmodlePinsMap().get(ModlePin.TYPE_PIN_PV+i);
             if(modlePin==null){
                 qlist.add("");
             }else {
@@ -324,7 +345,7 @@ public class ModleController {
 
         List<String> alphelist=new ArrayList<>();
         for(int i=1;i<=baseConf.getPv();++i){
-            ModlePin modlePin=controlModle.getStringmodlePinsMap().get("pv"+i);
+            ModlePin modlePin=controlModle.getStringmodlePinsMap().get(ModlePin.TYPE_PIN_PV+i);
             if(modlePin==null){
                 alphelist.add("");
             }else {
@@ -335,26 +356,32 @@ public class ModleController {
 
 
         List<String> splist=new ArrayList<>();
+        List<ModlePin> sppinlist=new ArrayList<>();
         for(int i=1;i<=baseConf.getPv();++i){
-            ModlePin modlePin=controlModle.getStringmodlePinsMap().get("sp"+i);
+            ModlePin modlePin=controlModle.getStringmodlePinsMap().get(ModlePin.TYPE_PIN_SP+i);
 
             if(modlePin==null){
                 splist.add("");
+                sppinlist.add(new ModlePin());
             }else {
                 splist.add(modlePin.getModleOpcTag());
+                sppinlist.add(modlePin);
             }
 
         }
 
 
         List<String> mvlist=new ArrayList<>();
+        List<ModlePin> mvpinlist=new ArrayList<>();
         for(int i=1;i<=baseConf.getMv();++i){
-            ModlePin modlePin=controlModle.getStringmodlePinsMap().get("mv"+i);
+            ModlePin modlePin=controlModle.getStringmodlePinsMap().get(ModlePin.TYPE_PIN_MV+i);
 
             if(modlePin==null){
                 mvlist.add("");
+                mvpinlist.add(new ModlePin());
             }else {
                 mvlist.add(modlePin.getModleOpcTag());
+                mvpinlist.add(modlePin);
             }
 
         }
@@ -362,7 +389,7 @@ public class ModleController {
 
         List<String> rlist=new ArrayList<>();
         for(int i=1;i<=baseConf.getMv();++i){
-            ModlePin modlePin=controlModle.getStringmodlePinsMap().get("mv"+i);
+            ModlePin modlePin=controlModle.getStringmodlePinsMap().get(ModlePin.TYPE_PIN_MV+i);
             if(modlePin==null){
                 rlist.add("");
             }else {
@@ -375,7 +402,7 @@ public class ModleController {
         List<String> dmvHighlist=new ArrayList<>();
         List<String> dmvLowlist=new ArrayList<>();
         for(int i=1;i<=baseConf.getMv();++i){
-            ModlePin modlePin=controlModle.getStringmodlePinsMap().get("mv"+i);
+            ModlePin modlePin=controlModle.getStringmodlePinsMap().get(ModlePin.TYPE_PIN_MV+i);
             if(modlePin==null){
                 dmvHighlist.add("");
                 dmvLowlist.add("");
@@ -389,7 +416,7 @@ public class ModleController {
 
         List<ModlePin> mvuplist=new ArrayList<>();
         for(int i=1;i<=baseConf.getMv();++i){
-            ModlePin modlePin=controlModle.getStringmodlePinsMap().get("mvup"+i);
+            ModlePin modlePin=controlModle.getStringmodlePinsMap().get(ModlePin.TYPE_PIN_MVUP+i);
 
             if(modlePin==null){
                 mvuplist.add(new ModlePin() );
@@ -402,7 +429,7 @@ public class ModleController {
 
         List<Filter> filterpvlist=new ArrayList<>();
         for(int i=1;i<=baseConf.getMv();++i){
-            ModlePin modlePin=controlModle.getStringmodlePinsMap().get("pv"+i);
+            ModlePin modlePin=controlModle.getStringmodlePinsMap().get(ModlePin.TYPE_PIN_PV+i);
 
             if(modlePin==null){
                 filterpvlist.add(new MoveAverageFilter());//这里仅仅是用于填充也页面数据，不是说没有滤波器的默认就是move
@@ -415,7 +442,7 @@ public class ModleController {
 
         List<Filter> filtermvfblist=new ArrayList<>();
         for(int i=1;i<=baseConf.getMv();++i){
-            ModlePin modlePin=controlModle.getStringmodlePinsMap().get("mvfb"+i);
+            ModlePin modlePin=controlModle.getStringmodlePinsMap().get(ModlePin.TYPE_PIN_MVFB+i);
             if(modlePin==null){
                 filtermvfblist.add(new MoveAverageFilter());//这里仅仅是用于填充也页面数据，不是说没有滤波器的默认就是move
             }else {
@@ -428,7 +455,7 @@ public class ModleController {
 
         List<Filter> filterfflist=new ArrayList<>();
         for(int i=1;i<=baseConf.getMv();++i){
-            ModlePin modlePin=controlModle.getStringmodlePinsMap().get("ff"+i);
+            ModlePin modlePin=controlModle.getStringmodlePinsMap().get(ModlePin.TYPE_PIN_FF+i);
             if(modlePin==null){
                 filterfflist.add(new MoveAverageFilter());//这里仅仅是用于填充也页面数据，不是说没有滤波器的默认就是move
             }else {
@@ -444,7 +471,7 @@ public class ModleController {
 
         List<ModlePin> mvdownlist=new ArrayList<>();
         for(int i=1;i<=baseConf.getMv();++i){
-            ModlePin modlePin=controlModle.getStringmodlePinsMap().get("mvdown"+i);
+            ModlePin modlePin=controlModle.getStringmodlePinsMap().get(ModlePin.TYPE_PIN_MVDOWN+i);
 
             if(modlePin==null){
                 mvdownlist.add(new ModlePin() );
@@ -456,33 +483,40 @@ public class ModleController {
 
 
         List<String> mvfblist=new ArrayList<>();
+        List<ModlePin> mvfbpinlist=new ArrayList<>();
         for(int i=1;i<=baseConf.getMv();++i){
-            ModlePin modlePin=controlModle.getStringmodlePinsMap().get("mvfb"+i);
+            ModlePin modlePin=controlModle.getStringmodlePinsMap().get(ModlePin.TYPE_PIN_MVFB+i);
 
             if(modlePin==null){
                 mvfblist.add("");
+                mvfbpinlist.add(new ModlePin());
             }else {
                 mvfblist.add(modlePin.getModleOpcTag());
+                mvfbpinlist.add(modlePin);
             }
 
         }
 
         List<String> fflist=new ArrayList<>();
+        List<ModlePin> ffpinlist=new ArrayList<>();
         for(int i=1;i<=baseConf.getFf();++i){
-            ModlePin modlePin=controlModle.getStringmodlePinsMap().get("ff"+i);
+            ModlePin modlePin=controlModle.getStringmodlePinsMap().get(ModlePin.TYPE_PIN_FF+i);
 
             if(modlePin==null){
                 fflist.add("");
+                ffpinlist.add(new ModlePin());
             }else {
                 fflist.add(modlePin.getModleOpcTag());
+                ffpinlist.add(modlePin);
             }
 
         }
 
 
+        /**前馈上限*/
         List<ModlePin> ffuplist=new ArrayList<>();
         for(int i=1;i<=baseConf.getFf();++i){
-            ModlePin modlePin=controlModle.getStringmodlePinsMap().get("ffup"+i);
+            ModlePin modlePin=controlModle.getStringmodlePinsMap().get(ModlePin.TYPE_PIN_FFUP+i);
 
             if(modlePin==null){
                 ffuplist.add(new ModlePin());
@@ -492,9 +526,10 @@ public class ModleController {
 
         }
 
+        /**前馈下限*/
         List<ModlePin> ffdownlist=new ArrayList<>();
         for(int i=1;i<=baseConf.getFf();++i){
-            ModlePin modlePin=controlModle.getStringmodlePinsMap().get("ffdown"+i);
+            ModlePin modlePin=controlModle.getStringmodlePinsMap().get(ModlePin.TYPE_PIN_FFDOWN+i);
 
             if(modlePin==null){
                 ffdownlist.add(new ModlePin());
@@ -509,18 +544,22 @@ public class ModleController {
         for(int i=1;i<=baseConf.getMv();++i){
 
             JSONObject mvjson=new JSONObject();
-            mvjson.put("mv","mv"+i);
+            mvjson.put(ModlePin.TYPE_PIN_MV,ModlePin.TYPE_PIN_MV+i);
             for(int j=1;j<=baseConf.getPv();++j){
 
                 boolean isfind=false;
                 for(ResponTimeSerise responTimeSerise:controlModle.getResponTimeSerises()){
-                    if(responTimeSerise.getInputPins().equals("mv"+i)&&responTimeSerise.getOutputPins().equals("pv"+j)){
-                        mvjson.put("pv"+j,responTimeSerise.getStepRespJson());
+                    if(
+                            responTimeSerise.getInputPins().equals(ModlePin.TYPE_PIN_MV+i)
+                                    &&
+                                    responTimeSerise.getOutputPins().equals(ModlePin.TYPE_PIN_PV+j)
+                    ){
+                        mvjson.put(ModlePin.TYPE_PIN_PV+j,responTimeSerise.getStepRespJson());
                         isfind=true;
                     }
                 }
                 if(!isfind){
-                    mvjson.put("pv"+j,"");
+                    mvjson.put(ModlePin.TYPE_PIN_PV+j,"");
                 }
 
             }
@@ -536,18 +575,22 @@ public class ModleController {
         for(int i=1;i<=baseConf.getFf();++i){
 
             JSONObject ffjson=new JSONObject();
-            ffjson.put("ff","ff"+i);
+            ffjson.put(ModlePin.TYPE_PIN_FF,ModlePin.TYPE_PIN_FF+i);
             for(int j=1;j<=baseConf.getPv();++j){
 
                 boolean isfind=false;
                 for(ResponTimeSerise responTimeSerise:controlModle.getResponTimeSerises()){
-                    if(responTimeSerise.getInputPins().equals("ff"+i)&&responTimeSerise.getOutputPins().equals("pv"+j)){
-                        ffjson.put("pv"+j,responTimeSerise.getStepRespJson());
+                    if(
+                            responTimeSerise.getInputPins().equals(ModlePin.TYPE_PIN_FF+i)
+                                    &&
+                                    responTimeSerise.getOutputPins().equals(ModlePin.TYPE_PIN_PV+j)
+                    ){
+                        ffjson.put(ModlePin.TYPE_PIN_PV+j,responTimeSerise.getStepRespJson());
                         isfind=true;
                     }
                 }
                 if(!isfind){
-                    ffjson.put("pv"+j,"");
+                    ffjson.put(ModlePin.TYPE_PIN_PV+j,"");
                 }
 
             }
@@ -559,7 +602,7 @@ public class ModleController {
 
         List<String> deadZnoelist=new ArrayList<>();
         for(int i=1;i<=baseConf.getPv();++i){
-            ModlePin modlePin=controlModle.getStringmodlePinsMap().get("pv"+i);
+            ModlePin modlePin=controlModle.getStringmodlePinsMap().get(ModlePin.TYPE_PIN_PV+i);
             if(modlePin==null){
                 deadZnoelist.add("");
             }else {
@@ -571,12 +614,9 @@ public class ModleController {
 
 
         //funelInitvalue
-
-
-
         List<String> funelInitValuelist=new ArrayList<>();
         for(int i=1;i<=baseConf.getPv();++i){
-            ModlePin modlePin=controlModle.getStringmodlePinsMap().get("pv"+i);
+            ModlePin modlePin=controlModle.getStringmodlePinsMap().get(ModlePin.TYPE_PIN_PV+i);
             if(modlePin==null){
                 funelInitValuelist.add("");
             }else {
@@ -587,12 +627,15 @@ public class ModleController {
 
         mv.addObject("modle",controlModle);
         mv.addObject("pvlist",pvlist);
+        mv.addObject("pvpinlist",pvpinlist);
         mv.addObject("qlist",qlist);
         mv.addObject("alphelist",alphelist);
 
 
         mv.addObject("splist",splist);
+        mv.addObject("sppinlist",sppinlist);
         mv.addObject("mvlist",mvlist);
+        mv.addObject("mvpinlist",mvpinlist);
         mv.addObject("rlist",rlist);
         mv.addObject("dmvHighlist",dmvHighlist);
         mv.addObject("dmvLowlist",dmvLowlist);
@@ -600,8 +643,10 @@ public class ModleController {
         mv.addObject("mvuplist",mvuplist);
         mv.addObject("mvdownlist",mvdownlist);
         mv.addObject("mvfblist",mvfblist);
+        mv.addObject("mvfbpinlist",mvfbpinlist);
 
         mv.addObject("fflist",fflist);
+        mv.addObject("ffpinlist",ffpinlist);
         mv.addObject("ffuplist",ffuplist);
         mv.addObject("ffdownlist",ffdownlist);
 
@@ -616,8 +661,13 @@ public class ModleController {
         mv.addObject("filtermvfblist",filtermvfblist);
         mv.addObject("filterfflist",filterfflist);
 
-
-
+        /**opc点号来源*/
+        List<String> opcresources=new ArrayList<>();
+        for(OPCService opcService:opcServicConstainer.getOpcservepool().values()){
+            opcresources.add("opc"+opcService.getOpcip());
+        }
+        opcresources.add("constant");
+        mv.addObject("opcresources",opcresources);
         return mv;
     }
 
@@ -640,11 +690,11 @@ public class ModleController {
             controlModle.setControlAPCOutCycle(Integer.valueOf(modlejsonObject.getString("O")));
 
             if (modlejsonObject.getString("modleid").trim().equals("")){
-                modleServe.insertModle(controlModle);
+                modleDBServe.insertModle(controlModle);
                 newmodle=true;
 
             }else {
-                modleServe.modifymodle(Integer.valueOf(modlejsonObject.getString("modleid").trim()),controlModle);
+                modleDBServe.modifymodle(Integer.valueOf(modlejsonObject.getString("modleid").trim()),controlModle);
                 controlModle.setModleId(Integer.valueOf(modlejsonObject.getString("modleid").trim()));
             }
 
@@ -654,21 +704,24 @@ public class ModleController {
              *
              * auto*/
             ModlePin autopin=new ModlePin();
-            autopin.setResource("opc");
+            autopin.setResource(modlejsonObject.getString("autoresource"));
             autopin.setModleOpcTag(modlejsonObject.getString("autoTag"));
+
             autopin.setReference_modleId(controlModle.getModleId());
-            autopin.setModlePinName("auto");
+            autopin.setModlePinName(ModlePin.TYPE_PIN_AUTO);
             controlModle.getModlePins().add(autopin);
 
             /**
              * pv*/
             for(int i=1;i<= baseConf.getPv();i++){
 
-                String pvTag=modlejsonObject.getString("pv"+i).trim();
+                String pvTag=modlejsonObject.getString(ModlePin.TYPE_PIN_PV+i).trim();
                 String QTag=modlejsonObject.getString("q"+i);
-                String spTag=modlejsonObject.getString("sp"+i);
+                String spTag=modlejsonObject.getString(ModlePin.TYPE_PIN_SP+i);
                 String spDeadZone=modlejsonObject.getString("pv"+i+"DeadZone");
                 String spFunelInitValue=modlejsonObject.getString("pv"+i+"FunelInitValue");
+                String spfuneltype=modlejsonObject.getString("funneltype"+i);
+
                 String pvtracoef=modlejsonObject.getString("tracoef"+i);//参考轨迹系数
 
                 /**
@@ -677,17 +730,21 @@ public class ModleController {
                 String filtercoefpv=modlejsonObject.getString("filtercoefpv"+i);
                 String filteropctagpv=modlejsonObject.getString("filteropctagpv"+i);
                 String filternamepv=modlejsonObject.getString("filternamepv"+i);
+
+                String filterpvres=modlejsonObject.getString("filterpv"+i+"resource");
+
               //pvTag!=null&&pvTag.trim()!=""
                 if((pvTag!=null&&!pvTag.trim().equals(""))&&(QTag!=null&&!QTag.trim().equals(""))&&(spTag!=null&&!spTag.trim().equals(""))&&(spDeadZone!=null&&!spDeadZone.trim().equals(""))&&(spFunelInitValue!=null&&!spFunelInitValue.trim().equals(""))){
 
                     ModlePin pvpin=new ModlePin();
-                    pvpin.setResource("opc");
+                    pvpin.setResource(modlejsonObject.getString(ModlePin.TYPE_PIN_PV+i+"resource"));
                     pvpin.setModleOpcTag(pvTag);
                     pvpin.setQ(Double.valueOf(QTag));
                     pvpin.setReference_modleId(controlModle.getModleId());
                     pvpin.setModlePinName("pv"+i);
                     pvpin.setDeadZone(Double.valueOf(spDeadZone));
                     pvpin.setFunelinitValue(Double.valueOf(spFunelInitValue));
+                    pvpin.setFunneltype(spfuneltype);
 
                     /**
                      * 滤波器
@@ -696,12 +753,14 @@ public class ModleController {
                         if(filternamepv.equals("mvav")){
                             MoveAverageFilter moveAverageFilter=new MoveAverageFilter();
                             moveAverageFilter.setBackToDCSTag(filteropctagpv);
+                            moveAverageFilter.setOpcresource(filterpvres);
                             moveAverageFilter.setCapacity(Double.valueOf(filtercoefpv).intValue());//窗口时间长度
                             moveAverageFilter.setFiltername(filternamepv);
                             pvpin.setFilter(moveAverageFilter);
                         }else if(filternamepv.equals("fodl")){
                             FirstOrderLagFilter firstOrderLagFilter=new FirstOrderLagFilter();
                             firstOrderLagFilter.setBackToDCSTag(filteropctagpv);
+                            firstOrderLagFilter.setOpcresource(filterpvres);
                             firstOrderLagFilter.setFilter_alphe(Double.valueOf(filtercoefpv));
                             firstOrderLagFilter.setFiltername(filternamepv);
                             pvpin.setFilter(firstOrderLagFilter);
@@ -718,7 +777,7 @@ public class ModleController {
 
                     ModlePin sppin=new ModlePin();
                     sppin.setModleOpcTag(spTag);
-                    sppin.setResource("opc");
+                    sppin.setResource(modlejsonObject.getString(ModlePin.TYPE_PIN_SP+i+"resource"));
                     sppin.setReference_modleId(controlModle.getModleId());
                     sppin.setModlePinName("sp"+i);
                     controlModle.getModlePins().add(sppin);
@@ -753,7 +812,7 @@ public class ModleController {
                 if(mv!=null&&!mv.trim().equals("")){
                     ModlePin mvpin=new ModlePin();
                     mvpin.setR(Double.valueOf(r));
-                    mvpin.setResource("opc");
+                    mvpin.setResource(modlejsonObject.getString(ModlePin.TYPE_PIN_MV+i+"resource"));
                     mvpin.setReference_modleId(controlModle.getModleId());
                     mvpin.setModleOpcTag(mv);
                     mvpin.setModlePinName("mv"+i);
@@ -765,7 +824,7 @@ public class ModleController {
                     ModlePin mvfbpin=new ModlePin();
                     mvfbpin.setReference_modleId(controlModle.getModleId());
                     mvfbpin.setModlePinName("mvfb"+i);
-                    mvfbpin.setResource("opc");
+                    mvfbpin.setResource(modlejsonObject.getString(ModlePin.TYPE_PIN_MVFB+i+"resource"));
                     mvfbpin.setModleOpcTag(mvfb);
                     controlModle.getModlePins().add(mvfbpin);
 
@@ -774,12 +833,14 @@ public class ModleController {
                         if(filternamemv.equals("mvav")){
                             MoveAverageFilter moveAverageFilter=new MoveAverageFilter();
                             moveAverageFilter.setBackToDCSTag(filteropctagmv);
+                            moveAverageFilter.setOpcresource(modlejsonObject.getString("filtermvfb"+i+"resource"));
                             moveAverageFilter.setCapacity(Double.valueOf(filtercoefmv).intValue());//窗口时间长度
                             moveAverageFilter.setFiltername(filternamemv);
                             mvfbpin.setFilter(moveAverageFilter);
                         }else if(filternamemv.equals("fodl")){
                             FirstOrderLagFilter firstOrderLagFilter=new FirstOrderLagFilter();
                             firstOrderLagFilter.setBackToDCSTag(filteropctagmv);
+                            firstOrderLagFilter.setOpcresource(modlejsonObject.getString("filtermvfb"+i+"resource"));
                             firstOrderLagFilter.setFilter_alphe(Double.valueOf(filtercoefmv));
                             firstOrderLagFilter.setFiltername(filternamemv);
                             mvfbpin.setFilter(firstOrderLagFilter);
@@ -830,19 +891,23 @@ public class ModleController {
                     ModlePin ffpin=new ModlePin();
                     ffpin.setReference_modleId(controlModle.getModleId());
                     ffpin.setModlePinName("ff"+i);
-                    ffpin.setResource("opc");
+                    ffpin.setResource(modlejsonObject.getString(ModlePin.TYPE_PIN_FF+i+"resource"));
                     ffpin.setModleOpcTag(ff);
 
                     if(filternameff!=null){
                         if(filternameff.equals("mvav")){
                             MoveAverageFilter moveAverageFilter=new MoveAverageFilter();
                             moveAverageFilter.setBackToDCSTag(filteropctagff);
+                            moveAverageFilter.setOpcresource(modlejsonObject.getString("filterff"+i+"resource"));
+
                             moveAverageFilter.setCapacity(Double.valueOf(filtercoefff).intValue());//窗口时间长度
                             moveAverageFilter.setFiltername(filternameff);
                             ffpin.setFilter(moveAverageFilter);
                         }else if(filternameff.equals("fodl")){
                             FirstOrderLagFilter firstOrderLagFilter=new FirstOrderLagFilter();
                             firstOrderLagFilter.setBackToDCSTag(filteropctagff);
+                            firstOrderLagFilter.setOpcresource(modlejsonObject.getString("filterff"+i+"resource"));
+
                             firstOrderLagFilter.setFilter_alphe(Double.valueOf(filtercoefff));
                             firstOrderLagFilter.setFiltername(filternameff);
                             ffpin.setFilter(firstOrderLagFilter);
@@ -882,7 +947,7 @@ public class ModleController {
                 if (modlejsonObject.getString("modleid").trim().equals("")){
                     //新模型
 
-                    modleServe.insertModlePins(controlModle.getModlePins());
+                    modleDBServe.insertModlePins(controlModle.getModlePins());
                     //插入滤波器数据
                     for(ModlePin modlePin:controlModle.getModlePins()){
 
@@ -891,11 +956,11 @@ public class ModleController {
 
                             if(modlePin.getFilter() instanceof MoveAverageFilter){
 
-                                modleServe.insertPinsMVAVFilter((MoveAverageFilter)modlePin.getFilter());
+                                modleDBServe.insertPinsMVAVFilter((MoveAverageFilter)modlePin.getFilter());
 
                             }else if(modlePin.getFilter() instanceof FirstOrderLagFilter){
 
-                                modleServe.insertPinsFODLFilter((FirstOrderLagFilter)modlePin.getFilter());
+                                modleDBServe.insertPinsFODLFilter((FirstOrderLagFilter)modlePin.getFilter());
 
                             }
 
@@ -909,13 +974,13 @@ public class ModleController {
                     /**
                      * 删除引脚和对应的filter
                      * */
-                    modleServe.deleteModlePins(Integer.valueOf(modlejsonObject.getString("modleid").trim()));
+                    modleDBServe.deleteModlePins(Integer.valueOf(modlejsonObject.getString("modleid").trim()));
 
-                    ControlModle oldmodle=modleConstainer.getModules().get(Integer.valueOf(modlejsonObject.getString("modleid").trim()));
+                    ControlModle oldmodle=modleConstainer.getModulepool().get(Integer.valueOf(modlejsonObject.getString("modleid").trim()));
 
                     for(ModlePin modlePin:oldmodle.getModlePins()){
                         if(modlePin.getFilter()!=null){
-                            modleServe.deletePinsFilter(modlePin.getFilter().getPk_pinid());
+                            modleDBServe.deletePinsFilter(modlePin.getFilter().getPk_pinid());
                         }
 
                     }
@@ -923,7 +988,7 @@ public class ModleController {
                     /**
                      * 重新插入
                      * */
-                    modleServe.insertModlePins(controlModle.getModlePins());
+                    modleDBServe.insertModlePins(controlModle.getModlePins());
 
 
                     for(ModlePin modlePin:controlModle.getModlePins()){
@@ -933,11 +998,11 @@ public class ModleController {
 
                             if(modlePin.getFilter() instanceof MoveAverageFilter){
 
-                                modleServe.insertPinsMVAVFilter((MoveAverageFilter)modlePin.getFilter());
+                                modleDBServe.insertPinsMVAVFilter((MoveAverageFilter)modlePin.getFilter());
 
                             }else if(modlePin.getFilter() instanceof FirstOrderLagFilter){
 
-                                modleServe.insertPinsFODLFilter((FirstOrderLagFilter)modlePin.getFilter());
+                                modleDBServe.insertPinsFODLFilter((FirstOrderLagFilter)modlePin.getFilter());
 
                             }
 
@@ -949,8 +1014,8 @@ public class ModleController {
             }
 
             List<ResponTimeSerise> responTimeSeriseArrayList=new ArrayList<>();
-
             JSONArray mvrespjsonObject =JSONArray.parseArray(mvresp);
+
             for(int i=0;i<baseConf.getMv();++i){
                 JSONObject mvrespjsonObjectJSONObject=mvrespjsonObject.getJSONObject(i);
                 String mvnamepin=mvrespjsonObjectJSONObject.getString("mv");
@@ -964,7 +1029,6 @@ public class ModleController {
                         responTimeSeriseArrayList.add(responTimeSerise);
                     }
                 }
-
             }
 
 
@@ -991,10 +1055,10 @@ public class ModleController {
                 if(controlModle.getModlePins().size()!=0){
 
                     if (modlejsonObject.getString("modleid").trim().equals("")){
-                        modleServe.insertModleResp(responTimeSeriseArrayList);
+                        modleDBServe.insertModleResp(responTimeSeriseArrayList);
                     }else {
-                        modleServe.deleteModleResp(Integer.valueOf(modlejsonObject.getString("modleid").trim()));
-                        modleServe.insertModleResp(responTimeSeriseArrayList);
+                        modleDBServe.deleteModleResp(Integer.valueOf(modlejsonObject.getString("modleid").trim()));
+                        modleDBServe.insertModleResp(responTimeSeriseArrayList);
                     }
 
                 }
@@ -1003,18 +1067,18 @@ public class ModleController {
              * 如果找不模型的id,那么直接从数据库中初始化模型
              * */
             if(modlejsonObject.getString("modleid").trim().equals("")){
-                ControlModle controlModle1=modleServe.getModle(controlModle.getModleId());
+                ControlModle controlModle1= modleDBServe.getModle(controlModle.getModleId());
                 modleConstainer.registerModle(controlModle1);
             }else {
                 /**
                  * 找到id，那么就需要停止运行，然后移除模型，然后重新从数据库初始化模型，开始运行
                  * */
-                ControlModle controlModle1=modleConstainer.getModules().get(Integer.valueOf(modlejsonObject.getString("modleid").trim()));
-                controlModle1.getExecutePythonBridge().stop();
-                controlModle1.removeopctag();
+                ControlModle oldcontrolModle=modleConstainer.getModulepool().get(Integer.valueOf(modlejsonObject.getString("modleid").trim()));
+                oldcontrolModle.getExecutePythonBridge().stop();
+                oldcontrolModle.unregisterpin();
 
-                modleConstainer.getModules().remove(Integer.valueOf(modlejsonObject.getString("modleid").trim()));
-                ControlModle newcontrolModle2=modleServe.getModle(controlModle.getModleId());
+                modleConstainer.getModulepool().remove(Integer.valueOf(modlejsonObject.getString("modleid").trim()));
+                ControlModle newcontrolModle2= modleDBServe.getModle(controlModle.getModleId());
                 modleConstainer.registerModle(newcontrolModle2);
             }
 
@@ -1035,7 +1099,7 @@ public class ModleController {
         jsonObject.put("modleId",controlModle.getModleId());
         return jsonObject.toJSONString();
         } catch (Exception e) {
-            logger.error(e);
+            logger.error(e.getMessage(),e);
             JSONObject jsonObject=new JSONObject();
             jsonObject.put("msg","error");
             return jsonObject.toJSONString();

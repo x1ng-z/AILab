@@ -79,18 +79,18 @@
     </bean>
 
 
-    <bean id="opcconninfo" class="hs.Opc.OpcConfigure" factory-method="createInstance">
-        <constructor-arg value="${opchost}" index="0"/>
-        <constructor-arg value="${opcdomain}" index="1"/>
-        <constructor-arg value="${opcusername}" index="2"/>
-        <constructor-arg value="${opcpassword}" index="3"/>
-        <constructor-arg value="${opcclsid}" index="4"/>
-    </bean>
+<!--    <bean id="opcconninfo" class="hs.Opc.OpcConfigure" factory-method="createInstance">-->
+<!--        <constructor-arg value="${opchost}" index="0"/>-->
+<!--        <constructor-arg value="${opcdomain}" index="1"/>-->
+<!--        <constructor-arg value="${opcusername}" index="2"/>-->
+<!--        <constructor-arg value="${opcpassword}" index="3"/>-->
+<!--        <constructor-arg value="${opcclsid}" index="4"/>-->
+<!--    </bean>-->
 
-    <bean id="opcserve" class="org.openscada.opc.lib.da.Server">
-        <constructor-arg ref="opcconninfo" index="0"/>
-        <constructor-arg value="#{T(java.util.concurrent.Executors).newSingleThreadScheduledExecutor()}"/>
-    </bean>
+<!--    <bean id="opcserve" class="org.openscada.opc.lib.da.Server">-->
+<!--        <constructor-arg ref="opcconninfo" index="0"/>-->
+<!--        <constructor-arg value="#{T(java.util.concurrent.Executors).newSingleThreadScheduledExecutor()}"/>-->
+<!--    </bean>-->
     <!--<bean id="reconneccopc" class="org.openscada.opc.lib.da.AutoReconnectController" init-method="connect" destroy-method="disconnect">-->
         <!--<constructor-arg ref="opcserve" index="0"/>-->
     <!--</bean>-->

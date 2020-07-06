@@ -11,12 +11,22 @@ import java.util.LinkedList;
  * @date 2020/3/30 12:28
  */
 public class ModlePin {
+    public final static String TYPE_PIN_PV="pv";
+    public final static String TYPE_PIN_SP="sp";
+    public final static String TYPE_PIN_MV="mv";
+    public final static String TYPE_PIN_MVFB="mvfb";
+    public final static String TYPE_PIN_FF="ff";
+    public final static String TYPE_PIN_AUTO="auto";
+    public final static String TYPE_PIN_FFDOWN="ffdown";
+    public final static String TYPE_PIN_FFUP="ffup";
+    public final static String TYPE_PIN_MVUP="mvup";
+    public final static String TYPE_PIN_MVDOWN="mvdown";
     private int modlepinsId;
     private int reference_modleId;
     private String modleOpcTag;
     private String modlePinName;//引脚名称 pv1,sp1...
     private String opcTagName;
-    private String resource;
+    private String resource="";
     private ModlePin upLmt;//高限
     private ModlePin downLmt;//低限
     private ModlePin feedBack;//反馈
@@ -24,6 +34,7 @@ public class ModlePin {
     private Double R;
     private Double deadZone;//死区时间
     private Double funelinitValue;//漏洞初始值
+    private String funneltype;
     private Double writeValue;
     private Double newReadValue;//opc更新的新值
     private Double oldReadValue;//opc更新旧值
@@ -39,36 +50,18 @@ public class ModlePin {
 
 
     public void opcUpdateValue(double value) {
-//        if(oldvalueStack.size()<stackSize){
-//            oldvalueStack.addFirst(newvalue);
-//        }else {
-//            oldvalueStack.removeLast();
-//        }
         oldReadValue = newReadValue;
         newReadValue = value;
         updateOpcTime = Instant.now();
     }
 
     public double modleGetReal() {
+        //有过滤器吗，有就充过滤器中获取，没有就直接冲
         if(filter==null){
             return  (newReadValue==null?0:newReadValue);
         }else {
             return filter.getLastfilterdata();
         }
-    }
-
-    public double modleGetDiff() {
-        Double diffif=0d;
-        if(!isFristTimeModle){
-            diffif= newReadValue - lastTimeValue;
-            lastTimeValue = newReadValue;
-
-        }else{
-            lastTimeValue= newReadValue;
-            isFristTimeModle =false;
-
-        }
-       return diffif;
     }
 
 
@@ -231,5 +224,13 @@ public class ModlePin {
 
     public void setReferTrajectoryCoef(Double referTrajectoryCoef) {
         this.referTrajectoryCoef = referTrajectoryCoef;
+    }
+
+    public String getFunneltype() {
+        return funneltype;
+    }
+
+    public void setFunneltype(String funneltype) {
+        this.funneltype = funneltype;
     }
 }

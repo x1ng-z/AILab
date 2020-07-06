@@ -12,6 +12,7 @@ public class FirstOrderLagFilter implements Filter {
     private int pk_pinid;
     private String filtername;
     private String backToDCSTag;//反写进dcs的位号
+    private String opcresource;
     private Double filter_alphe;
     private ConcurrentLinkedQueue<Double> unfilterdatapool =new ConcurrentLinkedQueue();
     private ConcurrentLinkedQueue<Double> filterdataspool =new ConcurrentLinkedQueue();
@@ -120,4 +121,11 @@ public class FirstOrderLagFilter implements Filter {
     }
 
 
+    public String getOpcresource() {
+        return opcresource;
+    }
+
+    public void setOpcresource(String opcresource) {
+        this.opcresource = opcresource;
+    }
 }

@@ -1,18 +1,19 @@
 package hs.Bean;
 
 /**
+ *
+ * mpv基础配置信息
  * @author zzx
  * @version 1.0
  * @date 2020/4/2 8:19
  */
 public class BaseConf {
-    private int ompanyId;
-    private String commenName;
-    private int companyOrder;
-    private int ff;
-    private int mv;
-    private int pv;
-    private String verification;
+    private int ompanyId;//公司主键id
+    private String commenName;//公司名称
+    private int companyOrder;//无用
+    private int ff;//前馈数量
+    private int mv;//mv数量
+    private int pv;//pv的数量
 
 
     public int getOmpanyId() {
@@ -61,13 +62,5 @@ public class BaseConf {
 
     public void setPv(int pv) {
         this.pv = pv;
-    }
-
-    public String getVerification() {
-        return verification;
-    }
-
-    public void setVerification(String verification) {
-        this.verification = verification;
     }
 }

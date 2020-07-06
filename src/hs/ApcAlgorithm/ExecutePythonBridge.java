@@ -7,7 +7,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 public class ExecutePythonBridge {
     private org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(ExecutePythonBridge.class);
     public  Process p=null;
-    public String pythonhome="python.exe";
     private String pythonjs="E:\\LinkAPC.py";
     private String url;//new String[]{pythonhome,pythonjs,"http://localhost:8080/python/modlebuild/"+key+".do"};
     private String modleid;
@@ -48,7 +47,7 @@ public class ExecutePythonBridge {
             error.start();
 
         } catch (Exception e) {
-           logger.error(e);
+           logger.error(e.getMessage(),e);
            logger.error("jsdir"+pythonjs);
         }
     }

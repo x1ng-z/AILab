@@ -35,6 +35,16 @@ public class FilterService implements Runnable {
         }
     });
 
+
+
+    public void selfinit(){
+        Thread filterServicethread=new Thread(this);
+        filterServicethread.setDaemon(true);
+        filterServicethread.start();
+    }
+
+
+
     @Override
     public void run() {
         while (!Thread.currentThread().isInterrupted()) {
@@ -59,16 +69,16 @@ public class FilterService implements Runnable {
                             try {
                                 filtTask.getItem().write(new JIVariant(filter.getLastfilterdata(), false));
                             } catch (JIException e) {
-                                logger.error(e);
+                                logger.error(e.getMessage(),e);
                             }
                         }
                     }
                 });
 
             } catch (InterruptedException e) {
-                logger.error(e);
+                logger.error(e.getMessage(),e);
             }catch (Exception e){
-                logger.error(e);
+                logger.error(e.getMessage(),e);
             }
         }
 

@@ -32,4 +32,8 @@ public interface Filter {
 
     public Double getcoeff();
 
+
+    public String getOpcresource() ;
+
+    public void setOpcresource(String opcresource) ;
 }

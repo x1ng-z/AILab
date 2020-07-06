@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+
+<mapper namespace="hs.Dao.OpcServeDBMapper">
+    <resultMap id="OpcserveResult" type="hs.Opc.OPCService">
+        <id property="opcserveid" column="opcserveid"/>
+        <result property="opcuser" column="opcuser"/>
+        <result property="opcpassword" column="opcpassword"/>
+        <result property="opcip" column="opcip"/>
+        <result property="opcclsid" column="opcclsid"/>
+        <collection property="initopcVeriTagsInDB" column="opcserveid" ofType="hs.Opc.OpcVeriTag" select="findOpcServeVertags"/>
+    </resultMap>
+
+
+    <resultMap id="opcvertagResult" type="hs.Opc.OpcVeriTag">
+        <id property="tagid" column="tagid"/>
+        <result property="tagName" column="tagName"/>
+        <result property="tag" column="tag"/>
+        <result property="opcserveid" column="opcserveid"/>
+    </resultMap>
+    
+
+
+
+<!--    List<OPCService> getopcserves();-->
+    <select id="getopcserves" resultMap="OpcserveResult">
+      select * from opcserveinfo
+    </select>
+
+    <select id="findOpcServeVertags" resultMap="opcvertagResult">
+      select * from opcverification where opcserveid=#{opcserveid}
+    </select>
+
+<!--    void updateopcserves(OPCService opcService);-->
+    <update id="updateopcserves" parameterType="hs.Opc.OPCService">
+        update opcserveinfo set opcuser=#{opcserve.opcuser}, set opcpassword=#{opcserve.opcpassword}, set opcip=#{opcserve.opcip},set opcclsid=#{opcserve.opcclsid} where opcserveid=#{opcserve.opcserveid}
+    </update>
+
+
+<!--    void deleteopcserves(int opcserveid);-->
+    <delete id="deleteopcserves" >
+        delete from opcserveinfo where opcserveid=#{opcserveid}
+    </delete>
+
+
+<!--    void insertopcserves(OPCService opcService);-->
+    <insert id="insertopcserves" parameterType="hs.Opc.OPCService" useGeneratedKeys="true" keyProperty="opcserveid">
+        insert into opcserveinfo(opcuser, opcpassword, opcip, opcclsid) values (#{opcserve.opcuser},#{opcserve.opcpassword},#{opcserve.opcip},#{opcserve.opcclsid})
+    </insert>
+
+
+<!--    void updateopcverificationtag(OpcVeriTag opcVeriTag);-->
+    <update id="updateopcverificationtag" parameterType="hs.Opc.OpcVeriTag">
+         update opcverification set tagName=#{opcVeriTag.tagName},tag=#{opcVeriTag.tag},opcserveid=#{opcVeriTag.opcserveid} where tagid=#{opcVeriTag.tagid}
+    </update>
+
+
+<!--    void deleteopcverificationtag(int tagid);-->
+    <delete id="deleteopcverificationtag" >
+        delete from opcverification where tagid=#{tagid}
+    </delete>
+
+
+<!--    void insertopcverificationtag(OpcVeriTag opcVeriTag);-->
+    <insert id="insertopcverificationtag" parameterType="hs.Opc.OPCService" useGeneratedKeys="true" keyProperty="tagid">
+        insert into opcverification(tagName, tag, opcserveid) values (#{opcVeriTag.tagName},#{opcVeriTag.tag},#{opcVeriTag.opcserveid})
+    </insert>
+
+</mapper>

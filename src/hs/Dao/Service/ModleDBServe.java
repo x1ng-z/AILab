@@ -4,10 +4,9 @@ import hs.Bean.BaseConf;
 import hs.Bean.ControlModle;
 import hs.Bean.ModlePin;
 import hs.Bean.ResponTimeSerise;
-import hs.Dao.ModleMapper;
+import hs.Dao.ModleDBMapper;
 import hs.Filter.FirstOrderLagFilter;
 import hs.Filter.MoveAverageFilter;
-import org.apache.ibatis.annotations.Param;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Isolation;
@@ -20,8 +19,8 @@ import java.util.List;
  * @date 2020/3/18 14:01
  */
 @Component
-public class ModleServe {
-    private ModleMapper modleMapper;
+public class ModleDBServe {
+    private ModleDBMapper modleMapper;
 
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
@@ -108,7 +107,7 @@ public class ModleServe {
 
 
     @Autowired
-    public void setModleMapper(ModleMapper modleMapper) {
+    public void setModleMapper(ModleDBMapper modleMapper) {
         this.modleMapper = modleMapper;
     }
 }

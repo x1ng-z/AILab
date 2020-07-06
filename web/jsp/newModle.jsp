@@ -10,7 +10,7 @@
 <html>
 <head>
     <link rel="shortcut icon"
-          href="../img/favicon.ico" type="image/x-icon" />
+          href="../img/favicon.ico" type="image/x-icon"/>
     <meta charset="utf-8">
     <title>newmodle</title>
     <meta name="renderer" content="webkit">
@@ -40,34 +40,47 @@
         <div class="layui-inline">
             <label class="layui-form-label">序列数量</label>
             <div class="layui-input-inline">
-                <input type="text" name="N" lay-verify="required" autocomplete="off" placeholder="响应序列的数目"
+                <input type="number" name="N" lay-verify="required" autocomplete="off" placeholder="响应序列的数目"
                        class="layui-input">
             </div>
         </div>
         <div class="layui-inline">
             <label class="layui-form-label">预测步数</label>
             <div class="layui-input-inline">
-                <input type="text" name="P" lay-verify="required|number" autocomplete="off" class="layui-input">
+                <input type="number" name="P" lay-verify="required|number" autocomplete="off" class="layui-input">
             </div>
         </div>
         <div class="layui-inline">
             <label class="layui-form-label">输出步数</label>
             <div class="layui-input-inline">
-                <input type="text" name="M" lay-verify="required|number" autocomplete="off" placeholder="计算后续多少步的输出"
+                <input type="number" name="M" lay-verify="required|number" autocomplete="off" placeholder="计算后续多少步的输出"
                        class="layui-input">
             </div>
         </div>
         <div class="layui-inline">
             <label class="layui-form-label">输出间隔(秒)</label>
             <div class="layui-input-inline">
-                <input type="text" name="O" lay-verify="required|number" autocomplete="off" class="layui-input">
+                <input type="number" name="O" lay-verify="required|number" autocomplete="off" class="layui-input">
             </div>
         </div>
 
         <div class="layui-inline">
             <label class="layui-form-label">手自动位号</label>
             <div class="layui-input-inline">
-                <input type="text" name="autoTag" lay-verify="required" autocomplete="off" class="layui-input" placeholder="opc位号">
+                <input type="text" name="autoTag" lay-verify="required" autocomplete="off" class="layui-input"
+                       placeholder="opc位号">
+            </div>
+        </div>
+
+        <div class="layui-inline">
+            <label class="layui-form-label">auto位号来源</label>
+            <div class="layui-input-inline">
+                <select name="autoresource">
+                    <option value="">请选择来源</option>
+                    <<c:forEach var="opcres" items="${opcresources}" varStatus="Count">
+                         <option value="${opcres}">${opcres}</option>
+                    </c:forEach>
+                </select>
             </div>
         </div>
     </div>
@@ -84,9 +97,20 @@
                     <input type="text" name="pv${pv}" autocomplete="off" class="layui-input" placeholder="opc位号">
                 </div>
             </div>
+
+            <div class="layui-inline">
+                <label class="layui-form-label">pv${pv}来源</label>
+                <div class="layui-input-inline">
+                    <select name="pv${pv}resource">
+                        <option value="">请选择来源</option>
+                        <c:forEach var="opcres" items="${opcresources}" varStatus="Count">
+                            <option value="${opcres}">${opcres}</option>
+                        </c:forEach>
+                    </select>
+                </div>
+            </div>
         </c:forEach>
     </div>
-
 
 
     <fieldset class="layui-elem-field layui-field-title" style="margin-top: 20px;">
@@ -97,12 +121,12 @@
             <div class="layui-inline">
                 <label class="layui-form-label">pv${pv}死区</label>
                 <div class="layui-input-inline">
-                    <input type="text" name="pv${pv}DeadZone" autocomplete="off" class="layui-input" placeholder="pv${pv}死区">
+                    <input type="text" name="pv${pv}DeadZone" autocomplete="off" class="layui-input"
+                           placeholder="pv${pv}死区">
                 </div>
             </div>
         </c:forEach>
     </div>
-
 
 
     <fieldset class="layui-elem-field layui-field-title" style="margin-top: 20px;">
@@ -113,12 +137,31 @@
             <div class="layui-inline">
                 <label class="layui-form-label">pv${pv}漏斗初始值</label>
                 <div class="layui-input-inline">
-                    <input type="text" name="pv${pv}FunelInitValue" autocomplete="off" class="layui-input" placeholder="pv${pv}漏斗初始值设置值">
+                    <input type="text" name="pv${pv}FunelInitValue" autocomplete="off" class="layui-input"
+                           placeholder="pv${pv}漏斗初始值设置值">
                 </div>
             </div>
         </c:forEach>
     </div>
 
+    <fieldset class="layui-elem-field layui-field-title" style="margin-top: 20px;">
+        <legend>PV漏斗类型选择：全漏斗(区间控制)，上漏斗(保留上漏斗线，下漏斗线为负无穷)，下漏斗(保留下漏斗线，上漏斗线为正无穷)</legend>
+    </fieldset>
+    <div class="layui-form-item">
+        <c:forEach var="pv" items="${pvlist}" varStatus="Count">
+            <div class="layui-inline">
+                <label class="layui-form-label">pv${pv}漏斗类型</label>
+                <div class="layui-input-inline">
+                    <select name="funneltype${pv}">
+                        <option value="">滤波选择</option>
+                        <option value="fullfunnel" selected>全漏斗</option>
+                        <option value="upfunnel">上漏斗</option>
+                        <option value="downfunnel">下漏斗</option>
+                    </select>
+                </div>
+            </div>
+        </c:forEach>
+    </div>
 
 
     <fieldset class="layui-elem-field layui-field-title" style="margin-top: 20px;">
@@ -143,12 +186,12 @@
             <div class="layui-inline">
                 <label class="layui-form-label">pv${pv}的柔化系数</label>
                 <div class="layui-input-inline">
-                    <input type="text" name="tracoef${pv}" autocomplete="off" class="layui-input" placeholder="pv${pv}的柔化系数">
+                    <input type="text" name="tracoef${pv}" autocomplete="off" class="layui-input"
+                           placeholder="pv${pv}的柔化系数">
                 </div>
             </div>
         </c:forEach>
     </div>
-
 
 
     <fieldset class="layui-elem-field layui-field-title" style="margin-top: 20px;">
@@ -171,20 +214,34 @@
             <div class="layui-inline">
                 <label class="layui-form-label">pv${pv}滤波系数</label>
                 <div class="layui-input-inline">
-                    <input type="number" name="filtercoefpv${pv}" autocomplete="off" class="layui-input" placeholder="pv${pv}滤波系数">
+                    <input type="number" name="filtercoefpv${pv}" autocomplete="off" class="layui-input"
+                           placeholder="pv${pv}滤波系数">
                 </div>
             </div>
 
             <div class="layui-inline">
                 <label class="layui-form-label">pv${pv}滤波输出OPC位号</label>
                 <div class="layui-input-inline">
-                    <input type="text" name="filteropctagpv${pv}" autocomplete="off" class="layui-input" placeholder="pv${pv}滤波输出opc位号">
+                    <input type="text" name="filteropctagpv${pv}" autocomplete="off" class="layui-input"
+                           placeholder="pv${pv}滤波输出opc位号">
                 </div>
             </div>
+
+            <div class="layui-inline">
+                <label class="layui-form-label">pv${pv}滤波输出OPC来源</label>
+                <div class="layui-input-inline">
+                    <select name="filterpv${pv}resource">
+                        <option value="">请选择来源</option>
+                        <c:forEach var="opcres" items="${opcresources}" varStatus="Count">
+                            <option value="${opcres}">${opcres}</option>
+                        </c:forEach>
+                    </select>
+                </div>
+            </div>
+
+
         </c:forEach>
     </div>
-
-
 
 
     <fieldset class="layui-elem-field layui-field-title" style="margin-top: 20px;">
@@ -196,6 +253,18 @@
                 <label class="layui-form-label">sp${sp}</label>
                 <div class="layui-input-inline">
                     <input type="text" name="sp${sp}" autocomplete="off" class="layui-input" placeholder="opc位号">
+                </div>
+            </div>
+
+            <div class="layui-inline">
+                <label class="layui-form-label">sp${sp}来源</label>
+                <div class="layui-input-inline">
+                    <select name="sp${sp}resource">
+                        <option value="">请选择来源</option>
+                        <c:forEach var="opcres" items="${opcresources}" varStatus="Count">
+                            <option value="${opcres}">${opcres}</option>
+                        </c:forEach>
+                    </select>
                 </div>
             </div>
 
@@ -213,6 +282,20 @@
                     <input type="text" name="mv${mv}" autocomplete="off" class="layui-input" placeholder="opc位号">
                 </div>
             </div>
+
+
+            <div class="layui-inline">
+                <label class="layui-form-label">mv${mv}来源</label>
+                <div class="layui-input-inline">
+                    <select name="mv${mv}resource">
+                        <option value="">请选择来源</option>
+                        <c:forEach var="opcres" items="${opcresources}" varStatus="Count">
+                            <option value="${opcres}">${opcres}</option>
+                        </c:forEach>
+                    </select>
+                </div>
+            </div>
+
         </c:forEach>
     </div>
 
@@ -225,7 +308,7 @@
             <div class="layui-inline">
                 <label class="layui-form-label">r${pv}</label>
                 <div class="layui-input-inline">
-                    <input type="text" name="r${pv}" autocomplete="off" class="layui-input" placeholder="mv${pv}的R">
+                    <input type="number" name="r${pv}" autocomplete="off" class="layui-input" placeholder="mv${pv}的R">
                 </div>
             </div>
         </c:forEach>
@@ -240,13 +323,12 @@
             <div class="layui-inline">
                 <label class="layui-form-label">dmv${mv}High</label>
                 <div class="layui-input-inline">
-                    <input type="text" name="dmv${mv}High" autocomplete="off" class="layui-input" placeholder="dmv${mv}High">
+                    <input type="number" name="dmv${mv}High" autocomplete="off" class="layui-input"
+                           placeholder="dmv${mv}High">
                 </div>
             </div>
         </c:forEach>
     </div>
-
-
 
 
     <fieldset class="layui-elem-field layui-field-title" style="margin-top: 20px;">
@@ -257,12 +339,12 @@
             <div class="layui-inline">
                 <label class="layui-form-label">dmv${mv}Low</label>
                 <div class="layui-input-inline">
-                    <input type="text" name="dmv${mv}Low" autocomplete="off" class="layui-input" placeholder="dmv${mv}Low">
+                    <input type="number" name="dmv${mv}Low" autocomplete="off" class="layui-input"
+                           placeholder="dmv${mv}Low">
                 </div>
             </div>
         </c:forEach>
     </div>
-
 
 
     <fieldset class="layui-elem-field layui-field-title" style="margin-top: 20px;">
@@ -283,8 +365,9 @@
                 <div class="layui-input-inline">
                     <select name="mvup${mvup}resource">
                         <option value="">请选择来源</option>
-                        <option value="opc">opc</option>
-                        <option value="constant">常量</option>
+                        <c:forEach var="opcres" items="${opcresources}" varStatus="Count">
+                            <option value="${opcres}">${opcres}</option>
+                        </c:forEach>
                     </select>
                 </div>
             </div>
@@ -310,8 +393,9 @@
                 <div class="layui-input-inline">
                     <select name="mvdown${mvdown}resource">
                         <option value="">请选择来源</option>
-                        <option value="opc">opc</option>
-                        <option value="constant">常量</option>
+                        <<c:forEach var="opcres" items="${opcresources}" varStatus="Count">
+                             <option value="${opcres}">${opcres}</option>
+                        </c:forEach>
                     </select>
                 </div>
             </div>
@@ -331,6 +415,19 @@
                            placeholder="mv${mvdown}反馈位号">
                 </div>
             </div>
+
+            <div class="layui-inline">
+                <label class="layui-form-label">mvfb${mvdown}反馈opc位号来源</label>
+                <div class="layui-input-inline">
+                    <select name="mvfb${mvdown}resource">
+                        <option value="">请选择来源</option>
+                        <<c:forEach var="opcres" items="${opcresources}" varStatus="Count">
+                        <option value="${opcres}">${opcres}</option>
+                    </c:forEach>
+                    </select>
+                </div>
+            </div>
+
         </c:forEach>
     </div>
 
@@ -355,22 +452,35 @@
             <div class="layui-inline">
                 <label class="layui-form-label">mvfb${mv}滤波系数</label>
                 <div class="layui-input-inline">
-                    <input type="number" name="filtercoefmv${mv}" autocomplete="off" class="layui-input" placeholder="mvfb${mv}滤波系数">
+                    <input type="number" name="filtercoefmv${mv}" autocomplete="off" class="layui-input"
+                           placeholder="mvfb${mv}滤波系数">
                 </div>
             </div>
 
             <div class="layui-inline">
                 <label class="layui-form-label">mvfb${mv}滤波输出OPC位号</label>
                 <div class="layui-input-inline">
-                    <input type="text" name="filteropctagmv${mv}" autocomplete="off" class="layui-input" placeholder="mvfb${mv}滤波输出opc位号">
+                    <input type="text" name="filteropctagmv${mv}" autocomplete="off" class="layui-input"
+                           placeholder="mvfb${mv}滤波输出opc位号">
+                </div>
+            </div>
+
+
+            <div class="layui-inline">
+                <label class="layui-form-label">mvfb${mv}滤波输出OPC位号来源</label>
+                <div class="layui-input-inline">
+                    <select name="filtermvfb${mv}resource">
+                        <option value="">请选择来源</option>
+                        <<c:forEach var="opcres" items="${opcresources}" varStatus="Count">
+                            <option value="${opcres}">${opcres}</option>
+                        </c:forEach>
+                    </select>
                 </div>
             </div>
 
 
         </c:forEach>
     </div>
-
-
 
 
     <fieldset class="layui-elem-field layui-field-title" style="margin-top: 20px;">
@@ -384,9 +494,21 @@
                     <input type="text" name="ff${ff}" autocomplete="off" class="layui-input" placeholder="ff${ff}位号">
                 </div>
             </div>
+
+
+            <div class="layui-inline">
+                <label class="layui-form-label">ff${ff}opc位号来源</label>
+                <div class="layui-input-inline">
+                    <select name="ff${ff}resource">
+                        <option value="">请选择来源</option>
+                        <c:forEach var="opcres" items="${opcresources}" varStatus="Count">
+                            <option value="${opcres}">${opcres}</option>
+                        </c:forEach>
+                    </select>
+                </div>
+            </div>
         </c:forEach>
     </div>
-
 
 
     <fieldset class="layui-elem-field layui-field-title" style="margin-top: 20px;">
@@ -409,23 +531,34 @@
             <div class="layui-inline">
                 <label class="layui-form-label">ff${ff}滤波系数</label>
                 <div class="layui-input-inline">
-                    <input type="number" name="filtercoefff${ff}" autocomplete="off" class="layui-input" placeholder="ff${ff}滤波系数">
+                    <input type="number" name="filtercoefff${ff}" autocomplete="off" class="layui-input"
+                           placeholder="ff${ff}滤波系数">
                 </div>
             </div>
 
             <div class="layui-inline">
                 <label class="layui-form-label">ff${ff}滤波输出OPC位号</label>
                 <div class="layui-input-inline">
-                    <input type="text" name="filteropctagff${ff}" autocomplete="off" class="layui-input" placeholder="ff${ff}滤波输出opc位号">
+                    <input type="text" name="filteropctagff${ff}" autocomplete="off" class="layui-input"
+                           placeholder="ff${ff}滤波输出opc位号">
+                </div>
+            </div>
+
+            <div class="layui-inline">
+                <label class="layui-form-label">ff${ff}滤波输出OPC位号来源</label>
+                <div class="layui-input-inline">
+                    <select name="filterff${ff}resource">
+                        <option value="">请选择来源</option>
+                        <c:forEach var="opcres" items="${opcresources}" varStatus="Count">
+                            <option value="${opcres}">${opcres}</option>
+                        </c:forEach>
+                    </select>
                 </div>
             </div>
 
 
         </c:forEach>
     </div>
-
-
-
 
 
     <fieldset class="layui-elem-field layui-field-title" style="margin-top: 20px;">
@@ -445,8 +578,9 @@
                 <div class="layui-input-inline">
                     <select name="ffup${ff}resource">
                         <option value="">请选择来源</option>
-                        <option value="opc">opc</option>
-                        <option value="constant">常量</option>
+                        <c:forEach var="opcres" items="${opcresources}" varStatus="Count">
+                            <option value="${opcres}">${opcres}</option>
+                        </c:forEach>
                     </select>
                 </div>
             </div>
@@ -472,8 +606,9 @@
                 <div class="layui-input-inline">
                     <select name="ffdown${ffdown}resource">
                         <option value="">请选择来源</option>
-                        <option value="opc">opc</option>
-                        <option value="constant">常量</option>
+                        <c:forEach var="opcres" items="${opcresources}" varStatus="Count">
+                            <option value="${opcres}">${opcres}</option>
+                        </c:forEach>
                     </select>
                 </div>
             </div>
@@ -482,7 +617,7 @@
 
 
     <fieldset class="layui-elem-field layui-field-title" style="margin-top: 20px;">
-        <legend>MV对PV的响应设置 形如{k:10,t:180,tao:200}  英文模式输入!</legend>
+        <legend>MV对PV的响应设置 形如{k:10,t:180,tao:200} 英文模式输入!</legend>
     </fieldset>
 
     <table class="layui-table" lay-data='{"data":${mvresp}, "id":"mvresp"}' lay-filter="mvresp">
@@ -497,7 +632,7 @@
     </table>
 
     <fieldset class="layui-elem-field layui-field-title" style="margin-top: 20px;">
-        <legend>前馈(FF)对PV的响应设置 形如{k:10,t:180,tao:200}  英文模式输入!</legend>
+        <legend>前馈(FF)对PV的响应设置 形如{k:10,t:180,tao:200} 英文模式输入!</legend>
     </fieldset>
     <table class="layui-table" lay-data='{"data":${ffresp}, "id":"ffresp"}' lay-filter="ffresp">
         <thead>
@@ -522,7 +657,7 @@
 <script>
     var table;
     var layer;
-    layui.use(['layer','form'], function () {
+    layui.use(['layer', 'form'], function () {
         var form = layui.form,
             layer = parent.layer === undefined ? layui.layer : parent.layer;
         form.render(); //更新全部
@@ -538,21 +673,25 @@
 
             console.log(table.cache);
             console.log(typeof table.cache);
-                var index = layer.msg('创建中，请稍候',{icon: 16,time:false,shade:0.8});
-                $.ajax({
+            var index = layer.msg('创建中，请稍候', {icon: 16, time: false, shade: 0.8});
+            $.ajax({
                 url: "${pageContext.request.contextPath}/modle/savemodle.do" + "?" + Math.random(),
                 async: true,
-                data: {"modle": JSON.stringify(data.field),"mvresp":JSON.stringify(table.cache.mvresp),"ffresp":JSON.stringify(table.cache.ffresp)},
+                data: {
+                    "modle": JSON.stringify(data.field),
+                    "mvresp": JSON.stringify(table.cache.mvresp),
+                    "ffresp": JSON.stringify(table.cache.ffresp)
+                },
                 type: "POST",
                 success: function (result) {
                     console.log(result);
                     layer.close(index);
-                    let json=JSON.parse(result);
-                    if(json['msg']=="error"){
+                    let json = JSON.parse(result);
+                    if (json['msg'] == "error") {
                         layer.msg("创建失败！");
-                    }else{
+                    } else {
                         layer.msg("创建成功！");
-                        location.href='${pageContext.request.contextPath}/'+json['go'];
+                        location.href = '${pageContext.request.contextPath}/' + json['go'];
                         //newleft(json['modleName'],json['modleId'])
                         parent.location.reload();
                     }
@@ -570,59 +709,51 @@
     });
 
 
-
-    layui.use('table', function(){
+    layui.use('table', function () {
         table = layui.table;
 
         //监听单元格编辑
-        table.on('edit(mvresp)', function(obj){
+        table.on('edit(mvresp)', function (obj) {
             var value = obj.value //得到修改后的值
-                ,data = obj.data //得到所在行所有键值
-                ,field = obj.field; //得到字段
+                , data = obj.data //得到所在行所有键值
+                , field = obj.field; //得到字段
             // layer.msg('[ID: '+ data.mv +'] ' + field + ' 字段更改为：'+ value);
-            console.log('[ID: '+ data.mv +'] ' + field + ' 字段更改为：'+ value);
+            console.log('[ID: ' + data.mv + '] ' + field + ' 字段更改为：' + value);
             console.log(table.cache);
 
         });
 
-        table.on('edit(ffresp)', function(obj){
+        table.on('edit(ffresp)', function (obj) {
             var value = obj.value //得到修改后的值
-                ,data = obj.data //得到所在行所有键值
-                ,field = obj.field; //得到字段
+                , data = obj.data //得到所在行所有键值
+                , field = obj.field; //得到字段
             // layer.msg('[ID: '+ data.ff +'] ' + field + ' 字段更改为：'+ value);
-            console.log('[ID: '+ data.ff +'] ' + field + ' 字段更改为：'+ value);
+            console.log('[ID: ' + data.ff + '] ' + field + ' 字段更改为：' + value);
             console.log(table.cache);
 
         });
     });
 
 
-
 </script>
-
 
 
 <script>
 
-    function newleft(modleName,modleId) {
+    function newleft(modleName, modleId) {
 
-        console.log($(".layui-nav-tree",parent.document).find("li").find("dl")[0])
+        console.log($(".layui-nav-tree", parent.document).find("li").find("dl")[0])
 
-        mydd=document.createElement("dd");
-        mya=document.createElement("a");
-        mya.setAttribute("href","/modle/modlestatus/"+modleId+".do");
-        mya.innerHTML=modleName;
+        mydd = document.createElement("dd");
+        mya = document.createElement("a");
+        mya.setAttribute("href", "/modle/modlestatus/" + modleId + ".do");
+        mya.innerHTML = modleName;
         mydd.appendChild(mya);
         let parentli
-        $(".layui-nav-tree",parent.document).find("li").find("dl")[0].append(mydd);
+        $(".layui-nav-tree", parent.document).find("li").find("dl")[0].append(mydd);
 
     }
 </script>
-
-
-
-
-
 
 
 </body>

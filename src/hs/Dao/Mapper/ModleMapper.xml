@@ -2,7 +2,7 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="hs.Dao.ModleMapper">
+<mapper namespace="hs.Dao.ModleDBMapper">
     <resultMap id="modleResult" type="hs.Bean.ControlModle">
         <id property="modleId" column="modleId"/>
         <result property="modleName" column="modleName"/>
@@ -57,6 +57,7 @@
         <result property="R" column="R"/>
         <result property="dmvLow" column="dmvLow"/>
         <result property="referTrajectoryCoef" column="referTrajectoryCoef"/>
+        <result property="funneltype" column="funneltype"/>
         <association property="filter" javaType="hs.Filter.Filter" column="modlepinsId" select="findfilterByid"/>
     </resultMap>
     
@@ -65,6 +66,7 @@
         <result property="pk_pinid" column="pk_pinid"/>
         <result property="backToDCSTag" column="backToDCSTag"/>
         <result property="filtername" column="filtername"/>
+        <result property="opcresource" column="opcresource"/>
         <discriminator javaType="string" column="filtername">
             <case value="mvav" resultType="hs.Filter.MoveAverageFilter">
                 <result property="capacity" column="filter_time"/>
@@ -85,9 +87,6 @@
     </select>
 
 
-    <select id="findTagById" resultType="hs.Bean.Tag">
-        select * from tag where tagId=#{id}
-    </select>
 
     <select id="findModlePin" parameterType="java.util.Map" resultType="hs.Bean.ModlePin">
         select * from modlepins where modlepinsId=#{id} and reference_modleId=#{modleId}
@@ -108,11 +107,11 @@
     </select>
 
     <insert id="insertModlePins" parameterType="hs.Bean.ModlePin" useGeneratedKeys="true" keyProperty="modlepinsId">
-        insert into modlepins(reference_modleId, modleOpcTag, modlePinName, opcTagName, resource, Q, R,deadZone,funelinitValue,dmvHigh,dmvLow,referTrajectoryCoef)
+        insert into modlepins(reference_modleId, modleOpcTag, modlePinName, opcTagName, resource, Q, R,deadZone,funelinitValue,dmvHigh,dmvLow,referTrajectoryCoef,funneltype)
         values
         <foreach collection="modlePins" item="pin" separator=",">
             (#{pin.reference_modleId}, #{pin.modleOpcTag},  #{pin.modlePinName}, #{pin.opcTagName},
-            #{pin.resource}, #{pin.Q}, #{pin.R},#{pin.deadZone},#{pin.funelinitValue},#{pin.dmvHigh},#{pin.dmvLow},#{pin.referTrajectoryCoef})
+            #{pin.resource}, #{pin.Q}, #{pin.R},#{pin.deadZone},#{pin.funelinitValue},#{pin.dmvHigh},#{pin.dmvLow},#{pin.referTrajectoryCoef},#{pin.funneltype})
         </foreach>
 
     </insert>
@@ -154,13 +153,13 @@
     </delete>
 
     <insert id="insertPinsFODLFilter" parameterType="hs.Filter.FirstOrderLagFilter" useGeneratedKeys="true" keyProperty="pk_filterid">
-        insert into filter(filtername, filter_alphe, pk_pinid,backToDCSTag)
-        values (#{filter.filtername},#{filter.filter_alphe},#{filter.pk_pinid},#{filter.backToDCSTag})
+        insert into filter(filtername, filter_alphe, pk_pinid,backToDCSTag,opcresource)
+        values (#{filter.filtername},#{filter.filter_alphe},#{filter.pk_pinid},#{filter.backToDCSTag},#{filter.opcresource})
     </insert>
 
     <insert id="insertPinsMVAVFilter" parameterType="hs.Filter.MoveAverageFilter" useGeneratedKeys="true" keyProperty="pk_filterid">
-        insert into filter(filtername, filter_time, pk_pinid,backToDCSTag)
-        values (#{filter.filtername},#{filter.capacity},#{filter.pk_pinid},#{filter.backToDCSTag})
+        insert into filter(filtername, filter_time, pk_pinid,backToDCSTag,opcresource)
+        values (#{filter.filtername},#{filter.capacity},#{filter.pk_pinid},#{filter.backToDCSTag},#{filter.opcresource})
     </insert>
 
     <select id="findfilterByid" resultMap="filterResult">

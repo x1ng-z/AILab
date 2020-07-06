@@ -4,6 +4,7 @@ import hs.ApcAlgorithm.ExecutePythonBridge;
 import hs.Bean.ModleConstainer;
 import hs.Filter.FilterService;
 import hs.Opc.OPCService;
+import hs.Opc.OpcServicConstainer;
 import org.apache.log4j.Logger;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.servlet.DispatcherServlet;
@@ -22,17 +23,21 @@ public class BootstatServlet extends DispatcherServlet {
         super.initFrameworkServlet();
         logger.info("init complet");
         ApplicationContext applicationContext =getWebApplicationContext();
+        ModleConstainer modleConstainer =applicationContext.getBean(ModleConstainer.class);
+        modleConstainer.init();
+//
+//        opcServicConstainer.toString();
 
-        OPCService OPCserver =applicationContext.getBean(OPCService.class);
-        Thread opcthread=new Thread(OPCserver);
-        opcthread.setDaemon(true);
-        opcthread.start();
+//        OPCService OPCserver =applicationContext.getBean(OPCService.class);
+//        Thread opcthread=new Thread(OPCserver);
+//        opcthread.setDaemon(true);
+//        opcthread.start();
 
 
-        FilterService filterService =applicationContext.getBean(FilterService.class);
-        Thread filterServicethread=new Thread(filterService);
-        filterServicethread.setDaemon(true);
-        filterServicethread.start();
+//        FilterService filterService =applicationContext.getBean(FilterService.class);
+//        Thread filterServicethread=new Thread(filterService);
+//        filterServicethread.setDaemon(true);
+//        filterServicethread.start();
 
 //        ModleConstainer  modleConstainer=applicationContext.getBean(ModleConstainer.class);
 ////        List<ControlModle> modles=modleServe.getAllModle();

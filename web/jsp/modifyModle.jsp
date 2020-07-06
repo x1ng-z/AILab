@@ -10,7 +10,7 @@
 <html>
 <head>
     <link rel="shortcut icon"
-          href="../img/favicon.ico" type="image/x-icon" />
+          href="../img/favicon.ico" type="image/x-icon"/>
     <meta charset="utf-8">
     <title>modifymodle</title>
     <meta name="renderer" content="webkit">
@@ -78,7 +78,28 @@
         <div class="layui-inline">
             <label class="layui-form-label">手自动位号</label>
             <div class="layui-input-inline">
-                <input type="text" name="autoTag" lay-verify="required" autocomplete="off" class="layui-input" value="${modle.autoEnbalePin.modleOpcTag}">
+                <input type="text" name="autoTag" lay-verify="required" autocomplete="off" class="layui-input"
+                       value="${modle.autoEnbalePin.modleOpcTag}">
+            </div>
+        </div>
+
+        <div class="layui-inline">
+            <label class="layui-form-label">auto来源</label>
+            <div class="layui-input-inline">
+                <select name="autoresource">
+                    <option value="">请选择来源</option>
+                    <c:forEach var="opcres" items="${opcresources}" varStatus="Count">
+                        <c:choose>
+                            <c:when test="${modle.autoEnbalePin.resource!=null&&modle.autoEnbalePin.resource.equals(opcres)}">
+                                <option value="${opcres}" selected>${opcres}</option>
+                            </c:when>
+                            <c:otherwise>
+                                <option value="${opcres}">${opcres}</option>
+                            </c:otherwise>
+                        </c:choose>
+                    </c:forEach>
+
+                </select>
             </div>
         </div>
     </div>
@@ -88,18 +109,36 @@
         <legend>PV设置</legend>
     </fieldset>
     <div class="layui-form-item">
-        <c:forEach var="pv" items="${pvlist}" varStatus="Count">
+        <c:forEach var="pv" items="${pvpinlist}" varStatus="Count">
             <div class="layui-inline">
                 <label class="layui-form-label">pv${Count.count}</label>
                 <div class="layui-input-inline">
                     <input type="text" name="pv${Count.count}" autocomplete="off" class="layui-input"
-                           placeholder="opc位号" value="${pv}">
+                           placeholder="opc位号" value="${pv.modleOpcTag==null?'':pv.modleOpcTag}">
+                </div>
+            </div>
+
+            <div class="layui-inline">
+                <label class="layui-form-label">pv${Count.count}位号来源</label>
+                <div class="layui-input-inline">
+                    <select name="pv${Count.count}resource">
+                        <option value="">请选择来源</option>
+                        <c:forEach var="opcres" items="${opcresources}" varStatus="Count">
+                            <c:choose>
+                                <c:when test="${pv.resource!=null&&pv.resource.equals(opcres)}">
+                                    <option value="${opcres}" selected>${opcres}</option>
+                                </c:when>
+                                <c:otherwise>
+                                    <option value="${opcres}">${opcres}</option>
+                                </c:otherwise>
+                            </c:choose>
+                        </c:forEach>
+
+                    </select>
                 </div>
             </div>
         </c:forEach>
     </div>
-
-
 
 
     <fieldset class="layui-elem-field layui-field-title" style="margin-top: 20px;">
@@ -110,12 +149,12 @@
             <div class="layui-inline">
                 <label class="layui-form-label">pv${Count.count}死区</label>
                 <div class="layui-input-inline">
-                    <input type="text" name="pv${Count.count}DeadZone" autocomplete="off" class="layui-input" value="${pv}"  placeholder="pv${Count.count}的死区">
+                    <input type="text" name="pv${Count.count}DeadZone" autocomplete="off" class="layui-input"
+                           value="${pv}" placeholder="pv${Count.count}的死区">
                 </div>
             </div>
         </c:forEach>
     </div>
-
 
 
     <fieldset class="layui-elem-field layui-field-title" style="margin-top: 20px;">
@@ -126,7 +165,52 @@
             <div class="layui-inline">
                 <label class="layui-form-label">pv${Count.count}漏斗初始值</label>
                 <div class="layui-input-inline">
-                    <input type="text" name="pv${Count.count}FunelInitValue" autocomplete="off" class="layui-input" value="${pv}"  placeholder="pv${Count.count}的漏斗值">
+                    <input type="text" name="pv${Count.count}FunelInitValue" autocomplete="off" class="layui-input"
+                           value="${pv}" placeholder="pv${Count.count}的漏斗值">
+                </div>
+            </div>
+        </c:forEach>
+    </div>
+
+
+    <fieldset class="layui-elem-field layui-field-title" style="margin-top: 20px;">
+        <legend>PV漏斗类型选择：全漏斗(区间控制)，上漏斗(保留上漏斗线，下漏斗线为负无穷)，下漏斗(保留下漏斗线，上漏斗线为正无穷)</legend>
+    </fieldset>
+    <div class="layui-form-item">
+        <c:forEach var="pvfuneltype" items="${pvpinlist}" varStatus="Count">
+            <div class="layui-inline">
+                <label class="layui-form-label">pv${Count.count}漏斗类型</label>
+                <div class="layui-input-inline">
+                    <select name="funneltype${Count.count}">
+                        <option value="">滤波选择</option>
+                        <c:choose>
+                            <c:when test="${(pvfuneltype.funneltype!=null)&&( pvfuneltype.funneltype eq 'fullfunnel')}">
+                                <option value="fullfunnel" selected>全漏斗</option>
+                            </c:when>
+                            <c:otherwise>
+                                <option value="fullfunnel">全漏斗</option>
+                            </c:otherwise>
+                        </c:choose>
+
+                        <c:choose>
+                            <c:when test="${(pvfuneltype.funneltype!=null)&&( pvfuneltype.funneltype eq 'upfunnel')}">
+                                <option value="upfunnel" selected>上漏斗</option>
+                            </c:when>
+                            <c:otherwise>
+                                <option value="upfunnel">上漏斗</option>
+                            </c:otherwise>
+                        </c:choose>
+
+                        <c:choose>
+                            <c:when test="${(pvfuneltype.funneltype!=null)&&( pvfuneltype.funneltype eq 'downfunnel')}">
+                                <option value="downfunnel" selected>下漏斗</option>
+                            </c:when>
+                            <c:otherwise>
+                                <option value="downfunnel">下漏斗</option>
+                            </c:otherwise>
+                        </c:choose>
+
+                    </select>
                 </div>
             </div>
         </c:forEach>
@@ -157,12 +241,12 @@
             <div class="layui-inline">
                 <label class="layui-form-label">pv${Count.count}的柔化系数</label>
                 <div class="layui-input-inline">
-                    <input type="text" name="tracoef${Count.count}" autocomplete="off" class="layui-input" value="${pv}" placeholder="pv${Count.count}的柔化系数">
+                    <input type="text" name="tracoef${Count.count}" autocomplete="off" class="layui-input" value="${pv}"
+                           placeholder="pv${Count.count}的柔化系数">
                 </div>
             </div>
         </c:forEach>
     </div>
-
 
 
     <fieldset class="layui-elem-field layui-field-title" style="margin-top: 20px;">
@@ -201,31 +285,72 @@
             <div class="layui-inline">
                 <label class="layui-form-label">pv${Count.count}滤波系数</label>
                 <div class="layui-input-inline">
-                    <input type="number" name="filtercoefpv${Count.count}" autocomplete="off" class="layui-input" value="${pv.getcoeff()}" placeholder="pv${Count.count}滤波系数">
+                    <input type="number" name="filtercoefpv${Count.count}" autocomplete="off" class="layui-input"
+                           value="${pv.getcoeff()}" placeholder="pv${Count.count}滤波系数">
                 </div>
             </div>
 
             <div class="layui-inline">
                 <label class="layui-form-label">pv${Count.count}滤波输出OPC位号</label>
                 <div class="layui-input-inline">
-                    <input type="text" name="filteropctagpv${Count.count}" autocomplete="off" class="layui-input" value="${pv.backToDCSTag}" placeholder="pv${Count.count}滤波输出opc位号">
+                    <input type="text" name="filteropctagpv${Count.count}" autocomplete="off" class="layui-input"
+                           value="${pv.backToDCSTag}" placeholder="pv${Count.count}滤波输出opc位号">
                 </div>
             </div>
+
+
+            <div class="layui-inline">
+                <label class="layui-form-label">pv${Count.count}滤波输出OPC来源</label>
+                <div class="layui-input-inline">
+                    <select name="filterpv${Count.count}resource">
+                        <option value="">请选择来源</option>
+                        <c:forEach var="opcres" items="${opcresources}" varStatus="Count">
+                            <c:choose>
+                                <c:when test="${(pv.opcresource!=null) && (pv.opcresource.equals(opcres))}">
+                                    <option value="${opcres}" selected>${opcres}</option>
+                                </c:when>
+                                <c:otherwise>
+                                    <option value="${opcres}">${opcres}</option>
+                                </c:otherwise>
+                            </c:choose>
+                        </c:forEach>
+                    </select>
+                </div>
+            </div>
+
         </c:forEach>
     </div>
-
 
 
     <fieldset class="layui-elem-field layui-field-title" style="margin-top: 20px;">
         <legend>SP设置</legend>
     </fieldset>
     <div class="layui-form-item">
-        <c:forEach var="sp" items="${splist}" varStatus="Count">
+        <c:forEach var="sp" items="${sppinlist}" varStatus="Count">
             <div class="layui-inline">
                 <label class="layui-form-label">sp${Count.count}</label>
                 <div class="layui-input-inline">
                     <input type="text" name="sp${Count.count}" autocomplete="off" class="layui-input"
-                           placeholder="opc位号" value="${sp}">
+                           placeholder="opc位号" value="${sp.modleOpcTag==null?'':sp.modleOpcTag}">
+                </div>
+            </div>
+
+            <div class="layui-inline">
+                <label class="layui-form-label">sp${Count.count}位号来源</label>
+                <div class="layui-input-inline">
+                    <select name="sp${Count.count}resource">
+                        <option value="">请选择来源</option>
+                        <c:forEach var="opcres" items="${opcresources}" varStatus="Count">
+                            <c:choose>
+                                <c:when test="${(sp.resource!=null) && (sp.resource.equals(opcres))}">
+                                    <option value="${opcres}" selected>${opcres}</option>
+                                </c:when>
+                                <c:otherwise>
+                                    <option value="${opcres}">${opcres}</option>
+                                </c:otherwise>
+                            </c:choose>
+                        </c:forEach>
+                    </select>
                 </div>
             </div>
 
@@ -236,14 +361,34 @@
         <legend>MV设置</legend>
     </fieldset>
     <div class="layui-form-item">
-        <c:forEach var="mv" items="${mvlist}" varStatus="Count">
+        <c:forEach var="mv" items="${mvpinlist}" varStatus="Count">
             <div class="layui-inline">
                 <label class="layui-form-label">mv${Count.count}</label>
                 <div class="layui-input-inline">
                     <input type="text" name="mv${Count.count}" autocomplete="off" class="layui-input"
-                           placeholder="opc位号" value="${mv}">
+                           placeholder="opc位号" value="${mv.modleOpcTag==null?'':mv.modleOpcTag}">
                 </div>
             </div>
+
+            <div class="layui-inline">
+                <label class="layui-form-label">mv${Count.count}opc位号来源</label>
+                <div class="layui-input-inline">
+                    <select name="mv${Count.count}resource">
+                        <option value="">请选择来源</option>
+                        <c:forEach var="opcres" items="${opcresources}" varStatus="Count">
+                            <c:choose>
+                                <c:when test="${(mv.resource!=null) && (mv.resource.equals(opcres))}">
+                                    <option value="${opcres}" selected>${opcres}</option>
+                                </c:when>
+                                <c:otherwise>
+                                    <option value="${opcres}">${opcres}</option>
+                                </c:otherwise>
+                            </c:choose>
+                        </c:forEach>
+                    </select>
+                </div>
+            </div>
+
         </c:forEach>
     </div>
 
@@ -264,7 +409,6 @@
     </div>
 
 
-
     <fieldset class="layui-elem-field layui-field-title" style="margin-top: 20px;">
         <legend>dmv高限</legend>
     </fieldset>
@@ -273,13 +417,12 @@
             <div class="layui-inline">
                 <label class="layui-form-label">dmv${Count.count}High</label>
                 <div class="layui-input-inline">
-                    <input type="text" name="dmv${Count.count}High" autocomplete="off" class="layui-input" placeholder="dmv${Count.count}High" value="${dmv}">
+                    <input type="text" name="dmv${Count.count}High" autocomplete="off" class="layui-input"
+                           placeholder="dmv${Count.count}High" value="${dmv}">
                 </div>
             </div>
         </c:forEach>
     </div>
-
-
 
 
     <fieldset class="layui-elem-field layui-field-title" style="margin-top: 20px;">
@@ -290,7 +433,8 @@
             <div class="layui-inline">
                 <label class="layui-form-label">dmv${Count.count}Low</label>
                 <div class="layui-input-inline">
-                    <input type="text" name="dmv${Count.count}Low" autocomplete="off" class="layui-input" placeholder="dmv${Count.count}Low" value="${dmv}">
+                    <input type="text" name="dmv${Count.count}Low" autocomplete="off" class="layui-input"
+                           placeholder="dmv${Count.count}Low" value="${dmv}">
                 </div>
             </div>
         </c:forEach>
@@ -306,7 +450,7 @@
                 <label class="layui-form-label">mvup${Count.count}</label>
                 <div class="layui-input-inline">
                     <input type="text" name="mvup${Count.count}" autocomplete="off" class="layui-input"
-                           placeholder="mv${Count.count}上限" value="${mvup.modleOpcTag}">
+                           placeholder="mv${Count.count}上限" value="${mvup.modleOpcTag==null?"":mvup.modleOpcTag}">
                 </div>
             </div>
 
@@ -315,23 +459,17 @@
                 <div class="layui-input-inline">
                     <select name="mvup${Count.count}resource">
                         <option value="">请选择来源</option>
-                        <c:choose>
-                            <c:when test="${mvup.resource eq 'opc'}">
-                                <option value="opc" selected>opc</option>
-                            </c:when>
-                            <c:otherwise>
-                                <option value="opc">opc</option>
-                            </c:otherwise>
-                        </c:choose>
+                        <c:forEach var="opcres" items="${opcresources}" varStatus="Count">
+                            <c:choose>
+                                <c:when test="${mvup.resource!=null&&mvup.resource.equals(opcres)}">
+                                    <option value="${opcres}" selected>${opcres}</option>
+                                </c:when>
+                                <c:otherwise>
+                                    <option value="${opcres}">${opcres}</option>
+                                </c:otherwise>
+                            </c:choose>
+                        </c:forEach>
 
-                        <c:choose>
-                            <c:when test="${mvup.resource eq 'constant'}">
-                                <option value="constant" selected>常量</option>
-                            </c:when>
-                            <c:otherwise>
-                                <option value="constant">常量</option>
-                            </c:otherwise>
-                        </c:choose>
 
                     </select>
                 </div>
@@ -349,7 +487,7 @@
                 <label class="layui-form-label">mvdown${Count.count}</label>
                 <div class="layui-input-inline">
                     <input type="text" name="mvdown${Count.count}" autocomplete="off" class="layui-input"
-                           placeholder="mv${Count.count}下限" value="${mvdown.modleOpcTag}">
+                           placeholder="mv${Count.count}下限" value="${mvdown.modleOpcTag==null?"":mvdown.modleOpcTag}">
                 </div>
             </div>
 
@@ -358,23 +496,16 @@
                 <div class="layui-input-inline">
                     <select name="mvdown${Count.count}resource">
                         <option value="">请选择来源</option>
-                        <c:choose>
-                            <c:when test="${mvdown.resource eq 'opc'}">
-                                <option value="opc" selected>opc</option>
-                            </c:when>
-                            <c:otherwise>
-                                <option value="opc">opc</option>
-                            </c:otherwise>
-                        </c:choose>
-
-                        <c:choose>
-                            <c:when test="${mvdown.resource eq 'constant'}">
-                                <option value="constant" selected>常量</option>
-                            </c:when>
-                            <c:otherwise>
-                                <option value="constant">常量</option>
-                            </c:otherwise>
-                        </c:choose>
+                        <c:forEach var="opcres" items="${opcresources}" varStatus="Count">
+                            <c:choose>
+                                <c:when test="${mvdown.resource!=null&&mvdown.resource.equals(opcres)}">
+                                    <option value="${opcres}" selected>${opcres}</option>
+                                </c:when>
+                                <c:otherwise>
+                                    <option value="${opcres}">${opcres}</option>
+                                </c:otherwise>
+                            </c:choose>
+                        </c:forEach>
                     </select>
                 </div>
             </div>
@@ -386,14 +517,35 @@
         <legend>MV反馈设置</legend>
     </fieldset>
     <div class="layui-form-item">
-        <c:forEach var="mvfb" items="${mvfblist}" varStatus="Count">
+        <c:forEach var="mvfb" items="${mvfbpinlist}" varStatus="Count">
             <div class="layui-inline">
                 <label class="layui-form-label">mvfb${Count.count}</label>
                 <div class="layui-input-inline">
                     <input type="text" name="mvfb${Count.count}" autocomplete="off" class="layui-input"
-                           placeholder="mv${Count.count}反馈位号" value="${mvfb}">
+                           placeholder="mv${Count.count}反馈位号" value="${mvfb.modleOpcTag==null?'':mvfb.modleOpcTag}">
                 </div>
             </div>
+
+            <div class="layui-inline">
+                <label class="layui-form-label">mvfb${Count.count}反馈opc位号来源</label>
+                <div class="layui-input-inline">
+                    <select name="mvfb${Count.count}resource">
+                        <option value="">请选择来源</option>
+                        <<c:forEach var="opcres" items="${opcresources}" varStatus="Count">
+                        <c:choose>
+                            <c:when test="${mvfb.resource!=null&&mvfb.resource.equals(opcres)}">
+                                <option value="${opcres}" selected>${opcres}</option>
+                            </c:when>
+                            <c:otherwise>
+                                <option value="${opcres}">${opcres}</option>
+                            </c:otherwise>
+                        </c:choose>
+                    </c:forEach>
+                    </select>
+                </div>
+            </div>
+
+
         </c:forEach>
     </div>
 
@@ -434,14 +586,36 @@
             <div class="layui-inline">
                 <label class="layui-form-label">mvfb${Count.count}滤波系数</label>
                 <div class="layui-input-inline">
-                    <input type="number" name="filtercoefmv${Count.count}" autocomplete="off" class="layui-input" value="${mv.getcoeff()}" placeholder="mvfb${Count.count}滤波系数">
+                    <input type="number" name="filtercoefmv${Count.count}" autocomplete="off" class="layui-input"
+                           value="${mv.getcoeff()}" placeholder="mvfb${Count.count}滤波系数">
                 </div>
             </div>
 
             <div class="layui-inline">
                 <label class="layui-form-label">mvfb${Count.count}滤波输出OPC位号</label>
                 <div class="layui-input-inline">
-                    <input type="text" name="filteropctagmv${Count.count}" autocomplete="off" class="layui-input" value="${mv.backToDCSTag}" placeholder="mvfb${Count.count}滤波输出opc位号">
+                    <input type="text" name="filteropctagmv${Count.count}" autocomplete="off" class="layui-input"
+                           value="${mv.backToDCSTag}" placeholder="mvfb${Count.count}滤波输出opc位号">
+                </div>
+            </div>
+
+
+            <div class="layui-inline">
+                <label class="layui-form-label">mvfb${Count.count}滤波输出OPC位号来源</label>
+                <div class="layui-input-inline">
+                    <select name="filtermvfb${Count.count}resource">
+                        <option value="">请选择来源</option>
+                        <<c:forEach var="opcres" items="${opcresources}" varStatus="Count">
+                            <c:choose>
+                                <c:when test="${mv.opcresource!=null&&mv.opcresource.equals(opcres)}">
+                                    <option value="${opcres}" selected>${opcres}</option>
+                                </c:when>
+                                <c:otherwise>
+                                    <option value="${opcres}">${opcres}</option>
+                                </c:otherwise>
+                            </c:choose>
+                       </c:forEach>
+                    </select>
                 </div>
             </div>
         </c:forEach>
@@ -452,14 +626,36 @@
         <legend>FF(前馈)设置</legend>
     </fieldset>
     <div class="layui-form-item">
-        <c:forEach var="ff" items="${fflist}" varStatus="Count">
+        <c:forEach var="ff" items="${ffpinlist}" varStatus="Count">
             <div class="layui-inline">
                 <label class="layui-form-label">ff${Count.count}</label>
                 <div class="layui-input-inline">
                     <input type="text" name="ff${Count.count}" autocomplete="off" class="layui-input"
-                           placeholder="ff${Count.count}位号" value="${ff}">
+                           placeholder="ff${Count.count}位号" value="${ff.modleOpcTag==null?'':ff.modleOpcTag}">
                 </div>
             </div>
+
+
+            <div class="layui-inline">
+                <label class="layui-form-label">ff${Count.count}opc位号来源</label>
+                <div class="layui-input-inline">
+                    <select name="ff${Count.count}resource">
+                        <option value="">请选择来源</option>
+                        <c:forEach var="opcres" items="${opcresources}" varStatus="Count">
+                            <c:choose>
+                                <c:when test="${ff.resource!=null&&ff.resource.equals(opcres)}">
+                                    <option value="${opcres}" selected>${opcres}</option>
+                                </c:when>
+                                <c:otherwise>
+                                    <option value="${opcres}">${opcres}</option>
+                                </c:otherwise>
+                            </c:choose>
+                        </c:forEach>
+                    </select>
+                </div>
+            </div>
+
+
         </c:forEach>
     </div>
 
@@ -500,20 +696,41 @@
             <div class="layui-inline">
                 <label class="layui-form-label">ff${Count.count}滤波系数</label>
                 <div class="layui-input-inline">
-                    <input type="number" name="filtercoefff${Count.count}" autocomplete="off" class="layui-input" value="${ff.getcoeff()}" placeholder="ff${Count.count}滤波系数">
+                    <input type="number" name="filtercoefff${Count.count}" autocomplete="off" class="layui-input"
+                           value="${ff.getcoeff()}" placeholder="ff${Count.count}滤波系数">
                 </div>
             </div>
 
             <div class="layui-inline">
                 <label class="layui-form-label">ff${Count.count}滤波输出OPC位号</label>
                 <div class="layui-input-inline">
-                    <input type="text" name="filteropctagff${Count.count}" autocomplete="off" class="layui-input" value="${ff.backToDCSTag}" placeholder="ff${Count.count}滤波输出opc位号">
+                    <input type="text" name="filteropctagff${Count.count}" autocomplete="off" class="layui-input"
+                           value="${ff.backToDCSTag}" placeholder="ff${Count.count}滤波输出opc位号">
                 </div>
             </div>
+
+
+            <div class="layui-inline">
+                <label class="layui-form-label">ff${Count.count}滤波输出OPC位号来源</label>
+                <div class="layui-input-inline">
+                    <select name="filterff${Count.count}resource">
+                        <option value="">请选择来源</option>
+                        <c:forEach var="opcres" items="${opcresources}" varStatus="Count">
+                            <c:choose>
+                                <c:when test="${ff.opcresource!=null&&ff.opcresource.equals(opcres)}">
+                                    <option value="${opcres}" selected>${opcres}</option>
+                                </c:when>
+                                <c:otherwise>
+                                    <option value="${opcres}">${opcres}</option>
+                                </c:otherwise>
+                            </c:choose>
+                        </c:forEach>
+                    </select>
+                </div>
+            </div>
+
         </c:forEach>
     </div>
-
-
 
 
     <fieldset class="layui-elem-field layui-field-title" style="margin-top: 20px;">
@@ -525,7 +742,7 @@
                 <label class="layui-form-label">ffup${Count.count}</label>
                 <div class="layui-input-inline">
                     <input type="text" name="ffup${Count.count}" autocomplete="off" class="layui-input"
-                           placeholder="ff${Count.count}位号" value="${ffup.modleOpcTag}">
+                           placeholder="ff${Count.count}位号" value="${ffup.modleOpcTag==null?'':ffup.modleOpcTag}">
                 </div>
             </div>
 
@@ -534,23 +751,16 @@
                 <div class="layui-input-inline">
                     <select name="ffup${Count.count}resource">
                         <option value="">请选择来源</option>
-                        <c:choose>
-                            <c:when test="${ffup.resource eq 'opc'}">
-                                <option value="opc" selected>opc</option>
-                            </c:when>
-                            <c:otherwise>
-                                <option value="opc">opc</option>
-                            </c:otherwise>
-                        </c:choose>
-
-                        <c:choose>
-                            <c:when test="${ffup.resource eq 'constant'}">
-                                <option value="constant" selected>常量</option>
-                            </c:when>
-                            <c:otherwise>
-                                <option value="constant">常量</option>
-                            </c:otherwise>
-                        </c:choose>
+                        <c:forEach var="opcres" items="${opcresources}" varStatus="Count">
+                            <c:choose>
+                                <c:when test="${ffup.resource!=null&&ffup.resource.equals(opcres)}">
+                                    <option value="${opcres}" selected>${opcres}</option>
+                                </c:when>
+                                <c:otherwise>
+                                    <option value="${opcres}">${opcres}</option>
+                                </c:otherwise>
+                            </c:choose>
+                        </c:forEach>
                     </select>
                 </div>
             </div>
@@ -567,7 +777,7 @@
                 <label class="layui-form-label">ffdown${Count.count}</label>
                 <div class="layui-input-inline">
                     <input type="text" name="ffdown${Count.count}" autocomplete="off" class="layui-input"
-                           placeholder="ffdown${Count.count}位号/值" value="${ffdown.modleOpcTag}">
+                           placeholder="ffdown${Count.count}位号/值" value="${ffdown.modleOpcTag==null?'':ffdown.modleOpcTag}">
                 </div>
             </div>
 
@@ -576,23 +786,18 @@
                 <div class="layui-input-inline">
                     <select name="ffdown${Count.count}resource">
                         <option value="">请选择来源</option>
-                        <c:choose>
-                            <c:when test="${ffdown.resource eq 'opc'}">
-                                <option value="opc" selected>opc</option>
-                            </c:when>
-                            <c:otherwise>
-                                <option value="opc">opc</option>
-                            </c:otherwise>
-                        </c:choose>
 
-                        <c:choose>
-                            <c:when test="${ffdown.resource eq 'constant'}">
-                                <option value="constant" selected>常量</option>
-                            </c:when>
-                            <c:otherwise>
-                                <option value="constant">常量</option>
-                            </c:otherwise>
-                        </c:choose>
+                        <c:forEach var="opcres" items="${opcresources}" varStatus="Count">
+                            <c:choose>
+                                <c:when test="${ffdown.resource!=null&&ffdown.resource.equals(opcres)}">
+                                    <option value="${opcres}" selected>${opcres}</option>
+                                </c:when>
+                                <c:otherwise>
+                                    <option value="${opcres}">${opcres}</option>
+                                </c:otherwise>
+                            </c:choose>
+                        </c:forEach>
+
                     </select>
                 </div>
             </div>
@@ -600,10 +805,8 @@
     </div>
 
 
-
-
     <fieldset class="layui-elem-field layui-field-title" style="margin-top: 20px;">
-        <legend>MV对PV的响应设置 形如{k:10,t:180,tao:200}  英文模式输入!</legend>
+        <legend>MV对PV的响应设置 形如{k:10,t:180,tao:200} 英文模式输入!</legend>
     </fieldset>
 
     <table class="layui-table" lay-data='{"data":${mvresp}, "id":"mvresp"}' lay-filter="mvresp">
@@ -618,7 +821,7 @@
     </table>
 
     <fieldset class="layui-elem-field layui-field-title" style="margin-top: 20px;">
-        <legend>前馈(FF)对PV的响应设置 形如{k:10,t:180,tao:200}  英文模式输入!</legend>
+        <legend>前馈(FF)对PV的响应设置 形如{k:10,t:180,tao:200} 英文模式输入!</legend>
     </fieldset>
     <table class="layui-table" lay-data='{"data":${ffresp}, "id":"ffresp"}' lay-filter="ffresp">
         <thead>
@@ -643,7 +846,7 @@
 <script>
     var table;
 
-    layui.use(['form','layer'], function () {
+    layui.use(['form', 'layer'], function () {
         var form = layui.form,
             layer = parent.layer === undefined ? layui.layer : parent.layer;
         form.render(); //更新全部
@@ -656,7 +859,7 @@
             // layer.alert(JSON.stringify(data.field), {
             //     title: '最终的提交信息'
             // })
-            let index = layer.msg('修改中，请稍候',{icon: 16,time:false,shade:0.8});
+            let index = layer.msg('修改中，请稍候', {icon: 16, time: false, shade: 0.8});
             $.ajax({
                 url: "${pageContext.request.contextPath}/modle/savemodle.do" + "?" + Math.random(),
                 async: true,
@@ -669,13 +872,13 @@
                 success: function (result) {
                     console.log(result);
                     layer.close(index);
-                    let json=JSON.parse(result);
-                    if(json['msg']=="error"){
+                    let json = JSON.parse(result);
+                    if (json['msg'] == "error") {
                         layer.msg("修改失败！");
-                    }else{
+                    } else {
                         layer.msg("修改成功！");
-                        location.href='${pageContext.request.contextPath}'+json['go'];
-                       // newleft(json['modleName'],json['modleId'])
+                        location.href = '${pageContext.request.contextPath}' + json['go'];
+                        // newleft(json['modleName'],json['modleId'])
                     }
                     //window.location.href("result")
                     // var json = JSON.parse(result);
@@ -713,8 +916,6 @@
 
         });
     });
-
-
 
 
 </script>
