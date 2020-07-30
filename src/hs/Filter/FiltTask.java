@@ -1,9 +1,8 @@
 package hs.Filter;
 
 
+import hs.ShockDetect.ShockDetector;
 import org.openscada.opc.lib.da.Item;
-
-import java.util.LinkedList;
 
 /**
  * @author zzx
@@ -14,7 +13,10 @@ public class FiltTask{
     private Filter filter;
     private Double[] unfiltdatas;//用于移动平均
     private double unfiltdata;//用于一阶滤波
-    private Item item;//用于数据反写
+    private Item itemfilterback;//用于数据反写
+    private ShockDetector shockDetector;
+    private Item itemshockback;
+
 
 
     public Filter getFilter() {
@@ -42,11 +44,27 @@ public class FiltTask{
     }
 
 
-    public Item getItem() {
-        return item;
+    public Item getItemfilterback() {
+        return itemfilterback;
     }
 
-    public void setItem(Item item) {
-        this.item = item;
+    public void setItemfilterback(Item itemfilterback) {
+        this.itemfilterback = itemfilterback;
+    }
+
+    public ShockDetector getShockDetector() {
+        return shockDetector;
+    }
+
+    public void setShockDetector(ShockDetector shockDetector) {
+        this.shockDetector = shockDetector;
+    }
+
+    public Item getItemshockback() {
+        return itemshockback;
+    }
+
+    public void setItemshockback(Item itemshockback) {
+        this.itemshockback = itemshockback;
     }
 }

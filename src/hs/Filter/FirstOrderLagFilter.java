@@ -1,5 +1,7 @@
 package hs.Filter;
 
+import org.apache.log4j.Logger;
+
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
@@ -8,6 +10,8 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * @date 2020/6/12 8:01
  */
 public class FirstOrderLagFilter implements Filter {
+    private static final Logger logger = Logger.getLogger(FirstOrderLagFilter.class);
+
     private int pk_filterid;
     private int pk_pinid;
     private String filtername;
@@ -30,7 +34,7 @@ public class FirstOrderLagFilter implements Filter {
 //        this.filter_alphe = alphe;
 //    }
 
-     public void putDataTofilterdatas(double data){
+     public  void putDataTofilterdatas(double data){
         while (filterdatalength>capacity){
             filterdataspool.poll();
             filterdatalength--;
@@ -45,7 +49,14 @@ public class FirstOrderLagFilter implements Filter {
     public  Double getLastfilterdata(){
         Double[] temp=new Double[filterdataspool.size()];
         temp=filterdataspool.toArray(temp);
-        return temp[temp.length-1];
+
+        for(int i=0;i<temp.length;i++){
+            if(temp[temp.length-1-i]!=null){
+                return temp[temp.length-1-i];
+            }
+        }
+        logger.error("滤波器工作失败！");
+        return null;
     }
 
 
@@ -53,7 +64,7 @@ public class FirstOrderLagFilter implements Filter {
      * 将首个未滤波的数据同时交给unfilterdata和filterdata
      * */
     public  void setsampledata(double sampledata){
-        while (unfilterdatalength >=capacity){
+        while (unfilterdatalength >capacity){
             unfilterdatapool.poll();
             unfilterdatalength--;
         }
@@ -127,5 +138,21 @@ public class FirstOrderLagFilter implements Filter {
 
     public void setOpcresource(String opcresource) {
         this.opcresource = opcresource;
+    }
+
+    public Integer getCapacity() {
+        return capacity;
+    }
+
+    public void setCapacity(Integer capacity) {
+        this.capacity = capacity;
+    }
+
+    public ConcurrentLinkedQueue<Double> getUnfilterdatapool() {
+        return unfilterdatapool;
+    }
+
+    public ConcurrentLinkedQueue<Double> getFilterdataspool() {
+        return filterdataspool;
     }
 }

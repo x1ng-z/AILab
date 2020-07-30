@@ -46,45 +46,7 @@ public class PythonController {
         jsonObject.put("APCOutCycle", modle.getControlAPCOutCycle());
         jsonObject.put("enable", modle.getModleEnable());
         jsonObject.put("validekey", modle.getValidkey());
-
-        /**funnel type*/
-
-        double[][] funneltype = new double[modle.getCategoryPVmodletag().size()][2];
-        int indexpin = 0;
-        for (ModlePin pin : modle.getCategoryPVmodletag()) {
-            if (pin.getFunneltype() != null) {
-                if (pin.getFunneltype().equals("fullfunnel")) {
-                    double[] fnl = new double[2];
-                    fnl[0] = 0;
-                    fnl[1] = 0;
-                    funneltype[indexpin] = fnl;
-                } else if (pin.getFunneltype().equals("upfunnel")) {
-                    double[] fnl = new double[2];
-                    fnl[0] = 0;
-                    fnl[1] = 1;//乘负无穷
-                    funneltype[indexpin] = fnl;
-                } else if (pin.getFunneltype().equals("downfunnel")) {
-                    double[] fnl = new double[2];
-                    fnl[0] = 1;//乘正无穷
-                    fnl[1] = 0;
-                    funneltype[indexpin] = fnl;
-                } else {
-                    //匹配不到就是全漏斗
-                    double[] fnl = new double[2];
-                    fnl[0] = 0;
-                    fnl[1] = 0;
-                    funneltype[indexpin] = fnl;
-                }
-            } else {
-                //匹配不到就是全漏斗
-                double[] fnl = new double[2];
-                fnl[0] = 0;
-                fnl[1] = 0;
-                funneltype[indexpin] = fnl;
-            }
-            ++indexpin;
-        }
-        jsonObject.put("funneltype", funneltype);
+        jsonObject.put("funneltype", modle.getFunneltype());
 
 
         /**

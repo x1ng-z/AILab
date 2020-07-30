@@ -1,8 +1,10 @@
 package hs.Opc;
 
+import hs.Bean.ModleConstainer;
 import hs.Bean.ModlePin;
 import hs.Dao.Service.OpcDBServe;
 import hs.Filter.FilterService;
+import hs.Opc.Monitor.ModleStopRunMonitor;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -19,18 +21,21 @@ import java.util.regex.Pattern;
  * @date 2020/7/2 8:55
  */
 
-@Component
+@Component("opcServicConstainer")
 public class OpcServicConstainer {
     private static final Logger logger = Logger.getLogger(OpcServicConstainer.class);
     private FilterService filterService = null;//实时滤波服务
+    private ModleStopRunMonitor modleStopRunMonitor = null;
     private OpcDBServe opcDBServe = null;
     private ConcurrentHashMap<Integer, OPCService> opcservepool = new ConcurrentHashMap();//key=OPCserveid
     private ExecutorService executorService;
+    private ItemManger itemManger;
 
     @Autowired
-    public OpcServicConstainer(FilterService filterService, OpcDBServe opcDBServe) {
+    public OpcServicConstainer(FilterService filterService, OpcDBServe opcDBServe, ModleStopRunMonitor modleStopRunMonitor) {
         this.filterService = filterService;
         this.opcDBServe = opcDBServe;
+        this.modleStopRunMonitor = modleStopRunMonitor;
         this.executorService = Executors.newCachedThreadPool(new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
@@ -66,6 +71,25 @@ public class OpcServicConstainer {
         return null;
     }
 
+
+    /**
+     * 是否有一个opc group，用于判断是否有连接上的opcserve
+     */
+    public boolean isAnyConnectOpcServe() {
+        /**register pin*/
+        boolean isanyconn = false;
+        for (OPCService opcService : opcservepool.values()) {
+            if (opcService.getGroup() == null) {
+                continue;
+            } else {
+                isanyconn = true;
+                return isanyconn;
+            }
+
+        }
+        return isanyconn;
+    }
+
     /**
      * 是否有一个opc group，用于判断是否有连接上的opcserve
      */
@@ -83,9 +107,9 @@ public class OpcServicConstainer {
     }
 
 
-    public void registerModlePin(ModlePin modlePin) {
+    public void registerModlePinAndComponent(ModlePin modlePin) {
         if ((modlePin.getResource() != null) && (modlePin.getResource().equals("constant"))) {
-            return ;
+            return;
         } else if ((modlePin.getResource() != null)) {
             /**register pin*/
             for (OPCService opcService : opcservepool.values()) {
@@ -118,14 +142,50 @@ public class OpcServicConstainer {
             }
 
 
+            /**register shockdetect*/
+            if ((modlePin.getShockDetector() != null)) {
+
+                if((modlePin.getShockDetector().getBackToDCSTag() != null) && !(modlePin.getShockDetector().getOpcresource().equals(""))){
+                    for (OPCService opcService : opcservepool.values()) {
+                        Pattern pattern = Pattern.compile("([a-zA-Z]*)([0-9|.]*)");
+                        Matcher matcher = pattern.matcher(modlePin.getShockDetector().getOpcresource());
+                        if (matcher.find()) {
+                            if (matcher.group(2).equals(opcService.getOpcip())) {
+                                opcService.registerShockDetectortag(modlePin.getShockDetector().getBackToDCSTag());
+                                break;
+                            }
+                        }
+
+                    }
+                }
+                if((modlePin.getShockDetector().getFilterbacktodcstag() != null) && !(modlePin.getShockDetector().getFilteropcresource().equals(""))){
+                    for (OPCService opcService : opcservepool.values()) {
+                        Pattern pattern = Pattern.compile("([a-zA-Z]*)([0-9|.]*)");
+                        Matcher matcher = pattern.matcher(modlePin.getShockDetector().getFilteropcresource());
+                        if (matcher.find()) {
+                            if (matcher.group(2).equals(opcService.getOpcip())) {
+                                opcService.registerShockDetectortag(modlePin.getShockDetector().getFilterbacktodcstag() );
+                                break;
+                            }
+                        }
+
+                    }
+                }
+
+                //初始化检测器
+                modlePin.getShockDetector().componentrealize();
+
+
+            }
+
+
+
         }
 
     }
 
 
-
-
-    public boolean writeModlePinValie(ModlePin modlePin,Double value) {
+    public boolean writeModlePinValie(ModlePin modlePin, Double value) {
         if ((modlePin.getResource() != null) && (modlePin.getResource().equals("constant"))) {
             return true;
         } else if ((modlePin.getResource() != null)) {
@@ -135,7 +195,7 @@ public class OpcServicConstainer {
                 Matcher matcher = pattern.matcher(modlePin.getResource());
                 if (matcher.find()) {
                     if (matcher.group(2).equals(opcService.getOpcip())) {
-                        return opcService.writeTagvalue(modlePin.getModleOpcTag(),value);
+                        return opcService.writeTagvalue(modlePin.getModleOpcTag(), value);
                     }
                 }
 
@@ -147,8 +207,7 @@ public class OpcServicConstainer {
     }
 
 
-
-    public boolean unregisterModlePin(ModlePin modlePin) {
+    public boolean unregisterModlePinAndComponent(ModlePin modlePin) {
         if ((modlePin.getResource() != null) && (modlePin.getResource().equals("constant"))) {
             return true;
         } else if ((modlePin.getResource() != null)) {
@@ -158,7 +217,13 @@ public class OpcServicConstainer {
                 Matcher matcher = pattern.matcher(modlePin.getResource());
                 if (matcher.find()) {
                     if (matcher.group(2).equals(opcService.getOpcip())) {
-                        opcService.unregisterModlePin(modlePin);
+                        try {
+                            opcService.unregisterModlePin(modlePin);
+                        } catch (Exception e) {
+                            logger.error("opc位号:" + modlePin.getModleOpcTag() + "移除失败");
+                            logger.error(e.getMessage(), e);
+
+                        }
                     }
                 }
 
@@ -180,6 +245,36 @@ public class OpcServicConstainer {
             }
 
 
+            /**unregister shockdetect*/
+            if ((modlePin.getShockDetector() != null)) {
+                if (modlePin.getShockDetector().getBackToDCSTag() != null && (modlePin.getShockDetector().getOpcresource() != null)) {
+                    for (OPCService opcService : opcservepool.values()) {
+                        Pattern pattern = Pattern.compile("([a-zA-Z]*)([0-9|.]*)");
+                        Matcher matcher = pattern.matcher(modlePin.getShockDetector().getOpcresource());
+                        if (matcher.find()) {
+                            if (matcher.group(2).equals(opcService.getOpcip())) {
+                                opcService.unregisterShockdetectortag(modlePin.getShockDetector().getBackToDCSTag());
+                            }
+                        }
+
+                    }
+                }
+                if ((modlePin.getShockDetector().getFilterbacktodcstag() != null) && !(modlePin.getShockDetector().getFilteropcresource().equals(""))) {
+                    for (OPCService opcService : opcservepool.values()) {
+                        Pattern pattern = Pattern.compile("([a-zA-Z]*)([0-9|.]*)");
+                        Matcher matcher = pattern.matcher(modlePin.getShockDetector().getFilteropcresource());
+                        if (matcher.find()) {
+                            if (matcher.group(2).equals(opcService.getOpcip())) {
+                                opcService.unregisterShockdetectortag(modlePin.getShockDetector().getFilterbacktodcstag());
+                            }
+                        }
+
+                    }
+                }
+
+            }
+
+
         }
         return true;
 
@@ -190,7 +285,7 @@ public class OpcServicConstainer {
         List<OPCService> opcServiceList = opcDBServe.getopcserves();
         for (OPCService service : opcServiceList) {
             try {
-                service.initAndConnect(filterService);
+                service.initAndConnect(filterService, modleStopRunMonitor);
             } catch (Exception e) {
                 logger.error(e.getMessage(), e);
             }
@@ -218,4 +313,6 @@ public class OpcServicConstainer {
     public ConcurrentHashMap<Integer, OPCService> getOpcservepool() {
         return opcservepool;
     }
+
+
 }

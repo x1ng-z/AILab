@@ -1,5 +1,7 @@
 package hs.Filter;
 
+import hs.ShockDetect.ShockDetector;
+
 import java.util.LinkedList;
 
 /**
@@ -36,4 +38,5 @@ public interface Filter {
     public String getOpcresource() ;
 
     public void setOpcresource(String opcresource) ;
+
 }

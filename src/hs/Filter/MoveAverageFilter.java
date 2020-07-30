@@ -36,11 +36,19 @@ public class MoveAverageFilter implements Filter {
     public  Double getLastfilterdata(){
         Double[] temp=new Double[filterdataspool.size()];
         temp=filterdataspool.toArray(temp);
-        return temp[temp.length-1];
+
+        for(int i=0;i<temp.length;i++){
+            if(temp[temp.length-1-i]!=null){
+                logger.debug("滤波器size="+filterdataspool.size()+"拾取位置"+(temp.length-1-i));
+                return temp[temp.length-1-i];
+            }
+        }
+        logger.error("滤波器工作失败！");
+        return null;
     }
 
     public  void setsampledata(double sampledata) {
-        while (unfilterdatalength >= capacity) {
+        while (unfilterdatalength > capacity) {
             unfilterdatapool.poll();
             --unfilterdatalength;
         }
@@ -56,7 +64,7 @@ public class MoveAverageFilter implements Filter {
 
 
      public void putDataTofilterdatas(double data){
-        while (filterdatalength>=capacity){
+        while (filterdatalength>capacity){
             filterdataspool.poll();
             filterdatalength--;
         }

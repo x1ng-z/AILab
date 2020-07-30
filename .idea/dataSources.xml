@@ -62,5 +62,15 @@
         <property name="serverTimezone" value="Asia/Shanghai" />
       </driver-properties>
     </data-source>
+    <data-source source="LOCAL" name="ailab@200.0.0.212" uuid="e4e3d693-0bbf-4ed5-a8dc-3ca77a9ab0c2">
+      <driver-ref>mysql.8</driver-ref>
+      <synchronize>true</synchronize>
+      <remarks>兰溪红狮</remarks>
+      <jdbc-driver>com.mysql.cj.jdbc.Driver</jdbc-driver>
+      <jdbc-url>jdbc:mysql://200.0.0.212:3306/ailab</jdbc-url>
+      <driver-properties>
+        <property name="serverTimezone" value="Asia/Shanghai" />
+      </driver-properties>
+    </data-source>
   </component>
 </project>

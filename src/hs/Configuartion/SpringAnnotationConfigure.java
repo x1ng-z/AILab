@@ -4,9 +4,7 @@ import hs.Dao.Service.ModleDBServe;
 import org.apache.log4j.Logger;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.ImportResource;
+import org.springframework.context.annotation.*;
 
 /**
  * @author zzx
@@ -14,6 +12,7 @@ import org.springframework.context.annotation.ImportResource;
  * @date 2020/3/17 10:24
  */
 @Configuration
+@EnableAspectJAutoProxy
 @ImportResource("classpath:applicationContext.xml")
 public class SpringAnnotationConfigure {
     private static final Logger logger=Logger.getLogger(SpringAnnotationConfigure.class);

@@ -1,6 +1,7 @@
 package hs.Bean;
 
 import hs.Filter.Filter;
+import hs.ShockDetect.ShockDetector;
 
 import java.time.Instant;
 import java.util.LinkedList;
@@ -47,7 +48,7 @@ public class ModlePin {
     private Double dmvLow;
     private Filter filter=null;//滤波器
     private Double referTrajectoryCoef;//pv的柔化系数(参考轨迹参数)
-
+    private ShockDetector shockDetector;
 
     public void opcUpdateValue(double value) {
         oldReadValue = newReadValue;
@@ -60,7 +61,13 @@ public class ModlePin {
         if(filter==null){
             return  (newReadValue==null?0:newReadValue);
         }else {
-            return filter.getLastfilterdata();
+            Double filterresult=filter.getLastfilterdata();
+            if(filterresult!=null){
+                return filterresult;
+            }else {
+                return (newReadValue==null?0:newReadValue);
+            }
+
         }
     }
 
@@ -232,5 +239,17 @@ public class ModlePin {
 
     public void setFunneltype(String funneltype) {
         this.funneltype = funneltype;
+    }
+
+    public Double getNewReadValue() {
+        return newReadValue;
+    }
+
+    public ShockDetector getShockDetector() {
+        return shockDetector;
+    }
+
+    public void setShockDetector(ShockDetector shockDetector) {
+        this.shockDetector = shockDetector;
     }
 }

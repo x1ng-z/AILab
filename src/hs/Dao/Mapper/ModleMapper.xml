@@ -59,6 +59,7 @@
         <result property="referTrajectoryCoef" column="referTrajectoryCoef"/>
         <result property="funneltype" column="funneltype"/>
         <association property="filter" javaType="hs.Filter.Filter" column="modlepinsId" select="findfilterByid"/>
+        <association property="shockDetector" javaType="hs.ShockDetect.ShockDetector" column="modlepinsId" select="getShockDetetetor"/>
     </resultMap>
     
     <resultMap id="filterResult" type="hs.Filter.Filter">
@@ -75,6 +76,18 @@
                 <result property="filter_alphe" column="filter_alphe"/>
             </case>
         </discriminator>
+    </resultMap>
+
+    <resultMap id="shockdetectResult" type="hs.ShockDetect.ShockDetector">
+        <id property="pk_shockdetectid" column="pk_shockdetectid"/>
+        <result property="backToDCSTag" column="backToDCSTag"/>
+        <result property="opcresource" column="opcresource"/>
+        <result property="dampcoeff" column="dampcoeff"/>
+        <result property="windowstime" column="windowstime"/>
+        <result property="filtercoeff" column="filtercoeff"/>
+        <result property="enable" column="enable"/>
+        <result property="filterbacktodcstag" column="filterbacktodcstag"/>
+        <result property="filteropcresource" column="filteropcresource"/>
     </resultMap>
 
 
@@ -171,5 +184,21 @@
         delete from filter where pk_pinid=#{modlepinsId}
     </delete>
 
+
+    <insert id="insertShockDetetetor" parameterType="hs.ShockDetect.ShockDetector" useGeneratedKeys="true" keyProperty="pk_shockdetectid">
+        insert into shockdetect(pk_pinid,backToDCSTag,opcresource,dampcoeff,windowstime,filtercoeff,enable,filterbacktodcstag,filteropcresource) value (#{detector.pk_pinid},#{detector.backToDCSTag},#{detector.opcresource},#{detector.dampcoeff},#{detector.windowstime},#{detector.filtercoeff},#{detector.enable},#{detector.filterbacktodcstag},#{detector.filteropcresource})
+    </insert>
+
+    <select id="getShockDetetetor" resultMap="shockdetectResult">
+       select * from shockdetect where pk_pinid=#{id}
+    </select>
+
+    <delete id="removeShockDetetetor">
+        delete from shockdetect where pk_shockdetectid=#{id}
+    </delete>
+
+    <update id="updateShockDetetetor" parameterType="hs.ShockDetect.ShockDetector">
+        update shockdetect set pk_pinid=#{detector.pk_pinid},backToDCSTag=#{detector.backToDCSTag},opcresource=#{detector.opcresource},opcresource=#{detector.opcresource},dampcoeff=#{detector.dampcoeff},windowstime=#{detector.windowstime},filtercoeff=#{detector.filtercoeff},enable=#{detector.enable},filterbacktodcstag=#{detector.filterbacktodcstag},filteropcresource=#{detector.filteropcresource} where pk_shockdetectid=#{detector.pk_shockdetectid}
+    </update>
 
 </mapper>

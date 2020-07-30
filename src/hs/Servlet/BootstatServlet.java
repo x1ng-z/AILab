@@ -5,6 +5,7 @@ import hs.Bean.ModleConstainer;
 import hs.Filter.FilterService;
 import hs.Opc.OPCService;
 import hs.Opc.OpcServicConstainer;
+import hs.test.Test4filter;
 import org.apache.log4j.Logger;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.servlet.DispatcherServlet;
@@ -24,7 +25,14 @@ public class BootstatServlet extends DispatcherServlet {
         logger.info("init complet");
         ApplicationContext applicationContext =getWebApplicationContext();
         ModleConstainer modleConstainer =applicationContext.getBean(ModleConstainer.class);
-        modleConstainer.init();
+//        modleConstainer.init();
+
+
+
+//        Test4filter test4filter =applicationContext.getBean(Test4filter.class);
+//        test4filter.update(2);
+//        System.out.println(test4filter.getClass()+",hashcode="+test4filter.hashCode());
+
 //
 //        opcServicConstainer.toString();
 

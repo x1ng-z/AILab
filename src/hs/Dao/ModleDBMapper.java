@@ -4,8 +4,10 @@ import hs.Bean.*;
 import hs.Filter.Filter;
 import hs.Filter.FirstOrderLagFilter;
 import hs.Filter.MoveAverageFilter;
+import hs.ShockDetect.ShockDetector;
 import org.apache.ibatis.annotations.MapKey;
 import org.apache.ibatis.annotations.Param;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Map;
@@ -15,6 +17,7 @@ import java.util.Map;
  * @version 1.0
  * @date 2020/2/29 11:12
  */
+@Repository
 public interface ModleDBMapper {
 
     List<ControlModle> getModles();
@@ -34,6 +37,11 @@ public interface ModleDBMapper {
     void deletePinsFilter( @Param("modlepinsId") int modlepinsId);;
 
 
+
+    void insertShockDetetetor(@Param("detector")ShockDetector shockDetector);
+    ShockDetector getShockDetetetor(int id);
+    void removeShockDetetetor(int id);
+    void updateShockDetetetor(@Param("detector")ShockDetector shockDetector);
 
     void insertModleResp( @Param("responTimeSerises")List<ResponTimeSerise> responTimeSerises);
 

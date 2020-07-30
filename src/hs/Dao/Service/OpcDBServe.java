@@ -6,6 +6,7 @@ import hs.Opc.OpcVeriTag;
 import org.apache.ibatis.annotations.Param;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,7 +17,7 @@ import java.util.List;
  * @version 1.0
  * @date 2020/7/2 10:25
  */
-@Component
+@Service
 public class OpcDBServe {
     private OpcServeDBMapper opcServeDBMapper;
 

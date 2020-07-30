@@ -20,6 +20,22 @@ public class test {
         return 10*Math.sin(2*3.14*time/100)+Math.random()*10;
     }
     public static void main(String[] args) {
+        double pi=3.1415;
+        int N=2;
+        double r=pi/N;
+        int a=3/2;
+         ConcurrentLinkedQueue<Double> unfilterdatapool =new ConcurrentLinkedQueue();
+        unfilterdatapool.offer(1d);
+        unfilterdatapool.offer(2d);
+        Double[] temp=new Double[3];
+        temp=unfilterdatapool.toArray(temp);
+       for(int i=0;i<temp.length;i++){
+           if(temp[temp.length-1-i]!=null){
+               System.out.println(temp[temp.length-1-i]);
+               break;
+           }
+       }
+
 
 
         JSONObject jsonObject = new JSONObject();

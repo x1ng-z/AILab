@@ -21,13 +21,13 @@
 				<div class="layui-form-item">
 					<label class="layui-form-label"><i class="layui-icon layui-icon-username"></i></label>
 					<div class="layui-input-block">
-						<input name="username" class="layui-input" type="text" placeholder="请输入账号，默认admin" autocomplete="off" />
+						<input name="username" class="layui-input" type="text" placeholder="请输入账号" autocomplete="off" />
 					</div>
 				</div>
 				<div class="layui-form-item">
 					<label class="layui-form-label"><i class="layui-icon layui-icon-password"></i></label>
 					<div class="layui-input-block">
-						<input name="userpassword" class="layui-input" type="password" placeholder="请输入密码，默认123456" autocomplete="off"/>
+						<input name="userpassword" class="layui-input" type="password" placeholder="请输入密码" autocomplete="off"/>
 					</div>
 				</div>
 				<div class="layui-form-item">

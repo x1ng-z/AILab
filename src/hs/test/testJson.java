@@ -10,7 +10,9 @@ import hs.Opc.OPCService;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -35,7 +37,8 @@ public class testJson {
         jsonArray1.toArray(aa);
     }
     public static void main(String[] args) {
-
+        List<String> testremove=new ArrayList<>();
+        boolean nullelem=testremove.remove("1");
         int[][] pvusemv=new int[2][2];
         int [] data = {1,2,3,4,5,6,7,8,9};
         int [] newData;

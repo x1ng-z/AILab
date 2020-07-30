@@ -3,7 +3,6 @@ package hs.Bean;
 import com.alibaba.fastjson.JSONObject;
 import hs.ApcAlgorithm.ExecutePythonBridge;
 import hs.Controller.ModleController;
-import hs.Opc.OPCService;
 import hs.Opc.OpcServicConstainer;
 import org.apache.log4j.Logger;
 
@@ -61,7 +60,7 @@ public class ControlModle {
     private Integer controltime_M = 6;//单一控制输入未来控制M步增量(控制域)
     private Integer timeserise_N = 40;//响应序列长度
     private Integer controlAPCOutCycle = 0;//控制周期
-    private int modleEnable;//模块使能，用于设置算法是否运行，算法是否运行
+    private volatile int modleEnable;//模块使能，用于设置算法是否运行，算法是否运行
 
     private List<ModlePin> modlePins;//引脚
     private List<ResponTimeSerise> responTimeSerises;//响应
@@ -84,6 +83,7 @@ public class ControlModle {
     private Double[] alpheTrajectoryCoefficients = null;//参考轨迹的柔化系数
     private Double[] deadZones = null;//漏斗死区
     private Double[] funelinitvalues = null;//漏斗初始值
+    private double[][] funneltype;
 
     /**
      * *             mv1 mv2 mv3.....mvn
@@ -122,7 +122,7 @@ public class ControlModle {
                 stringmodlePinsMap.put(modlePin.getModlePinName(), modlePin);//将定义的引脚按照key=pvn/mvn/spn等(n=1,2,3..8) value=pin
                 /**将引脚注册进行opcserice中*/
                 if ((opcServicConstainer.getOPcserveGroup() != null) && (modlePin != null)) {
-                   opcServicConstainer.registerModlePin(modlePin);
+                   opcServicConstainer.registerModlePinAndComponent(modlePin);
                 }
 
                 /**
@@ -131,6 +131,8 @@ public class ControlModle {
                 if ((modlePin != null) && (modlePin.getModlePinName().equals(ModlePin.TYPE_PIN_AUTO))) {
                     autoEnbalePin = modlePin;
                 }
+
+
             }
 
 
@@ -295,10 +297,45 @@ public class ControlModle {
              * */
             deadZones = new Double[categoryPVmodletag.size()];
             funelinitvalues = new Double[categoryPVmodletag.size()];
+
+            /**funnel type*/
+            funneltype = new double[categoryPVmodletag.size()][2];
+
             loop = 0;
             for (ModlePin modlePin : categoryPVmodletag) {
                 deadZones[loop] = modlePin.getDeadZone();
                 funelinitvalues[loop] = modlePin.getFunelinitValue();
+
+                if (modlePin.getFunneltype() != null) {
+                    if (modlePin.getFunneltype().equals("fullfunnel")) {
+                        double[] fnl = new double[2];
+                        fnl[0] = 0;
+                        fnl[1] = 0;
+                        funneltype[loop] = fnl;
+                    } else if (modlePin.getFunneltype().equals("upfunnel")) {
+                        double[] fnl = new double[2];
+                        fnl[0] = 0;
+                        fnl[1] = 1;//乘负无穷
+                        funneltype[loop] = fnl;
+                    } else if (modlePin.getFunneltype().equals("downfunnel")) {
+                        double[] fnl = new double[2];
+                        fnl[0] = 1;//乘正无穷
+                        fnl[1] = 0;
+                        funneltype[loop] = fnl;
+                    } else {
+                        //匹配不到就是全漏斗
+                        double[] fnl = new double[2];
+                        fnl[0] = 0;
+                        fnl[1] = 0;
+                        funneltype[loop] = fnl;
+                    }
+                } else {
+                    //匹配不到就是全漏斗
+                    double[] fnl = new double[2];
+                    fnl[0] = 0;
+                    fnl[1] = 0;
+                    funneltype[loop] = fnl;
+                }
                 ++loop;
             }
 
@@ -330,8 +367,8 @@ public class ControlModle {
    public boolean  unregisterpin(){
         boolean result=true;
         for(ModlePin pin:modlePins){
-            if ((opcServicConstainer.getOPcserveGroup() != null) && (pin != null)) {
-                result =result && opcServicConstainer.unregisterModlePin(pin);
+            if ((opcServicConstainer.isAnyConnectOpcServe()) && (pin != null)) {
+                result =result && opcServicConstainer.unregisterModlePinAndComponent(pin);
             }
         }
         return result;
@@ -607,11 +644,11 @@ public class ControlModle {
         this.controlAPCOutCycle = controlAPCOutCycle;
     }
 
-    public int getModleEnable() {
+    public synchronized int getModleEnable() {
         return modleEnable;
     }
 
-    public void setModleEnable(int modleEnable) {
+    public synchronized void setModleEnable(int modleEnable) {
         this.modleEnable = modleEnable;
     }
 
@@ -703,8 +740,8 @@ public class ControlModle {
         return validkey;
     }
 
-    public void setValidkey(long validkey) {
-        this.validkey = validkey;
+    public void generateValidkey() {
+        this.validkey = System.currentTimeMillis();
     }
 
     public Double[] getAlpheTrajectoryCoefficients() {
@@ -721,5 +758,13 @@ public class ControlModle {
 
     public void setOpcServicConstainer(OpcServicConstainer opcServicConstainer) {
         this.opcServicConstainer = opcServicConstainer;
+    }
+
+    public double[][] getFunneltype() {
+        return funneltype;
+    }
+
+    public void setFunneltype(double[][] funneltype) {
+        this.funneltype = funneltype;
     }
 }
