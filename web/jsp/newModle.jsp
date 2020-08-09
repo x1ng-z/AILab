@@ -1128,7 +1128,7 @@
             return true;
         } else {
             //alert("function in " + param)
-            let pattern = new RegExp("{k:[\\d|.|-]+,t:[\\d|.]+,tao:[\\d|.]+}");
+            let pattern = new RegExp("^{k:[\\d|.|-]+,t:[\\d|.]+,tao:[\\d|.]+}$");
             return pattern.test(param);
         }
     }

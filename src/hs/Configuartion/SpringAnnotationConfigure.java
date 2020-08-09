@@ -12,7 +12,7 @@ import org.springframework.context.annotation.*;
  * @date 2020/3/17 10:24
  */
 @Configuration
-@EnableAspectJAutoProxy
+//@EnableAspectJAutoProxy
 @ImportResource("classpath:applicationContext.xml")
 public class SpringAnnotationConfigure {
     private static final Logger logger=Logger.getLogger(SpringAnnotationConfigure.class);

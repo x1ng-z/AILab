@@ -24,6 +24,7 @@ public class InputStreamRunnable implements Runnable {
             log.error(ex.getMessage(),ex);
         }
     }
+    @Override
     public void run() {
         String line;
         int num = 0;

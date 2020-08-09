@@ -32,13 +32,13 @@ public class ModleRunTask implements MonitorTask {
                 controlModle.generateValidkey();
                 controlModle.getExecutePythonBridge().execute();
                 modleDBServe.modifymodleEnable(controlModle.getModleId(), 1);
-                logger.error("DCS控制：模型运行成功");
+                logger.info("DCS控制：模型id="+controlModle.getModleId()+"运行成功");
             } else {
-                logger.error("DCS控制：模型本来就是运行状态！");
+                logger.info("DCS控制：模型id="+controlModle.getModleId()+"本来就是运行状态！");
             }
 
         } else {
-            logger.error("DCS控制：模型运行失败");
+            logger.info("DCS控制：模型id="+modleid+"运行失败");
         }
     }
 

@@ -7,6 +7,7 @@ import com.mchange.lang.ArrayUtils;
 import hs.ApcAlgorithm.ExecutePythonBridge;
 import hs.Configuartion.SpringAnnotationConfigure;
 import hs.Opc.OPCService;
+import javafx.css.Match;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
 import java.math.BigDecimal;
@@ -14,6 +15,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author zzx
@@ -21,7 +24,7 @@ import java.util.concurrent.TimeUnit;
  * @date 2020/3/19 10:41
  */
 public class testJson {
-
+    private  static Pattern opcpattern = Pattern.compile("([a-zA-Z]*)([0-9|.]*)");
     public void  test(){
         double[] dd=new double[2];
         for(double d:dd){
@@ -37,14 +40,55 @@ public class testJson {
         jsonArray1.toArray(aa);
     }
     public static void main(String[] args) {
+
+
+        StringBuilder stringBuilder= new StringBuilder();
+
+        stringBuilder.append(1);
+        stringBuilder.append(2);
+        stringBuilder.append(3);
+        stringBuilder.append(4);
+        System.out.println(stringBuilder.substring(0,stringBuilder.length()-1));
+
+
+
+
+        double[][] dd=new double[2][2];
+
+        int i=3;
+        if(i==1){
+            System.out.println(i+"=1");
+        }else if(i==2){
+            System.out.println(i+"=2");
+        }else {
+            System.out.println(i+"=other");
+        }
+
+        Matcher matcher1 =opcpattern.matcher("opc192.169.10.212");
+
+        if(matcher1.find()){
+            System.out.println(matcher1.group(2));
+        }
+
+        matcher1=opcpattern.matcher("opc192.169.10.212");
+
+
+        if(matcher1.find()){
+            System.out.println(matcher1.group(2));
+        }
+
+
+
+
+
+
+
         List<String> testremove=new ArrayList<>();
         boolean nullelem=testremove.remove("1");
         int[][] pvusemv=new int[2][2];
         int [] data = {1,2,3,4,5,6,7,8,9};
         int [] newData;
         newData = Arrays.copyOfRange(data, 0, 7);
-        for(int i:newData)
-            System.out.print(i+" ");
 
 
 

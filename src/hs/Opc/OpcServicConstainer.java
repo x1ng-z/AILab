@@ -25,11 +25,12 @@ import java.util.regex.Pattern;
 public class OpcServicConstainer {
     private static final Logger logger = Logger.getLogger(OpcServicConstainer.class);
     private FilterService filterService = null;//实时滤波服务
-    private ModleStopRunMonitor modleStopRunMonitor = null;
+    private ModleStopRunMonitor modleStopRunMonitor = null;//dcs模块运行与停止监视服务
     private OpcDBServe opcDBServe = null;
     private ConcurrentHashMap<Integer, OPCService> opcservepool = new ConcurrentHashMap();//key=OPCserveid
     private ExecutorService executorService;
-    private ItemManger itemManger;
+    private Pattern opcpattern = Pattern.compile("([a-zA-Z]*)([0-9|.]*)");
+    private ModleConstainer modleConstainerl;
 
     @Autowired
     public OpcServicConstainer(FilterService filterService, OpcDBServe opcDBServe, ModleStopRunMonitor modleStopRunMonitor) {
@@ -56,8 +57,8 @@ public class OpcServicConstainer {
         } else if ((modlePin.getResource() != null)) {
             /**register pin*/
             for (OPCService opcService : opcservepool.values()) {
-                Pattern pattern = Pattern.compile("([a-zA-Z]*)([0-9|.]*)");
-                Matcher matcher = pattern.matcher(modlePin.getResource());
+//                Pattern pattern = Pattern.compile("([a-zA-Z]*)([0-9|.]*)");
+                Matcher matcher = opcpattern.matcher(modlePin.getResource());
                 if (matcher.find()) {
                     if (matcher.group(2).equals(opcService.getOpcip())) {
                         opcService.registerModlePin(modlePin);
@@ -113,8 +114,7 @@ public class OpcServicConstainer {
         } else if ((modlePin.getResource() != null)) {
             /**register pin*/
             for (OPCService opcService : opcservepool.values()) {
-                Pattern pattern = Pattern.compile("([a-zA-Z]*)([0-9|.]*)");
-                Matcher matcher = pattern.matcher(modlePin.getResource());
+                Matcher matcher = opcpattern.matcher(modlePin.getResource());
                 if (matcher.find()) {
                     if (matcher.group(2).equals(opcService.getOpcip())) {
                         opcService.registerModlePin(modlePin);
@@ -128,8 +128,7 @@ public class OpcServicConstainer {
             if ((modlePin.getFilter() != null) && (modlePin.getFilter().getBackToDCSTag() != null) && !(modlePin.getFilter().getBackToDCSTag().equals(""))) {
 
                 for (OPCService opcService : opcservepool.values()) {
-                    Pattern pattern = Pattern.compile("([a-zA-Z]*)([0-9|.]*)");
-                    Matcher matcher = pattern.matcher(modlePin.getFilter().getOpcresource());
+                    Matcher matcher = opcpattern.matcher(modlePin.getFilter().getOpcresource());
                     if (matcher.find()) {
                         if (matcher.group(2).equals(opcService.getOpcip())) {
                             opcService.registerFilter(modlePin);
@@ -147,8 +146,7 @@ public class OpcServicConstainer {
 
                 if((modlePin.getShockDetector().getBackToDCSTag() != null) && !(modlePin.getShockDetector().getOpcresource().equals(""))){
                     for (OPCService opcService : opcservepool.values()) {
-                        Pattern pattern = Pattern.compile("([a-zA-Z]*)([0-9|.]*)");
-                        Matcher matcher = pattern.matcher(modlePin.getShockDetector().getOpcresource());
+                        Matcher matcher = opcpattern.matcher(modlePin.getShockDetector().getOpcresource());
                         if (matcher.find()) {
                             if (matcher.group(2).equals(opcService.getOpcip())) {
                                 opcService.registerShockDetectortag(modlePin.getShockDetector().getBackToDCSTag());
@@ -160,8 +158,7 @@ public class OpcServicConstainer {
                 }
                 if((modlePin.getShockDetector().getFilterbacktodcstag() != null) && !(modlePin.getShockDetector().getFilteropcresource().equals(""))){
                     for (OPCService opcService : opcservepool.values()) {
-                        Pattern pattern = Pattern.compile("([a-zA-Z]*)([0-9|.]*)");
-                        Matcher matcher = pattern.matcher(modlePin.getShockDetector().getFilteropcresource());
+                        Matcher matcher = opcpattern.matcher(modlePin.getShockDetector().getFilteropcresource());
                         if (matcher.find()) {
                             if (matcher.group(2).equals(opcService.getOpcip())) {
                                 opcService.registerShockDetectortag(modlePin.getShockDetector().getFilterbacktodcstag() );
@@ -213,8 +210,7 @@ public class OpcServicConstainer {
         } else if ((modlePin.getResource() != null)) {
             /**unregister pin*/
             for (OPCService opcService : opcservepool.values()) {
-                Pattern pattern = Pattern.compile("([a-zA-Z]*)([0-9|.]*)");
-                Matcher matcher = pattern.matcher(modlePin.getResource());
+                Matcher matcher = opcpattern.matcher(modlePin.getResource());
                 if (matcher.find()) {
                     if (matcher.group(2).equals(opcService.getOpcip())) {
                         try {
@@ -232,8 +228,7 @@ public class OpcServicConstainer {
             /**unregister filter*/
             if ((modlePin.getFilter() != null) && (modlePin.getFilter().getBackToDCSTag() != null) && !(modlePin.getFilter().getBackToDCSTag().equals(""))) {
                 for (OPCService opcService : opcservepool.values()) {
-                    Pattern pattern = Pattern.compile("([a-zA-Z]*)([0-9|.]*)");
-                    Matcher matcher = pattern.matcher(modlePin.getFilter().getOpcresource());
+                    Matcher matcher = opcpattern.matcher(modlePin.getFilter().getOpcresource());
                     if (matcher.find()) {
                         if (matcher.group(2).equals(opcService.getOpcip())) {
                             opcService.unregisterFilter(modlePin);
@@ -249,8 +244,7 @@ public class OpcServicConstainer {
             if ((modlePin.getShockDetector() != null)) {
                 if (modlePin.getShockDetector().getBackToDCSTag() != null && (modlePin.getShockDetector().getOpcresource() != null)) {
                     for (OPCService opcService : opcservepool.values()) {
-                        Pattern pattern = Pattern.compile("([a-zA-Z]*)([0-9|.]*)");
-                        Matcher matcher = pattern.matcher(modlePin.getShockDetector().getOpcresource());
+                        Matcher matcher = opcpattern.matcher(modlePin.getShockDetector().getOpcresource());
                         if (matcher.find()) {
                             if (matcher.group(2).equals(opcService.getOpcip())) {
                                 opcService.unregisterShockdetectortag(modlePin.getShockDetector().getBackToDCSTag());
@@ -261,8 +255,7 @@ public class OpcServicConstainer {
                 }
                 if ((modlePin.getShockDetector().getFilterbacktodcstag() != null) && !(modlePin.getShockDetector().getFilteropcresource().equals(""))) {
                     for (OPCService opcService : opcservepool.values()) {
-                        Pattern pattern = Pattern.compile("([a-zA-Z]*)([0-9|.]*)");
-                        Matcher matcher = pattern.matcher(modlePin.getShockDetector().getFilteropcresource());
+                        Matcher matcher = opcpattern.matcher(modlePin.getShockDetector().getFilteropcresource());
                         if (matcher.find()) {
                             if (matcher.group(2).equals(opcService.getOpcip())) {
                                 opcService.unregisterShockdetectortag(modlePin.getShockDetector().getFilterbacktodcstag());
@@ -314,5 +307,19 @@ public class OpcServicConstainer {
         return opcservepool;
     }
 
+    public ModleConstainer getModleConstainerl() {
+        return modleConstainerl;
+    }
+
+    /**
+     * register modleConstainerl into OPCserviceConstainer and OPCServe
+     * */
+    public void setModleConstainerl(ModleConstainer modleConstainerl) {
+        this.modleConstainerl = modleConstainerl;
+        for(OPCService opcService : opcservepool.values()){
+            opcService.setModleConstainerl(modleConstainerl);
+        }
+
+    }
 
 }

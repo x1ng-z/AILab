@@ -15,16 +15,18 @@ import java.util.*;
  */
 public class ControlModle {
     public static Logger logger = Logger.getLogger(ModleController.class);
-    private long validkey = System.currentTimeMillis();//模型的标识token，用于apc算法判别自己的算法是否已经过去，需要停止
+    /**
+     * 模型的标识token，用于apc算法判别自己的算法是否已经过时，需要停止
+     */
+    private long validkey = System.currentTimeMillis();
+    /**
+     * 模型的标识token，用于apc仿真算法判别自己的算法是否已经过去，需要停止
+     */
     private int totalPv = 8;
     private int totalFf = 8;
     private int totalMv = 8;
 
-    /**
-     * 模型运算状态值
-     *
-     * */
-
+    /**模型真实运行状态*/
     /**
      * apc反馈的y0的预测值
      */
@@ -38,18 +40,28 @@ public class ControlModle {
      */
     private double[][] backPVFunelDown;//PV的漏斗下限
     /**
-     * apc反馈的dmv增量的预测值
+     * apc反馈的dmv增量的预测值shape=(p,m)
      */
-    private double[] backDmvWrite;//MV写入值
+    private double[][] backDmvWrite;
     /**
      * apc反馈的y0与yreal的error预测值
      */
     private double[] backPVPredictionError;//预测误差
 
+    /**
+     * 模型计算时候的前馈变换值dff shape=(p,num_ff)
+     */
+    private double[][] backDff;
+
 
     private OpcServicConstainer opcServicConstainer;//opcserviceconstainer
     private BaseConf baseConf;//控制器的基本配置，在数据库中所定义，进行注入
-    private ExecutePythonBridge executePythonBridge;//执行apc算法的桥接器
+
+    /**
+     * 执行apc算法的桥接器
+     */
+    private ExecutePythonBridge executePythonBridge;
+
     private int modleId;//模型id主键
     private String modleName;//模型名称
 
@@ -85,26 +97,48 @@ public class ControlModle {
     private Double[] funelinitvalues = null;//漏斗初始值
     private double[][] funneltype;
 
+
     /**
-     * *             mv1 mv2 mv3.....mvn
-     * *   pv1  1
-     * *   pv2  1
-     * *   pv3
-     * *   pv4
-     * *   ...
-     * *   pvn
-     * *这里的转化为pvusemv矩阵为[[1,0,0,..,0],
-     * *                      [1,0,0,...0]
-     * *                      ]
-     * *pv1用了mv1,pv2用了mv1
+     * 仿真模型
+     */
+    private SimulatControlModle simulatControlModle;
+    /**
+     * 仿真器地址
+     */
+    private String simulatorbuilddir;
+    /**
+     * 上一次仿真器工作状态
+     */
+    private boolean lastsimulaterunorstop = false;
+
+
+    /**
+     * mv1 mv2 mv3.....mvn
+     * pv1  1
+     * pv2  1
+     * pv3
+     * pv4
+     * ...
+     * pvn
      * <p>
      * 指示PV用了哪几个mv
+     * pvusemv矩阵shape=(num_pv,num_mv)
+     * 如：pv1用了mv1,pv2用了mv1
      * 如[[1,0]，
-     * [0,1]
-     * ]
-     * 意思是pv1用了mv1,pv2用了mv2
+     * [0,1]]
      */
-    private int[][] pvusemv = null;
+    private int[][] matrixPvUseMv = null;
+
+
+    /**
+     * 表示Pv使用了哪些ff
+     * pvuseff矩阵shape=(num_pv,num_ff)
+     * 如pv1用了ff1,pv2用了ff2
+     * 如[[1,0],
+     * [0,1]]
+     */
+    private int[][] matrixPvUseFf = null;
+
 
     public Map<String, ModlePin> getStringmodlePinsMap() {
         return stringmodlePinsMap;
@@ -112,17 +146,23 @@ public class ControlModle {
 
     private Map<String, ModlePin> stringmodlePinsMap = new HashMap<>();//方便引脚索引key=pv1.mv2,sp1,ff1等 value=引脚类
 
+
     /**
      * 模型构建函数
      */
     public Boolean modleBuild() {
+        logger.info("modle id=" + modleId + " is build");
+        simulatControlModle = new SimulatControlModle(simulatorbuilddir, modleId, lastsimulaterunorstop);
         try {
+
             for (ModlePin modlePin : modlePins) {
                 /**注册opc点号*/
                 stringmodlePinsMap.put(modlePin.getModlePinName(), modlePin);//将定义的引脚按照key=pvn/mvn/spn等(n=1,2,3..8) value=pin
                 /**将引脚注册进行opcserice中*/
                 if ((opcServicConstainer.getOPcserveGroup() != null) && (modlePin != null)) {
-                   opcServicConstainer.registerModlePinAndComponent(modlePin);
+                    opcServicConstainer.registerModlePinAndComponent(modlePin);
+                } else {
+                    logger.warn("modle id=" + modleId + " build failed, because opc group is null");
                 }
 
                 /**
@@ -135,6 +175,10 @@ public class ControlModle {
 
             }
 
+
+            /**
+             *引脚分类
+             * */
 
             /**
              * pv and sp
@@ -198,76 +242,86 @@ public class ControlModle {
                 }
             }
 
-            A_timeseriseMatrix = new Double[categoryPVmodletag.size()][categoryMVmodletag.size()][timeserise_N];
+
             /***
+             * 输入输出响应对应矩阵
              * init A matrix
              * */
-            for (int i = 0; i < categoryPVmodletag.size(); ++i) {
+            A_timeseriseMatrix = new Double[categoryPVmodletag.size()][categoryMVmodletag.size()][timeserise_N];
 
-                for (int j = 0; j < categoryMVmodletag.size(); ++j) {
+            for (int indexpv = 0; indexpv < categoryPVmodletag.size(); ++indexpv) {
+
+                for (int indexmv = 0; indexmv < categoryMVmodletag.size(); ++indexmv) {
                     Double[] initserise = new Double[timeserise_N];
                     for (int index_N = 0; index_N < timeserise_N; index_N++) {
                         initserise[index_N] = 0d;
                     }
-                    A_timeseriseMatrix[i][j] = initserise;
+                    A_timeseriseMatrix[indexpv][indexmv] = initserise;
                 }
 
             }
 
             /***
+             * 前馈输出对应矩阵
              * init B matrix
              * */
             B_timeseriseMatrix = new Double[categoryPVmodletag.size()][categoryFFmodletag.size()][timeserise_N];
-            for (int i = 0; i < categoryPVmodletag.size(); ++i) {
-                for (int j = 0; j < categoryFFmodletag.size(); ++j) {
+            for (int indexpv = 0; indexpv < categoryPVmodletag.size(); ++indexpv) {
+                for (int indexff = 0; indexff < categoryFFmodletag.size(); ++indexff) {
                     Double[] initserise = new Double[timeserise_N];
                     for (int index_N = 0; index_N < timeserise_N; index_N++) {
                         initserise[index_N] = 0d;
                     }
-                    B_timeseriseMatrix[i][j] = initserise;
+                    B_timeseriseMatrix[indexpv][indexff] = initserise;
                 }
 
             }
 
 
             /***
-             *fill respon into A matrix
+             *1、fill respon into A matrix
+             *2、and init MatrixPvUseMv
+             *3、init MatrixMvusePv  其实只要将 matrixPvUseMv进行转置就行
              * */
-            pvusemv = new int[categoryPVmodletag.size()][categoryMVmodletag.size()];
-            for (int i = 0; i < categoryPVmodletag.size(); ++i) {
-                for (int j = 0; j < categoryMVmodletag.size(); ++j) {
+//            simulatControlModle.setMatrixMvUsePv(new int[categoryMVmodletag.size()][categoryPVmodletag.size()]);
+            matrixPvUseMv = new int[categoryPVmodletag.size()][categoryMVmodletag.size()];
+            for (int indexpv = 0; indexpv < categoryPVmodletag.size(); ++indexpv) {
+                for (int indexmv = 0; indexmv < categoryMVmodletag.size(); ++indexmv) {
 
                     for (ResponTimeSerise responTimeSerise : responTimeSerises) {
                         if (
-                                responTimeSerise.getInputPins().equals(categoryMVmodletag.get(j).getModlePinName())
-                                        && responTimeSerise.getOutputPins().equals(categoryPVmodletag.get(i).getModlePinName())
+                                responTimeSerise.getInputPins().equals(categoryMVmodletag.get(indexmv).getModlePinName())
+                                        && responTimeSerise.getOutputPins().equals(categoryPVmodletag.get(indexpv).getModlePinName())
                         ) {
-                            A_timeseriseMatrix[i][j] = responTimeSerise.responOneTimeSeries(timeserise_N, controlAPCOutCycle);
-                            pvusemv[i][j] = 1;
+                            A_timeseriseMatrix[indexpv][indexmv] = responTimeSerise.responOneTimeSeries(timeserise_N, controlAPCOutCycle);
+                            matrixPvUseMv[indexpv][indexmv] = 1;
+//                            simulatControlModle.getMatrixMvUsePv()[j][i] = 1;
+                            simulatControlModle.addNumOfIOMappingRelation();
                             break;
                         }
-
                     }
-
                 }
-
-
             }
+
 
             /**
              *fill respon into B matrix
-             *
+             *填入前馈输出响应矩阵
              * */
-            for (int i = 0; i < categoryPVmodletag.size(); ++i) {
-                for (int j = 0; j < categoryFFmodletag.size(); ++j) {
+            matrixPvUseFf = new int[categoryPVmodletag.size()][categoryFFmodletag.size()];
+            for (int indexpv = 0; indexpv < categoryPVmodletag.size(); ++indexpv) {
+                for (int indexff = 0; indexff < categoryFFmodletag.size(); ++indexff) {
 
                     for (ResponTimeSerise responTimeSerise : responTimeSerises) {
                         if (
-                                responTimeSerise.getInputPins().equals(categoryFFmodletag.get(j).getModlePinName())
+                                responTimeSerise.getInputPins().equals(categoryFFmodletag.get(indexff).getModlePinName())
                                         &&
-                                        responTimeSerise.getOutputPins().equals(categoryPVmodletag.get(i).getModlePinName())
+                                        responTimeSerise.getOutputPins().equals(categoryPVmodletag.get(indexpv).getModlePinName())
                         ) {
-                            B_timeseriseMatrix[i][j] = responTimeSerise.responOneTimeSeries(timeserise_N, controlAPCOutCycle);
+                            B_timeseriseMatrix[indexpv][indexff] = responTimeSerise.responOneTimeSeries(timeserise_N, controlAPCOutCycle);
+                            matrixPvUseFf[indexpv][indexff] = 1;
+//                            simulatControlModle.getMatrixFfUsePv()[j][i] = 1;
+//                            simulatControlModle.addNumOfFOMappingRelation();
                             break;
                         }
 
@@ -305,33 +359,33 @@ public class ControlModle {
             for (ModlePin modlePin : categoryPVmodletag) {
                 deadZones[loop] = modlePin.getDeadZone();
                 funelinitvalues[loop] = modlePin.getFunelinitValue();
-
+                double[] fnl = new double[2];
                 if (modlePin.getFunneltype() != null) {
-                    if (modlePin.getFunneltype().equals("fullfunnel")) {
-                        double[] fnl = new double[2];
-                        fnl[0] = 0;
-                        fnl[1] = 0;
-                        funneltype[loop] = fnl;
-                    } else if (modlePin.getFunneltype().equals("upfunnel")) {
-                        double[] fnl = new double[2];
-                        fnl[0] = 0;
-                        fnl[1] = 1;//乘负无穷
-                        funneltype[loop] = fnl;
-                    } else if (modlePin.getFunneltype().equals("downfunnel")) {
-                        double[] fnl = new double[2];
-                        fnl[0] = 1;//乘正无穷
-                        fnl[1] = 0;
-                        funneltype[loop] = fnl;
-                    } else {
-                        //匹配不到就是全漏斗
-                        double[] fnl = new double[2];
-                        fnl[0] = 0;
-                        fnl[1] = 0;
-                        funneltype[loop] = fnl;
+                    switch (modlePin.getFunneltype()) {
+                        case ModlePin.TYPE_FUNNEL_FULL:
+                            fnl[0] = 0d;
+                            fnl[1] = 0d;
+                            funneltype[loop] = fnl;
+                            break;
+                        case ModlePin.TYPE_FUNNEL_UP:
+                            fnl[0] = 0;
+                            //乘负无穷
+                            fnl[1] = 1;
+                            funneltype[loop] = fnl;
+                            break;
+                        case ModlePin.TYPE_FUNNEL_DOWN:
+                            //乘正无穷
+                            fnl[0] = 1;
+                            fnl[1] = 0;
+                            funneltype[loop] = fnl;
+                            break;
+                        default:
+                            fnl[0] = 0;
+                            fnl[1] = 0;
+                            funneltype[loop] = fnl;
                     }
                 } else {
                     //匹配不到就是全漏斗
-                    double[] fnl = new double[2];
                     fnl[0] = 0;
                     fnl[1] = 0;
                     funneltype[loop] = fnl;
@@ -340,8 +394,19 @@ public class ControlModle {
             }
 
             outpoints_p = categoryPVmodletag.size();
+            simulatControlModle.setSimulateOutpoints_p(outpoints_p);
+
+
             feedforwardpoints_v = categoryFFmodletag.size();
+            simulatControlModle.setSimulateFeedforwardpoints_v(feedforwardpoints_v);
+
             inputpoints_m = categoryMVmodletag.size();
+            simulatControlModle.setSimulateInputpoints_m(inputpoints_m);
+
+            simulatControlModle.setControltime_M(controltime_M);
+            simulatControlModle.setPredicttime_P(predicttime_P);
+            simulatControlModle.setTimeserise_N(timeserise_N);
+            simulatControlModle.setControlAPCOutCycle(controlAPCOutCycle);
 
 
             backPVPrediction = new double[outpoints_p][timeserise_N];//pv的预测曲线
@@ -350,11 +415,23 @@ public class ControlModle {
 
             backPVFunelDown = new double[outpoints_p][timeserise_N];
 
-            backDmvWrite = new double[inputpoints_m];//MV写入值
+            backDmvWrite = new double[outpoints_p][inputpoints_m];//MV写入值
 
             backPVPredictionError = new double[outpoints_p];//预测误差
 
+            backDff = new double[outpoints_p][feedforwardpoints_v];//前馈变换值
+
             validkey = System.currentTimeMillis();
+
+            simulatControlModle.setModlePins(modlePins);
+            simulatControlModle.setResponTimeSerises(responTimeSerises);
+
+            simulatControlModle.setCategoryFFmodletag(categoryFFmodletag);
+            simulatControlModle.setCategoryMVmodletag(categoryMVmodletag);
+            simulatControlModle.setCategoryPVmodletag(categoryPVmodletag);
+            simulatControlModle.setCategorySPmodletag(categorySPmodletag);
+            simulatControlModle.setMatrixPvUseMv(matrixPvUseMv);
+            simulatControlModle.build();
             return true;
 
         } catch (Exception e) {
@@ -364,15 +441,15 @@ public class ControlModle {
     }
 
 
-   public boolean  unregisterpin(){
-        boolean result=true;
-        for(ModlePin pin:modlePins){
+    public boolean unregisterpin() {
+        boolean result = true;
+        for (ModlePin pin : modlePins) {
             if ((opcServicConstainer.isAnyConnectOpcServe()) && (pin != null)) {
-                result =result && opcServicConstainer.unregisterModlePinAndComponent(pin);
+                result = result && opcServicConstainer.unregisterModlePinAndComponent(pin);
             }
         }
         return result;
-   }
+    }
 
     public JSONObject getrealData() {
 
@@ -381,7 +458,7 @@ public class ControlModle {
              * y0(pv)
              * limitU(mv)
              * limitY()
-             * detaFF
+             * FF
              * Wi(sp)
              *
              * */
@@ -417,23 +494,24 @@ public class ControlModle {
             Double[] UFB = new Double[categoryMVmodletag.size()];
 
             for (ModlePin mvpin : categoryMVmodletag) {
-
-
                 Double[] mvminmax = new Double[2];
                 ModlePin mvdown = mvpin.getDownLmt();
                 ModlePin mvup = mvpin.getUpLmt();
 
-                if (mvdown.getResource().equals("constant")) {
-                    mvminmax[0] = Double.valueOf(mvdown.getModleOpcTag());
-                } else {
-                    mvminmax[0] = mvdown.modleGetReal();
-                }
+                mvminmax[0] = mvdown.modleGetReal();
+//                if (mvdown.getResource().equals("constant")) {
+//                    mvminmax[0] = Double.valueOf(mvdown.getModleOpcTag());
+//                } else {
+//                    mvminmax[0] = mvdown.modleGetReal();
+//                }
 
-                if (mvup.getResource().equals("constant")) {
-                    mvminmax[1] = Double.valueOf(mvup.getModleOpcTag());
-                } else  {
-                    mvminmax[1] = mvup.modleGetReal();
-                }
+//                if (mvup.getResource().equals("constant")) {
+//                    mvminmax[1] = Double.valueOf(mvup.getModleOpcTag());
+//                } else  {
+//                    mvminmax[1] = mvup.modleGetReal();
+//                }
+                mvminmax[1] = mvup.modleGetReal();
+
                 //执行器限制
                 limitU[loop] = mvminmax;
 
@@ -468,18 +546,20 @@ public class ControlModle {
                      * */
                     Double ffHigh = 0d;
                     Double ffLow = 0d;
-                    if (ffuppin.getResource().equals("constant")) {
-                        ffHigh = Double.valueOf(ffuppin.getModleOpcTag());
-                    }else {
-                        ffHigh = ffuppin.modleGetReal();
-                    }
+//                    if (ffuppin.getResource().equals("constant")) {
+//                        ffHigh = Double.valueOf(ffuppin.getModleOpcTag());
+//                    } else {
+//                        ffHigh = ffuppin.modleGetReal();
+//                    }
+//
+//                    if (ffdownpin.getResource().equals("constant")) {
+//                        ffLow = Double.valueOf(ffdownpin.getModleOpcTag());
+//                    } else {
+//                        ffLow = ffdownpin.modleGetReal();
+//                    }
 
-                    if (ffdownpin.getResource().equals("constant")) {
-                        ffLow = Double.valueOf(ffdownpin.getModleOpcTag());
-                    }else {
-                        ffLow = ffdownpin.modleGetReal();
-                    }
-
+                    ffHigh = ffuppin.modleGetReal();
+                    ffLow = ffdownpin.modleGetReal();
 
                     if ((ffLow <= ffpin.modleGetReal()) && (ffHigh >= ffpin.modleGetReal())) {
                         fflmt[loop] = 1d;
@@ -496,7 +576,6 @@ public class ControlModle {
             }
 
             jsonObject.put("enable", getModleEnable());
-
 
             /**
              *死区时间和漏斗初始值
@@ -532,23 +611,49 @@ public class ControlModle {
     }
 
     /**
+     * 更新模型计算后的数据
+     *
      * @param funelupAnddown   尺寸：2XpN
      *                         第0行存漏斗的上限；[0~N-1]第一个pv的，[N~2N-1]为第二个pv的漏斗上限
      *                         第1行存漏斗的下限；
      * @param backPVPrediction
      */
-    public boolean updateModleReal(double[] backPVPrediction, double[][] funelupAnddown, double[] backDmvWrite, double[] backPVPredictionError) {
+    public boolean updateModleReal(double[] backPVPrediction, double[][] funelupAnddown, double[] backDmvWrite, double[] backPVPredictionError, double[] dff) {
         /**
          * 模型运算状态值
          * */
+        try {
+            for (int i = 0; i < categoryPVmodletag.size(); i++) {
+                this.backPVPrediction[i] = Arrays.copyOfRange(backPVPrediction, 0 + timeserise_N * i, timeserise_N + timeserise_N * i);//pv的预测曲线
+                this.backPVFunelUp[i] = Arrays.copyOfRange(funelupAnddown[0], 0 + timeserise_N * i, timeserise_N + timeserise_N * i);//PV的漏斗上限
+                this.backPVFunelDown[i] = Arrays.copyOfRange(funelupAnddown[1], 0 + timeserise_N * i, timeserise_N + timeserise_N * i);//PV的漏斗下限
+            }
 
-        for (int i = 0; i < categoryPVmodletag.size(); i++) {
-            this.backPVPrediction[i] = Arrays.copyOfRange(backPVPrediction, 0 + timeserise_N * i, timeserise_N + timeserise_N * i);//pv的预测曲线
-            this.backPVFunelUp[i] = Arrays.copyOfRange(funelupAnddown[0], 0 + timeserise_N * i, timeserise_N + timeserise_N * i);//PV的漏斗上限
-            this.backPVFunelDown[i] = Arrays.copyOfRange(funelupAnddown[1], 0 + timeserise_N * i, timeserise_N + timeserise_N * i);//PV的漏斗下限
+            /**预测误差*/
+            this.backPVPredictionError = backPVPredictionError;
+
+            for (int indexpv = 0; indexpv < outpoints_p; indexpv++) {
+
+                /**dMV写入值*/
+                for (int indexmv = 0; indexmv < inputpoints_m; indexmv++) {
+                    if (matrixPvUseMv[indexpv][indexmv] == 1) {
+                        this.backDmvWrite[indexpv][indexmv] = backDmvWrite[indexmv];
+                    }
+                }
+
+                /**前馈增量*/
+                for (int indexff = 0; indexff < feedforwardpoints_v; indexff++) {
+                    if (matrixPvUseFf[indexpv][indexff] == 1) {
+                        this.backDff[indexpv][indexff] = dff[indexff];
+                    }
+
+                }
+
+            }
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+            return false;
         }
-        this.backDmvWrite = backDmvWrite;//MV写入值
-        this.backPVPredictionError = backPVPredictionError;//预测误差
         return true;
     }
 
@@ -715,9 +820,6 @@ public class ControlModle {
         return backPVFunelDown;
     }
 
-    public double[] getBackDmvWrite() {
-        return backDmvWrite;
-    }
 
     public double[] getBackPVPredictionError() {
         return backPVPredictionError;
@@ -728,12 +830,12 @@ public class ControlModle {
         return autoEnbalePin;
     }
 
-    public int[][] getPvusemv() {
-        return pvusemv;
+    public int[][] getMatrixPvUseMv() {
+        return matrixPvUseMv;
     }
 
-    public void setPvusemv(int[][] pvusemv) {
-        this.pvusemv = pvusemv;
+    public void setMatrixPvUseMv(int[][] matrixPvUseMv) {
+        this.matrixPvUseMv = matrixPvUseMv;
     }
 
     public long getValidkey() {
@@ -766,5 +868,42 @@ public class ControlModle {
 
     public void setFunneltype(double[][] funneltype) {
         this.funneltype = funneltype;
+    }
+
+
+    public SimulatControlModle getSimulatControlModle() {
+        return simulatControlModle;
+    }
+
+    public String getSimulatorbuilddir() {
+        return simulatorbuilddir;
+    }
+
+    public void setSimulatorbuilddir(String simulatorbuilddir) {
+        this.simulatorbuilddir = simulatorbuilddir;
+    }
+
+    public boolean isLastsimulaterunorstop() {
+        return lastsimulaterunorstop;
+    }
+
+    public void setLastsimulaterunorstop(boolean lastsimulaterunorstop) {
+        this.lastsimulaterunorstop = lastsimulaterunorstop;
+    }
+
+    public int[][] getMatrixPvUseFf() {
+        return matrixPvUseFf;
+    }
+
+    public void setMatrixPvUseFf(int[][] matrixPvUseFf) {
+        this.matrixPvUseFf = matrixPvUseFf;
+    }
+
+    public double[][] getBackDmvWrite() {
+        return backDmvWrite;
+    }
+
+    public double[][] getBackDff() {
+        return backDff;
     }
 }

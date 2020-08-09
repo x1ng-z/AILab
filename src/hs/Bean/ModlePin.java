@@ -12,22 +12,30 @@ import java.util.LinkedList;
  * @date 2020/3/30 12:28
  */
 public class ModlePin {
-    public final static String TYPE_PIN_PV="pv";
-    public final static String TYPE_PIN_SP="sp";
-    public final static String TYPE_PIN_MV="mv";
-    public final static String TYPE_PIN_MVFB="mvfb";
-    public final static String TYPE_PIN_FF="ff";
-    public final static String TYPE_PIN_AUTO="auto";
-    public final static String TYPE_PIN_FFDOWN="ffdown";
-    public final static String TYPE_PIN_FFUP="ffup";
-    public final static String TYPE_PIN_MVUP="mvup";
-    public final static String TYPE_PIN_MVDOWN="mvdown";
+    public final static String TYPE_PIN_PV = "pv";
+    public final static String TYPE_PIN_SP = "sp";
+    public final static String TYPE_PIN_MV = "mv";
+    public final static String TYPE_PIN_MVFB = "mvfb";
+    public final static String TYPE_PIN_FF = "ff";
+    public final static String TYPE_PIN_AUTO = "auto";
+    public final static String TYPE_PIN_FFDOWN = "ffdown";
+    public final static String TYPE_PIN_FFUP = "ffup";
+    public final static String TYPE_PIN_MVUP = "mvup";
+    public final static String TYPE_PIN_MVDOWN = "mvdown";
+    public final static String SOURCE_TYPE = "constant";
+
+    public final static String TYPE_FUNNEL_FULL="fullfunnel";
+    public final static String TYPE_FUNNEL_UP="upfunnel";
+    public final static String TYPE_FUNNEL_DOWN="downfunnel";
+
+
+
     private int modlepinsId;
     private int reference_modleId;
     private String modleOpcTag;
     private String modlePinName;//引脚名称 pv1,sp1...
     private String opcTagName;
-    private String resource="";
+    private String resource = "";
     private ModlePin upLmt;//高限
     private ModlePin downLmt;//低限
     private ModlePin feedBack;//反馈
@@ -43,10 +51,10 @@ public class ModlePin {
     private Instant updateOpcTime;
     private LinkedList<Double> oldvalueStack = new LinkedList<>();
     private int stackSize = 100;
-    private Boolean isFristTimeModle =true;
+    private Boolean isFristTimeModle = true;
     private Double dmvHigh;
     private Double dmvLow;
-    private Filter filter=null;//滤波器
+    private Filter filter = null;//滤波器
     private Double referTrajectoryCoef;//pv的柔化系数(参考轨迹参数)
     private ShockDetector shockDetector;
 
@@ -58,14 +66,19 @@ public class ModlePin {
 
     public double modleGetReal() {
         //有过滤器吗，有就充过滤器中获取，没有就直接冲
-        if(filter==null){
-            return  (newReadValue==null?0:newReadValue);
-        }else {
-            Double filterresult=filter.getLastfilterdata();
-            if(filterresult!=null){
+        if (filter == null) {
+            if (resource.equals(SOURCE_TYPE)) {
+                return Double.valueOf(modleOpcTag);
+            } else {
+                return (newReadValue == null ? 0 : newReadValue);
+            }
+        } else {
+            //有滤波器
+            Double filterresult = filter.getLastfilterdata();
+            if (filterresult != null) {
                 return filterresult;
-            }else {
-                return (newReadValue==null?0:newReadValue);
+            } else {
+                return (newReadValue == null ? 0 : newReadValue);
             }
 
         }
@@ -194,7 +207,7 @@ public class ModlePin {
     }
 
     public Double getWriteValue() {
-        return writeValue==null?0:writeValue;
+        return writeValue == null ? 0 : writeValue;
     }
 
     public void setWriteValue(Double writeValue) {

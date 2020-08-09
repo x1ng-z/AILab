@@ -4,7 +4,6 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import hs.Bean.ControlModle;
 import hs.Bean.ModleConstainer;
-import hs.Bean.ModlePin;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -42,7 +41,7 @@ public class PythonController {
         jsonObject.put("P", modle.getPredicttime_P());
         jsonObject.put("N", modle.getTimeserise_N());
         jsonObject.put("fnum", modle.getFeedforwardpoints_v());
-        jsonObject.put("pvusemv", modle.getPvusemv());
+        jsonObject.put("pvusemv", modle.getMatrixPvUseMv());
         jsonObject.put("APCOutCycle", modle.getControlAPCOutCycle());
         jsonObject.put("enable", modle.getModleEnable());
         jsonObject.put("validekey", modle.getValidkey());
@@ -114,6 +113,7 @@ public class PythonController {
             JSONArray eJson = modlestatus.getJSONArray("e");
             JSONArray funelupAnddownJson = modlestatus.getJSONArray("funelupAnddown");
             JSONArray dmvJson = modlestatus.getJSONArray("dmv");
+            JSONArray dffJson=modlestatus.getJSONArray("dff");
 
             int p = controlModle.getCategoryPVmodletag().size();
             int m = controlModle.getCategoryMVmodletag().size();
@@ -124,6 +124,10 @@ public class PythonController {
             double[] eArray = new double[p];
             double[] dmvArray = new double[m];
 
+            double[] dffArray=null;
+            if(controlModle.getFeedforwardpoints_v()!=0){
+                dffArray=new double[controlModle.getFeedforwardpoints_v()];
+            }
             for (int i = 0; i < p * N; i++) {
                 predictpvArray[i] = predictpvJson.getDouble(i);
                 funelupAnddownArray[0][i] = funelupAnddownJson.getJSONArray(0).getDouble(i);
@@ -137,8 +141,11 @@ public class PythonController {
             for (int i = 0; i < m; i++) {
                 dmvArray[i] = dmvJson.getDouble(i);
             }
+            for(int i=0;i<controlModle.getFeedforwardpoints_v();++i){
+                dffArray[i]=dffJson.getDouble(i);
+            }
 
-            if (!controlModle.updateModleReal(predictpvArray, funelupAnddownArray, dmvArray, eArray)) {
+            if (!controlModle.updateModleReal(predictpvArray, funelupAnddownArray, dmvArray, eArray,dffArray)) {
                 return "false";
             }
 

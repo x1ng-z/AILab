@@ -33,12 +33,12 @@ public class ModleStopTask implements MonitorTask{
                 controlModle.setModleEnable(0);
                 controlModle.getExecutePythonBridge().stop();
                 modleDBServe.modifymodleEnable(controlModle.getModleId(),0);
-                logger.error("DCS控制：模型停止成功");
+                logger.error("DCS控制：模型id="+controlModle.getModleId()+"停止成功");
             }else {
-                logger.error("DCS控制：模型本来就是停止");
+                logger.error("DCS控制：模型id="+controlModle.getModleId()+"本来就是停止");
             }
         }else {
-            logger.error("DCS控制：模型停止失败");
+            logger.error("DCS控制：模型id="+modleid+"停止失败");
         }
 
 

@@ -91,9 +91,20 @@
 
             <a href="" class="layui-btn"
                onclick="isdelete('${pageContext.request.contextPath}/modle/deleteModle.do?modleid=${modle.modleId}')">删除</a>
-            <a href=""
-               class="layui-btn"
-               onclick="newTab('编辑${modle.modleName}','${pageContext.request.contextPath}/modle/modifymodle.do?modleid=${modle.modleId}')">编辑</a>
+
+            <c:choose>
+                <c:when test="${modle.simulatControlModle.issimulation==true}">
+                    <a href=""
+                       class="layui-btn "
+                       onclick="stopOrrun('${pageContext.request.contextPath}/modle/stopSimulateModle.do?modleid=${modle.modleId}','确定停止仿真？')">仿真</a>
+                </c:when>
+                <c:otherwise>
+                    <a href=""
+                       class="layui-btn layui-btn-danger"
+                       onclick="stopOrrun('${pageContext.request.contextPath}/modle/runSimulateModle.do?modleid=${modle.modleId}','确定运行仿真？')">仿真</a>
+                </c:otherwise>
+            </c:choose>
+
 
 
             <c:choose>
@@ -104,10 +115,17 @@
                 </c:when>
                 <c:otherwise>
                     <a href=""
-                       class="layui-btn"
+                       class="layui-btn layui-btn-danger"
                        onclick="stopOrrun('${pageContext.request.contextPath}/modle/runModle.do?modleid=${modle.modleId}','确定运行？')">运行</a>
                 </c:otherwise>
             </c:choose>
+
+            <a href=""
+               class="layui-btn"
+               onclick="newTab('编辑${modle.modleName}','${pageContext.request.contextPath}/modle/modifymodle.do?modleid=${modle.modleId}')">编辑</a>
+
+
+
         </div>
 
     </div>
@@ -157,6 +175,9 @@
         }
     }
 
+
+
+
 </script>
 
 <script>
@@ -205,15 +226,17 @@
             , "cellMinWidth": 80 //全局定义常规单元格的最小宽度，layui 2.2.1 新增
             , "cols": [[
                 {field: 'modleName', title: '引脚', sort: true}
-                , {field: 'pvName', title: '主控点'}
                 , {field: 'pvValue', title: '实际值'}
                 , {field: 'spValue', title: '目标值'}
                 , {field: 'e', title: '预测误差'}
-                , {field: 'dmv', title: 'mv增量'}
+                ,{field: 'sdmv', title: 'sdmv'}
+                , {field: 'dmv', title: 'dmv'}
                 , {field: 'mvvalue', title: '给定值'}
                 , {field: 'mvFeedBack', title: '反馈'}
                 , {field: 'mvDownLmt', title: '下限'}
                 , {field: 'mvUpLmt', title: '上限'}
+                ,{field: 'dff', title: 'dff'}
+                ,{field: 'ff', title: 'ff'}
                 , {field: 'shockmv', title: 'mv幅值'}
                 , {field: 'shockpv', title: 'pv幅值'}
                 , {field: 'auto', title: '手自动', templet: '#switchTpl1', unresize: true}

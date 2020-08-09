@@ -3,12 +3,12 @@ package hs.Bean;
 import hs.ApcAlgorithm.ExecutePythonBridge;
 import hs.Dao.Service.ModleDBServe;
 import hs.Opc.Monitor.ModleStopRunMonitor;
-import hs.Opc.OPCService;
 import hs.Opc.OpcServicConstainer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -16,8 +16,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- *
  * 模块容器
+ *
  * @author zzx
  * @version 1.0
  * @date 2020/3/21 16:13
@@ -32,7 +32,12 @@ public class ModleConstainer {
     private ModleDBServe modleDBServe;
     private BaseConf baseConf;
     @Value("${apc.dir}")
+    @NonNull
     private String apcdir;
+
+    @Value("${simulator.dir}")
+    @NonNull
+    private String simulatordir;
 
     @Autowired
     public ModleConstainer(OpcServicConstainer opcServicConstainer, ModleStopRunMonitor modleStopRunMonitor, ModleDBServe modleDBServe, BaseConf baseConf) {
@@ -41,14 +46,15 @@ public class ModleConstainer {
         this.baseConf = baseConf;
         Modulepool = new ConcurrentHashMap<>();
         modleStopRunMonitor.setModleConstainer(this);
-        
+        opcServicConstainer.setModleConstainerl(this);
     }
 
-    public void selfinit(){
+    public void selfinit() {
         List<ControlModle> controlModleList = modleDBServe.getAllModle();
         for (ControlModle controlModle : controlModleList) {
             controlModle.setOpcServicConstainer(opcServicConstainer);
             controlModle.setBaseConf(baseConf);
+            controlModle.setSimulatorbuilddir(simulatordir);
             controlModle.modleBuild();
             Modulepool.put(controlModle.getModleId(), controlModle);
             ExecutePythonBridge executePythonBridge = new ExecutePythonBridge(
@@ -66,6 +72,7 @@ public class ModleConstainer {
         if (!Modulepool.containsKey(controlModle.getModleId())) {
             controlModle.setOpcServicConstainer(opcServicConstainer);
             controlModle.setBaseConf(baseConf);
+            controlModle.setSimulatorbuilddir(simulatordir);
             controlModle.modleBuild();
             Modulepool.put(controlModle.getModleId(), controlModle);
         }

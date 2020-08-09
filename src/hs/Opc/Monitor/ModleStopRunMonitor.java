@@ -9,10 +9,7 @@ import org.jinterop.dcom.core.JIVariant;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.*;
 
 /**
  * @author zzx
@@ -22,7 +19,7 @@ import java.util.concurrent.ThreadFactory;
 @Component
 public class ModleStopRunMonitor implements Runnable {
     private static final Logger logger = Logger.getLogger(ModleStopRunMonitor.class);
-    private LinkedBlockingQueue<MonitorTask> taskpool = new LinkedBlockingQueue<>();
+    private LinkedBlockingQueue<MonitorTask> taskpool = new LinkedBlockingQueue<>(100);
     private ModleDBServe modleDBServe;
     private ModleConstainer modleConstainer;
 
@@ -32,11 +29,16 @@ public class ModleStopRunMonitor implements Runnable {
     }
 
 
+    /**
+     *init task'setControlModle and setModleDBServe
+     * and put task
+     * */
     public void putTask(MonitorTask task){
         task.setControlModle(modleConstainer.getModulepool().get(task.getModleid()));
         task.setModleDBServe(modleDBServe);
         taskpool.offer(task);
     }
+
     private ExecutorService exec = Executors.newFixedThreadPool(4,new ThreadFactory() {
         @Override
         public Thread newThread(Runnable r) {
@@ -68,6 +70,7 @@ public class ModleStopRunMonitor implements Runnable {
                         Task.work();
                     }
                 });
+                logger.info("modle run minitor waitfor executer size="+taskpool.size());
             } catch (InterruptedException e) {
                 logger.error(e.getMessage(),e);
             }catch (Exception e){

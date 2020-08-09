@@ -14,6 +14,7 @@ import hs.ShockDetect.ShockDetector;
 import hs.Utils.Tool;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -59,7 +60,7 @@ public class ModleController {
 
     @RequestMapping("/modleRealStatus/{modleId}")
     @ResponseBody
-    public String modelRealStatusforweb(@PathVariable("modleId") String modleid) {
+    public String modelRealStatusforweb(@NonNull @PathVariable("modleId") String modleid) {
         int loop = 0;
         ControlModle controlModle = modleConstainer.getModulepool().get(Integer.valueOf(modleid.trim()));
 
@@ -76,33 +77,7 @@ public class ModleController {
             xaxis[i] = i;
         }
         result.put("xaxis", xaxis);
-        loop = 0;
-//        double[] mvs=new double[controlModle.getCategoryMVmodletag().size()];
-//        for(ModlePin mvpin:controlModle.getCategoryMVmodletag()){
-//            mvs[loop]=mvpin.getWriteValue();
-//            loop++;
-//        }
-//        result.put("mv",mvs);
-
         result.put("outSetp", controlModle.getControlAPCOutCycle());
-
-
-//        loop=0;
-//        double[] sps=new double[controlModle.getCategorySPmodletag().size()];
-//        for(ModlePin sppin:controlModle.getCategorySPmodletag()){
-//            sps[loop]=sppin.modleGetReal();
-//            loop++;
-//        }
-//        result.put("sp",sps);
-
-
-        loop = 0;
-        double[] ffs = new double[controlModle.getCategoryFFmodletag().size()];
-        for (ModlePin ffpin : controlModle.getCategoryFFmodletag()) {
-            ffs[loop] = ffpin.modleGetReal();
-            loop++;
-        }
-        result.put("ff", ffs);
 
 
         loop = 0;
@@ -128,25 +103,67 @@ public class ModleController {
         result.put("curveNames4pv", pvcurveNames);
         result.put("curveNames4funelDown", funelDowncurveNames);
 
+
+        /**表格内容*/
         int pvnum = controlModle.getCategoryPVmodletag().size();//2
         int mvnum = controlModle.getCategoryMVmodletag().size();//1
         int maxrownum = pvnum > mvnum ? pvnum : mvnum;
         JSONArray modlereadData = new JSONArray();
         for (loop = 0; loop < maxrownum; loop++) {
             JSONObject rowcontext = new JSONObject();
-            String rowpinname="";
+            String rowpinname = "";
             if (loop < pvnum) {
                 ModlePin pv = controlModle.getCategoryPVmodletag().get(loop);
                 ModlePin sp = controlModle.getCategorySPmodletag().get(loop);
 
-                rowcontext.put("pvName", pv.getModleOpcTag());
+//                rowcontext.put("pvName", pv.getModleOpcTag());
                 rowcontext.put("pvValue", Tool.getSpecalScale(3, pv.modleGetReal()));
                 rowcontext.put("spValue", Tool.getSpecalScale(3, sp.modleGetReal()));
                 rowcontext.put("e", Tool.getSpecalScale(3, controlModle.getBackPVPredictionError()[loop]));
-                rowcontext.put("shockpv",pv.getShockDetector()==null?"":Tool.getSpecalScale(3,pv.getShockDetector().getLowhzA()));
-                rowpinname+=pv.getModlePinName();
-            }
+                rowcontext.put("shockpv", pv.getShockDetector() == null ? "" : Tool.getSpecalScale(3, pv.getShockDetector().getLowhzA()));
 
+
+                /**dmv*/
+                StringBuilder dmvcontext = new StringBuilder();
+                /**仿真dmv*/
+                StringBuilder dmvsimulatecontext = new StringBuilder();
+                for (int indexmv = 0; indexmv < controlModle.getInputpoints_m(); ++indexmv) {
+                    if (controlModle.getMatrixPvUseMv()[loop][indexmv] == 1) {
+
+                        dmvcontext.append(Tool.getSpecalScale(3, controlModle.getBackDmvWrite()[loop][indexmv]));
+                        dmvcontext.append("|");
+
+                        dmvsimulatecontext.append(Tool.getSpecalScale(3, controlModle.getSimulatControlModle().getBackSimulateDmv()[loop][indexmv]));
+                        dmvsimulatecontext.append("|");
+
+
+                    }
+                }
+                rowcontext.put("dmv", dmvcontext.substring(0, dmvcontext.length() - 1));
+                rowcontext.put("sdmv", dmvsimulatecontext.substring(0, dmvsimulatecontext.length() - 1));
+
+                if(controlModle.getFeedforwardpoints_v()>0){
+                    /**dff*/
+                    StringBuilder dffcontext = new StringBuilder();
+                    /**ff值*/
+                    StringBuilder ffcontext = new StringBuilder();
+
+                    for (int indexff = 0; indexff < controlModle.getFeedforwardpoints_v(); ++indexff) {
+                        if (controlModle.getMatrixPvUseFf()[loop][indexff] == 1) {
+                            dffcontext.append(Tool.getSpecalScale(3, controlModle.getBackDmvWrite()[loop][indexff]));
+                            dffcontext.append("|");
+
+                            ffcontext.append(Tool.getSpecalScale(3, controlModle.getCategoryFFmodletag().get(indexff).modleGetReal()));
+                            ffcontext.append("|");
+                        }
+                    }
+                    rowcontext.put("dff", dffcontext.substring(0, dffcontext.length() - 1));
+                    rowcontext.put("ff", ffcontext.substring(0, ffcontext.length() - 1));
+
+                }
+
+                rowpinname += pv.getModlePinName();
+            }
 
 
             if (loop < mvnum) {//1,1
@@ -158,9 +175,9 @@ public class ModleController {
                 rowcontext.put("mvDownLmt", Tool.getSpecalScale(3, mvDownLmt.modleGetReal()));
                 rowcontext.put("mvUpLmt", Tool.getSpecalScale(3, mvUpLmt.modleGetReal()));
                 rowcontext.put("mvFeedBack", Tool.getSpecalScale(3, mvFeedBack.modleGetReal()));
-                rowcontext.put("dmv", Tool.getSpecalScale(3, controlModle.getBackDmvWrite()[loop]));
-                rowcontext.put("shockmv",mv.getShockDetector()==null?"":Tool.getSpecalScale(3,mv.getShockDetector().getLowhzA()));
-                rowpinname+="|"+mv.getModlePinName();
+
+                rowcontext.put("shockmv", mv.getShockDetector() == null ? "" : Tool.getSpecalScale(3, mv.getShockDetector().getLowhzA()));
+                rowpinname += "|" + mv.getModlePinName();
             }
 
             rowcontext.put("modleName", rowpinname);
@@ -184,10 +201,18 @@ public class ModleController {
         ControlModle controlModle = modleConstainer.getModulepool().get(Integer.valueOf(modleid.trim()));
         if (controlModle != null) {
             if (controlModle.getModleEnable() == 1) {
+                controlModle.getSimulatControlModle().generateSimulatevalidkey();
+                /**停止仿真运行*/
+                controlModle.getSimulatControlModle().setIssimulation(false);
+                controlModle.getSimulatControlModle().getExecutePythonBridgeSimulate().stop();
+
+
                 controlModle.generateValidkey();
+                /**停止模型*/
                 controlModle.setModleEnable(0);
                 controlModle.getExecutePythonBridge().stop();
                 modleDBServe.modifymodleEnable(controlModle.getModleId(), 0);
+
                 return "success";
             }
         } else {
@@ -198,6 +223,26 @@ public class ModleController {
         return "error";
 //        return mv;
     }
+
+
+    @RequestMapping("/stopSimulateModle")
+    @ResponseBody
+    public String stopSimulateModel(@RequestParam("modleid") String modleid) {
+        ControlModle controlModle = modleConstainer.getModulepool().get(Integer.valueOf(modleid.trim()));
+        if (controlModle != null) {
+            if (controlModle.getSimulatControlModle().isIssimulation()) {
+                controlModle.getSimulatControlModle().generateSimulatevalidkey();
+                /**停止仿真运行*/
+                controlModle.getSimulatControlModle().setIssimulation(false);
+                controlModle.getSimulatControlModle().getExecutePythonBridgeSimulate().stop();
+                return "success";
+            }
+        } else {
+            return "error";
+        }
+        return "error";
+    }
+
 
     @RequestMapping("/runModle")
     @ResponseBody
@@ -220,6 +265,23 @@ public class ModleController {
 //        return "/modle/modlestatus.do";
     }
 
+
+    @RequestMapping("/runSimulateModle")
+    @ResponseBody
+    public String runSimulateModel(@RequestParam("modleid") String modleid) {
+        ControlModle controlModle = modleConstainer.getModulepool().get(Integer.valueOf(modleid.trim()));
+        if (controlModle != null) {
+            if (!controlModle.getSimulatControlModle().isIssimulation()) {
+                controlModle.getSimulatControlModle().setIssimulation(true);
+                controlModle.getSimulatControlModle().getExecutePythonBridgeSimulate().execute();
+                return "success";
+            }
+        } else {
+            return "error";
+        }
+        return "error";
+    }
+
     @RequestMapping("/deleteModle")
     @ResponseBody
     public String deleteModel(@RequestParam("modleid") String modleid) {
@@ -227,7 +289,15 @@ public class ModleController {
             ControlModle controlModle = modleConstainer.getModulepool().get(Integer.valueOf(modleid.trim()));
             if (controlModle != null) {
                 if (controlModle.getModleEnable() == 1) {
+                    controlModle.generateValidkey();
+                    controlModle.setModleEnable(0);
                     controlModle.getExecutePythonBridge().stop();
+                }
+
+                if (controlModle.getSimulatControlModle().isIssimulation()) {
+                    controlModle.getSimulatControlModle().setIssimulation(false);
+                    controlModle.getSimulatControlModle().generateSimulatevalidkey();
+                    controlModle.getSimulatControlModle().getExecutePythonBridgeSimulate().stop();
                 }
                 /**
                  * 1、删除响应序列
@@ -241,7 +311,7 @@ public class ModleController {
                     if (modlePin.getFilter() != null) {
                         modleDBServe.deletePinsFilter(modlePin.getFilter().getPk_pinid());
                     }
-                    if(modlePin.getShockDetector()!=null){
+                    if (modlePin.getShockDetector() != null) {
                         modleDBServe.removeShockDetetetor(modlePin.getShockDetector().getPk_shockdetectid());
                     }
                 }
@@ -331,7 +401,7 @@ public class ModleController {
 
         List<String> pvlist = new ArrayList<>();
         List<ModlePin> pvpinlist = new ArrayList<>();
-        List<ShockDetector> shockDetectorPVlist=new ArrayList<>();
+        List<ShockDetector> shockDetectorPVlist = new ArrayList<>();
         for (int i = 1; i <= baseConf.getPv(); ++i) {
             ModlePin modlePin = controlModle.getStringmodlePinsMap().get(ModlePin.TYPE_PIN_PV + i);
             if (modlePin == null) {
@@ -341,7 +411,7 @@ public class ModleController {
             } else {
                 pvlist.add(modlePin.getModleOpcTag());
                 pvpinlist.add(modlePin);
-                shockDetectorPVlist.add(modlePin.getShockDetector()==null?new ShockDetector():modlePin.getShockDetector());
+                shockDetectorPVlist.add(modlePin.getShockDetector() == null ? new ShockDetector() : modlePin.getShockDetector());
             }
         }
 
@@ -384,7 +454,7 @@ public class ModleController {
 
         List<String> mvlist = new ArrayList<>();
         List<ModlePin> mvpinlist = new ArrayList<>();
-        List<ShockDetector> shockDetectorMVlist=new ArrayList<>();
+        List<ShockDetector> shockDetectorMVlist = new ArrayList<>();
         for (int i = 1; i <= baseConf.getMv(); ++i) {
             ModlePin modlePin = controlModle.getStringmodlePinsMap().get(ModlePin.TYPE_PIN_MV + i);
 
@@ -395,7 +465,7 @@ public class ModleController {
             } else {
                 mvlist.add(modlePin.getModleOpcTag());
                 mvpinlist.add(modlePin);
-                shockDetectorMVlist.add(modlePin.getShockDetector()==null?new ShockDetector(): modlePin.getShockDetector());
+                shockDetectorMVlist.add(modlePin.getShockDetector() == null ? new ShockDetector() : modlePin.getShockDetector());
             }
 
         }
@@ -637,7 +707,7 @@ public class ModleController {
         mv.addObject("modle", controlModle);
         mv.addObject("pvlist", pvlist);
         mv.addObject("pvpinlist", pvpinlist);
-        mv.addObject("shockDetectorPVlist",shockDetectorPVlist);
+        mv.addObject("shockDetectorPVlist", shockDetectorPVlist);
         mv.addObject("qlist", qlist);
         mv.addObject("alphelist", alphelist);
 
@@ -646,7 +716,7 @@ public class ModleController {
         mv.addObject("sppinlist", sppinlist);
         mv.addObject("mvlist", mvlist);
         mv.addObject("mvpinlist", mvpinlist);
-        mv.addObject("shockDetectorMVlist",shockDetectorMVlist);
+        mv.addObject("shockDetectorMVlist", shockDetectorMVlist);
         mv.addObject("rlist", rlist);
         mv.addObject("dmvHighlist", dmvHighlist);
         mv.addObject("dmvLowlist", dmvLowlist);
@@ -690,24 +760,24 @@ public class ModleController {
             boolean newmodle = false;
             JSONObject modlejsonObject = JSON.parseObject(modle);
 
-            ControlModle controlModle = new ControlModle();
+            ControlModle fleshcontrolModle = new ControlModle();
 
-            controlModle.setModleName(modlejsonObject.getString("modleName"));
-            controlModle.setPredicttime_P(Integer.valueOf(modlejsonObject.getString("P")));
-            controlModle.setControltime_M(Integer.valueOf(modlejsonObject.getString("M")));
-            controlModle.setTimeserise_N(Integer.valueOf(modlejsonObject.getString("N")));
-            controlModle.setControlAPCOutCycle(Integer.valueOf(modlejsonObject.getString("O")));
+            fleshcontrolModle.setModleName(modlejsonObject.getString("modleName"));
+            fleshcontrolModle.setPredicttime_P(Integer.valueOf(modlejsonObject.getString("P")));
+            fleshcontrolModle.setControltime_M(Integer.valueOf(modlejsonObject.getString("M")));
+            fleshcontrolModle.setTimeserise_N(Integer.valueOf(modlejsonObject.getString("N")));
+            fleshcontrolModle.setControlAPCOutCycle(Integer.valueOf(modlejsonObject.getString("O")));
 
             if (modlejsonObject.getString("modleid").trim().equals("")) {
-                modleDBServe.insertModle(controlModle);
+                modleDBServe.insertModle(fleshcontrolModle);
                 newmodle = true;
 
             } else {
-                modleDBServe.modifymodle(Integer.valueOf(modlejsonObject.getString("modleid").trim()), controlModle);
-                controlModle.setModleId(Integer.valueOf(modlejsonObject.getString("modleid").trim()));
+                modleDBServe.modifymodle(Integer.valueOf(modlejsonObject.getString("modleid").trim()), fleshcontrolModle);
+                fleshcontrolModle.setModleId(Integer.valueOf(modlejsonObject.getString("modleid").trim()));
             }
 
-            controlModle.setModlePins(new ArrayList<ModlePin>());
+            fleshcontrolModle.setModlePins(new ArrayList<ModlePin>());
 
             /**
              *
@@ -715,10 +785,10 @@ public class ModleController {
             ModlePin autopin = new ModlePin();
             autopin.setResource(modlejsonObject.getString("autoresource"));
             autopin.setModleOpcTag(modlejsonObject.getString("autoTag"));
-            if((autopin.getResource()!=null)&&(!autopin.getResource().equals(""))&&(autopin.getModleOpcTag()!=null)&&(!autopin.getModleOpcTag().equals(""))){
-                autopin.setReference_modleId(controlModle.getModleId());
+            if ((autopin.getResource() != null) && (!autopin.getResource().equals("")) && (autopin.getModleOpcTag() != null) && (!autopin.getModleOpcTag().equals(""))) {
+                autopin.setReference_modleId(fleshcontrolModle.getModleId());
                 autopin.setModlePinName(ModlePin.TYPE_PIN_AUTO);
-                controlModle.getModlePins().add(autopin);
+                fleshcontrolModle.getModlePins().add(autopin);
             }
 
 
@@ -760,7 +830,7 @@ public class ModleController {
                     pvpin.setResource(modlejsonObject.getString(ModlePin.TYPE_PIN_PV + i + "resource"));
                     pvpin.setModleOpcTag(pvTag);
                     pvpin.setQ(Double.valueOf(QTag));
-                    pvpin.setReference_modleId(controlModle.getModleId());
+                    pvpin.setReference_modleId(fleshcontrolModle.getModleId());
                     pvpin.setModlePinName("pv" + i);
                     pvpin.setDeadZone(Double.valueOf(spDeadZone));
                     pvpin.setFunelinitValue(Double.valueOf(spFunelInitValue));
@@ -790,7 +860,7 @@ public class ModleController {
                     /**
                      *震荡检测
                      * */
-                    if ((detectwindowstimepv != null)&&(!detectwindowstimepv.trim().equals("")) && (detectdampcoepv != null)&&(!detectdampcoepv.trim().equals("")) && (detectfiltercoepv != null)&&(!detectfiltercoepv.trim().equals(""))) {
+                    if ((detectwindowstimepv != null) && (!detectwindowstimepv.trim().equals("")) && (detectdampcoepv != null) && (!detectdampcoepv.trim().equals("")) && (detectfiltercoepv != null) && (!detectfiltercoepv.trim().equals(""))) {
                         ShockDetector shockDetector = new ShockDetector();
                         shockDetector.setEnable(1);
                         shockDetector.setWindowstime(Integer.valueOf(detectwindowstimepv));
@@ -804,7 +874,7 @@ public class ModleController {
                     }
 
 
-                    controlModle.getModlePins().add(pvpin);
+                    fleshcontrolModle.getModlePins().add(pvpin);
                     if (pvtracoef != null) {
                         pvpin.setReferTrajectoryCoef(Double.valueOf(pvtracoef.trim()));
                     } else {
@@ -814,9 +884,9 @@ public class ModleController {
                     ModlePin sppin = new ModlePin();
                     sppin.setModleOpcTag(spTag);
                     sppin.setResource(modlejsonObject.getString(ModlePin.TYPE_PIN_SP + i + "resource"));
-                    sppin.setReference_modleId(controlModle.getModleId());
+                    sppin.setReference_modleId(fleshcontrolModle.getModleId());
                     sppin.setModlePinName("sp" + i);
-                    controlModle.getModlePins().add(sppin);
+                    fleshcontrolModle.getModlePins().add(sppin);
 
                 }
             }
@@ -862,16 +932,16 @@ public class ModleController {
                     ModlePin mvpin = new ModlePin();
                     mvpin.setR(Double.valueOf(r));
                     mvpin.setResource(modlejsonObject.getString(ModlePin.TYPE_PIN_MV + i + "resource"));
-                    mvpin.setReference_modleId(controlModle.getModleId());
+                    mvpin.setReference_modleId(fleshcontrolModle.getModleId());
                     mvpin.setModleOpcTag(mv);
                     mvpin.setModlePinName("mv" + i);
                     mvpin.setDmvHigh(Double.valueOf(dmvhigh));
                     mvpin.setDmvLow(Double.valueOf(dmvlow));
-                    controlModle.getModlePins().add(mvpin);
+                    fleshcontrolModle.getModlePins().add(mvpin);
 
 
                     ModlePin mvfbpin = new ModlePin();
-                    mvfbpin.setReference_modleId(controlModle.getModleId());
+                    mvfbpin.setReference_modleId(fleshcontrolModle.getModleId());
                     mvfbpin.setModlePinName("mvfb" + i);
                     mvfbpin.setResource(modlejsonObject.getString(ModlePin.TYPE_PIN_MVFB + i + "resource"));
                     mvfbpin.setModleOpcTag(mvfb);
@@ -880,7 +950,7 @@ public class ModleController {
                      * mv震荡检测设置
                      * */
 
-                    if ((detectwindowstimemv != null) &&(!detectwindowstimemv.trim().equals(""))&& (detectdampcoemv != null) &&(!detectdampcoemv.trim().equals(""))&& (detectfiltercoemv != null)&&(!detectfiltercoemv.trim().equals(""))) {
+                    if ((detectwindowstimemv != null) && (!detectwindowstimemv.trim().equals("")) && (detectdampcoemv != null) && (!detectdampcoemv.trim().equals("")) && (detectfiltercoemv != null) && (!detectfiltercoemv.trim().equals(""))) {
                         ShockDetector shockDetector = new ShockDetector();
                         shockDetector.setEnable(1);
                         shockDetector.setWindowstime(Math.abs(Integer.valueOf(detectwindowstimemv)));
@@ -892,7 +962,7 @@ public class ModleController {
                         shockDetector.setFilteropcresource(detectfilteroutopctagmvresource);
                         mvpin.setShockDetector(shockDetector);
                     }
-                    controlModle.getModlePins().add(mvfbpin);
+                    fleshcontrolModle.getModlePins().add(mvfbpin);
 
                     /**
                      * 滤波器设置
@@ -919,20 +989,20 @@ public class ModleController {
                     }
 
                     ModlePin mvuppin = new ModlePin();
-                    mvuppin.setReference_modleId(controlModle.getModleId());
+                    mvuppin.setReference_modleId(fleshcontrolModle.getModleId());
                     mvuppin.setModlePinName("mvup" + i);
                     mvuppin.setResource(mvupresoure);
                     mvuppin.setModleOpcTag(mvup);
-                    controlModle.getModlePins().add(mvuppin);
+                    fleshcontrolModle.getModlePins().add(mvuppin);
 
                     ModlePin mvdownpin = new ModlePin();
-                    mvdownpin.setReference_modleId(controlModle.getModleId());
+                    mvdownpin.setReference_modleId(fleshcontrolModle.getModleId());
                     mvdownpin.setModlePinName("mvdown" + i);
                     mvdownpin.setResource(mvdownresource);
                     mvdownpin.setModleOpcTag(mvdown);
 
 
-                    controlModle.getModlePins().add(mvdownpin);
+                    fleshcontrolModle.getModlePins().add(mvdownpin);
                 }
 
             }
@@ -955,7 +1025,7 @@ public class ModleController {
 
                 if (ff != null && !ff.trim().equals("")) {
                     ModlePin ffpin = new ModlePin();
-                    ffpin.setReference_modleId(controlModle.getModleId());
+                    ffpin.setReference_modleId(fleshcontrolModle.getModleId());
                     ffpin.setModlePinName("ff" + i);
                     ffpin.setResource(modlejsonObject.getString(ModlePin.TYPE_PIN_FF + i + "resource"));
                     ffpin.setModleOpcTag(ff);
@@ -974,29 +1044,29 @@ public class ModleController {
                             firstOrderLagFilter.setBackToDCSTag(filteropctagff);
                             firstOrderLagFilter.setOpcresource(modlejsonObject.getString("filterff" + i + "resource"));
 
-                            firstOrderLagFilter.setFilter_alphe(Math.abs(Double.valueOf(filtercoefff))>1?1:Math.abs(Double.valueOf(filtercoefff)));
+                            firstOrderLagFilter.setFilter_alphe(Math.abs(Double.valueOf(filtercoefff)) > 1 ? 1 : Math.abs(Double.valueOf(filtercoefff)));
                             firstOrderLagFilter.setFiltername(filternameff);
                             ffpin.setFilter(firstOrderLagFilter);
                         }
                     }
 
-                    controlModle.getModlePins().add(ffpin);
+                    fleshcontrolModle.getModlePins().add(ffpin);
 
 
                     ModlePin ffuppin = new ModlePin();
-                    ffuppin.setReference_modleId(controlModle.getModleId());
+                    ffuppin.setReference_modleId(fleshcontrolModle.getModleId());
                     ffuppin.setModlePinName("ffup" + i);
                     ffuppin.setResource(ffupresource);
                     ffuppin.setModleOpcTag(ffup);
-                    controlModle.getModlePins().add(ffuppin);
+                    fleshcontrolModle.getModlePins().add(ffuppin);
 
 
                     ModlePin ffdownpin = new ModlePin();
-                    ffdownpin.setReference_modleId(controlModle.getModleId());
+                    ffdownpin.setReference_modleId(fleshcontrolModle.getModleId());
                     ffdownpin.setModlePinName("ffdown" + i);
                     ffdownpin.setResource(ffdownresource);
                     ffdownpin.setModleOpcTag(ffdown);
-                    controlModle.getModlePins().add(ffdownpin);
+                    fleshcontrolModle.getModlePins().add(ffdownpin);
 
                 }
 
@@ -1007,18 +1077,18 @@ public class ModleController {
             /**
              * 数据库引脚信息更新
              * */
-            if (controlModle.getModlePins().size() != 0) {
+            if (fleshcontrolModle.getModlePins().size() != 0) {
 
-                if (modlejsonObject.getString("modleid").trim().equals("")) {
+                if ((modlejsonObject.getString("modleid") == null) || (modlejsonObject.getString("modleid").trim().equals(""))) {
 
                     /**
                      * 新模型
                      * */
-                    modleDBServe.insertModlePins(controlModle.getModlePins());
+                    modleDBServe.insertModlePins(fleshcontrolModle.getModlePins());
                     /**
                      * 插入滤波器数据 和 插入震荡检测器
                      * */
-                    for (ModlePin modlePin : controlModle.getModlePins()) {
+                    for (ModlePin modlePin : fleshcontrolModle.getModlePins()) {
 
                         /**滤波器*/
                         if (modlePin.getFilter() != null) {
@@ -1055,6 +1125,8 @@ public class ModleController {
                     modleDBServe.deleteModlePins(Integer.valueOf(modlejsonObject.getString("modleid").trim()));
 
                     ControlModle oldmodle = modleConstainer.getModulepool().get(Integer.valueOf(modlejsonObject.getString("modleid").trim()));
+                    /**保存前一次仿真器运行状态运行状态*/
+                    fleshcontrolModle.setLastsimulaterunorstop(oldmodle.getSimulatControlModle().isIssimulation());
 
                     for (ModlePin modlePin : oldmodle.getModlePins()) {
                         if (modlePin.getFilter() != null) {
@@ -1069,8 +1141,8 @@ public class ModleController {
                     /**
                      * 重新插入
                      * */
-                    modleDBServe.insertModlePins(controlModle.getModlePins());
-                    for (ModlePin modlePin : controlModle.getModlePins()) {
+                    modleDBServe.insertModlePins(fleshcontrolModle.getModlePins());
+                    for (ModlePin modlePin : fleshcontrolModle.getModlePins()) {
 
                         if (modlePin.getFilter() != null) {
                             modlePin.getFilter().setPk_pinid(modlePin.getModlepinsId());
@@ -1109,7 +1181,7 @@ public class ModleController {
                         ResponTimeSerise responTimeSerise = new ResponTimeSerise();
                         responTimeSerise.setInputPins(mvnamepin);
                         responTimeSerise.setOutputPins("pv" + j);
-                        responTimeSerise.setRefrencemodleId(controlModle.getModleId());
+                        responTimeSerise.setRefrencemodleId(fleshcontrolModle.getModleId());
                         responTimeSerise.setStepRespJson(mvrespjsonObjectJSONObject.getString("pv" + j).trim());
                         responTimeSeriseArrayList.add(responTimeSerise);
                     }
@@ -1126,7 +1198,7 @@ public class ModleController {
                         ResponTimeSerise ffresponTimeSerise = new ResponTimeSerise();
                         ffresponTimeSerise.setInputPins(ffnamepin);
                         ffresponTimeSerise.setOutputPins("pv" + j);
-                        ffresponTimeSerise.setRefrencemodleId(controlModle.getModleId());
+                        ffresponTimeSerise.setRefrencemodleId(fleshcontrolModle.getModleId());
                         ffresponTimeSerise.setStepRespJson(ffrespjsonObjectJSONObject.getString("pv" + j).trim());
                         responTimeSeriseArrayList.add(ffresponTimeSerise);
                     }
@@ -1136,7 +1208,7 @@ public class ModleController {
 
             if (responTimeSeriseArrayList.size() != 0) {
 
-                if (controlModle.getModlePins().size() != 0) {
+                if (fleshcontrolModle.getModlePins().size() != 0) {
 
                     if (modlejsonObject.getString("modleid").trim().equals("")) {
                         modleDBServe.insertModleResp(responTimeSeriseArrayList);
@@ -1151,7 +1223,7 @@ public class ModleController {
              * 如果找不模型的id,那么直接从数据库中初始化模型
              * */
             if (modlejsonObject.getString("modleid").trim().equals("")) {
-                ControlModle controlModle1 = modleDBServe.getModle(controlModle.getModleId());
+                ControlModle controlModle1 = modleDBServe.getModle(fleshcontrolModle.getModleId());
                 modleConstainer.registerModle(controlModle1);
             } else {
                 /**
@@ -1162,7 +1234,7 @@ public class ModleController {
                 oldcontrolModle.unregisterpin();
 
                 modleConstainer.getModulepool().remove(Integer.valueOf(modlejsonObject.getString("modleid").trim()));
-                ControlModle newcontrolModle2 = modleDBServe.getModle(controlModle.getModleId());
+                ControlModle newcontrolModle2 = modleDBServe.getModle(fleshcontrolModle.getModleId());
                 modleConstainer.registerModle(newcontrolModle2);
             }
 
@@ -1175,11 +1247,11 @@ public class ModleController {
             if (newmodle) {
                 jsonObject.put("go", "/modle/newmodle.do");
             } else {
-                jsonObject.put("go", "/modle/modifymodle.do?modleid=" + controlModle.getModleId());
+                jsonObject.put("go", "/modle/modifymodle.do?modleid=" + fleshcontrolModle.getModleId());
             }
 
-            jsonObject.put("modleName", controlModle.getModleName());
-            jsonObject.put("modleId", controlModle.getModleId());
+            jsonObject.put("modleName", fleshcontrolModle.getModleName());
+            jsonObject.put("modleId", fleshcontrolModle.getModleId());
             return jsonObject.toJSONString();
         } catch (Exception e) {
             logger.error(e.getMessage(), e);

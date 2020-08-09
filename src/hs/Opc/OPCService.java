@@ -1,5 +1,6 @@
 package hs.Opc;
 
+import hs.Bean.ModleConstainer;
 import hs.Bean.ModlePin;
 import hs.Filter.*;
 import hs.Opc.Monitor.ModleRunTask;
@@ -16,10 +17,7 @@ import org.openscada.opc.lib.da.*;
 
 import java.net.UnknownHostException;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 /**
  * @author zzx
@@ -42,26 +40,37 @@ public class OPCService implements Runnable {
     private ItemManger itemManger = new ItemManger();
     /**
      * 引脚pool,索引是opctag
+     * key=标签,value=引脚s
      */
-    private Map<String, List<ModlePin>> opctagModlePinPool = new ConcurrentHashMap();//key=标签,value=引脚s
+    private Map<String, List<ModlePin>> opctagModlePinPool = new ConcurrentHashMap();
     /**
      * 引脚中的过滤器的pool,索引是opctag
+     * key=filetr反写的opctag,value=filter
      */
-    private Map<String, List<Filter>> opctagFilterPool = new ConcurrentHashMap();//key=filetr反写的opctag,value=filter
+    private Map<String, List<Filter>> opctagFilterPool = new ConcurrentHashMap();
 
     private Group group = null;
     /**
      * opc serve中group添加以后的item pool
      */
-    private ConcurrentHashMap<String, OpcVeriTag> varytag = new ConcurrentHashMap();//
+    private ConcurrentHashMap<String, OpcVeriTag> varytag = new ConcurrentHashMap();
 
     private List<OpcVeriTag> initopcVeriTagsInDB;
 
-    private FilterService filterService = null;//实时滤波服务
+    /**
+     * 实时滤波服务
+     */
+    private FilterService filterService = null;
 
     private ModleStopRunMonitor modleStopRunMonitor;
-    private boolean connectStatus = false;//链接状态
 
+    /**
+     * 链接状态
+     */
+    private boolean connectStatus = false;
+
+
+    private ModleConstainer modleConstainerl;
 
     public void initAndConnect(FilterService filterService, ModleStopRunMonitor modleStopRunMonitor) {
         this.filterService = filterService;
@@ -78,6 +87,7 @@ public class OPCService implements Runnable {
         ci.setPassword(opcpassword);
         ci.setProgId(null);
         ci.setClsid(opcclsid);
+
         server = new Server(ci, Executors.newSingleThreadScheduledExecutor());
 
         try {
@@ -552,6 +562,7 @@ public class OPCService implements Runnable {
                     readAndProcessDataByOnce();
                 } catch (JIException e) {
                     logger.error(e.getMessage(), e);
+                    connectStatus = false;//进行重新连接
                 }
             }
             long endgetdate = System.currentTimeMillis();
@@ -575,18 +586,25 @@ public class OPCService implements Runnable {
     public void readAndProcessDataByOnce() throws JIException {
         Map<Item, ItemState> itemItemStateMap = group.read(true, itemManger.getOpcitemPoolArraystyle());
         logger.info("in readAndProcessDataByOnce size=" + itemItemStateMap.size());
+        int errortagnamenum = 0;//取数报错的tag
         for (Map.Entry<Item, ItemState> entrie : itemItemStateMap.entrySet()) {
             Item item = entrie.getKey();
             ItemState itemState = entrie.getValue();
             try {
                 pinValueUpdate(item, itemState);
             } catch (JIException e) {
+                ++errortagnamenum;
+                logger.error("opc tag=" + itemManger.findTagnamebyItem(item) + " maybe error when get real data");
                 logger.error(e.getMessage(), e);
-            }catch (Exception e){
-                logger.error(e.getMessage(),e);
+            } catch (Exception e) {
+                ++errortagnamenum;
+                logger.error(e.getMessage(), e);
             }
         }
-
+        logger.info("error tag num=" + errortagnamenum);
+        if (errortagnamenum == itemManger.getOpcitemunitPool().size()) {
+            connectStatus = false;//进行重新连接
+        }
 
     }
 
@@ -594,11 +612,15 @@ public class OPCService implements Runnable {
     /**
      * s数据处理分发
      */
-    public void pinValueUpdate(Item item, ItemState itemState) throws JIException{
+    public void pinValueUpdate(Item item, ItemState itemState) throws JIException {
 
         String valueStringstyle = itemState.getValue().getObject().toString();
-
-        List<ModlePin> pins = opctagModlePinPool.get(itemManger.findTagnamebyItem(item));
+        String opcname = itemManger.findTagnamebyItem(item);
+        if (opcname == null) {
+            //位号被移除了
+            return;
+        }
+        List<ModlePin> pins = opctagModlePinPool.get(opcname);
 
         if (pins == null) {
             //pins列表为null说明这个不是pin引脚的tag，可能是filter的opctag，这个主要是用于反写的，不需要读取
@@ -616,15 +638,19 @@ public class OPCService implements Runnable {
             pin.opcUpdateValue(Double.valueOf(valueStringstyle));
 
             //DCS手自动切换监视
-            if (pin.getModlePinName() != null && pin.getModlePinName().equals(ModlePin.TYPE_PIN_AUTO)) {
-                if (pin.getOldReadValue() != null && pin.getNewReadValue() == 1 && pin.getOldReadValue() == 0) {
+            if (pin.getModlePinName() != null && pin.getModlePinName().trim().equals(ModlePin.TYPE_PIN_AUTO)) {
+                logger.info("modle id=" + pin.getReference_modleId() + "old value=" + pin.getOldReadValue() + ",new value=" + pin.getNewReadValue());
+                if ((pin.getOldReadValue() != null) && (pin.getOldReadValue() == 0) && (pin.getNewReadValue() != 0) /*&& (modleConstainerl != null) && (modleConstainerl.getModulepool().get(pin.getReference_modleId()).getModleEnable() == 0)*/) {
                     //run
+                    logger.debug("模型运行，modleid=" + pin.getReference_modleId());
                     ModleRunTask modleRunTask = new ModleRunTask();
                     modleRunTask.setModleid(pin.getReference_modleId());
                     modleStopRunMonitor.putTask(modleRunTask);
                     logger.debug("模型运行，modleid=" + pin.getReference_modleId());
-                } else if (pin.getOldReadValue() != null && pin.getNewReadValue() == 0 && pin.getOldReadValue() == 1) {
+
+                } else if ((pin.getOldReadValue() != null) && (pin.getOldReadValue() != 0) && (pin.getNewReadValue() == 0) /*&& (modleConstainerl != null) && (modleConstainerl.getModulepool().get(pin.getReference_modleId()).getModleEnable() == 1)*/) {
                     //stop
+                    logger.debug("模型停止，modleid=" + pin.getReference_modleId());
                     ModleStopTask modleStopTask = new ModleStopTask();
                     modleStopTask.setModleid(pin.getReference_modleId());
                     modleStopRunMonitor.putTask(modleStopTask);
@@ -731,18 +757,18 @@ public class OPCService implements Runnable {
                     stringvalue = 0 + "";
                 }
                 for (ModlePin pin : pins) {
-                    //更新引脚数据数据
+                    /**更新引脚数据数据*/
                     pin.opcUpdateValue(Double.valueOf(stringvalue));
 
-                    //DCS手自动切换监视
+                    /**DCS手自动切换监视*/
                     if (pin.getModlePinName() != null && pin.getModlePinName().equals(ModlePin.TYPE_PIN_AUTO)) {
-                        if (pin.getNewReadValue() == 1 && pin.getOldReadValue() == 0) {
-                            //run
+                        if (pin.getNewReadValue() == 1 && (modleConstainerl != null) && (modleConstainerl.getModulepool().get(pin.getReference_modleId()).getModleEnable() == 0)) {
+                            /**run*/
                             ModleRunTask modleRunTask = new ModleRunTask();
                             modleRunTask.setModleid(pin.getReference_modleId());
                             modleStopRunMonitor.putTask(modleRunTask);
-                        } else if (pin.getNewReadValue() == 0 && pin.getOldReadValue() == 1) {
-                            //stop
+                        } else if (pin.getNewReadValue() == 0 && (modleConstainerl != null) && (modleConstainerl.getModulepool().get(pin.getReference_modleId()).getModleEnable() == 1)) {
+                            /**stop*/
                             ModleStopTask modleStopTask = new ModleStopTask();
                             modleStopTask.setModleid(pin.getReference_modleId());
                             modleStopRunMonitor.putTask(modleStopTask);
@@ -751,7 +777,7 @@ public class OPCService implements Runnable {
                         }
                     }
 
-                    //检查是否存在滤波器，存在的话则根据滤波器类型生成滤波器执行任务
+                    /**检查是否存在滤波器，存在的话则根据滤波器类型生成滤波器执行任务*/
                     if (pin.getFilter() != null) {
 
                         if (pin.getFilter() instanceof FirstOrderLagFilter) {
@@ -914,5 +940,13 @@ public class OPCService implements Runnable {
 
     public void setOpcclsid(String opcclsid) {
         this.opcclsid = opcclsid;
+    }
+
+    public ModleConstainer getModleConstainerl() {
+        return modleConstainerl;
+    }
+
+    public void setModleConstainerl(ModleConstainer modleConstainerl) {
+        this.modleConstainerl = modleConstainerl;
     }
 }

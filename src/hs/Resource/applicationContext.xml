@@ -23,8 +23,7 @@
     </context:component-scan>
 
 
-    <bean id="annotationPropertyConfigurerNetty"
-          class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+    <bean id="propertyPlaceholderConfigurer" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
         <property name="ignoreUnresolvablePlaceholders" value="true" />
         <property name="locations">
             <array>
@@ -49,7 +48,7 @@
         <property name="maxPoolSize" value="9"></property>
         <property name="minPoolSize" value="3"></property>
         <!--<property name="maxStatements">200</property>-->
-        <property name="preferredTestQuery" value="SELECT count(*) FROM modle;"></property>
+        <property name="preferredTestQuery" value="SELECT count(*) FROM modle"></property>
         <property name="maxIdleTime" value="1800"></property>
         <property name="acquireRetryAttempts" value="10"></property>
     </bean>
@@ -72,7 +71,7 @@
     </bean>
 
     <!-- DAO接口所在包名，Spring会自动查找其下的类 -->
-    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+    <bean id="mapperScannerConfigurer" class="org.mybatis.spring.mapper.MapperScannerConfigurer" scope="singleton">
         <property name="basePackage" value="hs.Dao"/>
         <property name="annotationClass" value="org.springframework.stereotype.Repository"/>
         <property name="sqlSessionFactoryBeanName" value="sqlSessionFactory"/>
