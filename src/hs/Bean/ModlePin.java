@@ -86,30 +86,33 @@ public class ModlePin {
     }
 
     /**
-     *脚使能数据默认为1
-     *非脚使能数据默认数据为0
-     * **/
+     * 1实数直接将opctag转换为实数
+     * 2有滤波器直接进行取滤波后的值
+     * 3无滤波直接获取opcserve更新过来的newreadvalue
+     * 脚使能数据默认为1
+     * 非脚使能数据默认数据为0
+     **/
     public double modleGetReal() {
-        //有过滤器吗，有就充过滤器中获取，没有就直接冲
-        if (filter == null) {
-            if (resource.equals(SOURCE_TYPE_CONSTANT)) {
-                /***常数*/
-                return Double.valueOf(modleOpcTag);
-            } else {
-                if (pvenablepattern.matcher(modlePinName).find()) {
-                    /**引脚使能数据
-                     * 如果配置了opc位号*/
-                    if ((modleOpcTag != null) && (!modleOpcTag.equals(""))) {
-                        return (newReadValue == null ? 1 : newReadValue);
-                    } else {
-                        /**如果没有配置了opc位号*/
-                        return 1;
-                    }
-                } else {
-                    /***非引脚使能数据*/
-                    return (newReadValue == null ? 0 : newReadValue);
-                }
 
+        /**常量数据直接转换提起就行*/
+        if (resource.equals(SOURCE_TYPE_CONSTANT)) {
+            /***常数*/
+            return Double.valueOf(modleOpcTag);
+        }
+        /**有过滤器吗，有就充过滤器中获取，没有就直接opc更新来的newvalue中获取值就行*/
+        if (filter == null) {
+            if (pvenablepattern.matcher(modlePinName).find()) {
+                /**引脚使能数据
+                 * 如果配置了opc位号*/
+                if ((modleOpcTag != null) && (!modleOpcTag.equals(""))) {
+                    return (newReadValue == null ? 1 : newReadValue);
+                } else {
+                    /**如果没有配置了opc位号*/
+                    return 1;
+                }
+            } else {
+                /***非引脚使能数据*/
+                return (newReadValue == null ? 0 : newReadValue);
             }
         } else {
             //有滤波器
@@ -119,7 +122,6 @@ public class ModlePin {
             } else {
                 return (newReadValue == null ? 0 : newReadValue);
             }
-
         }
     }
 

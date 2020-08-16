@@ -80,12 +80,10 @@ public class ControlModle {
     private List<ModlePin> modlePins;//引脚
     private List<ResponTimeSerise> responTimeSerises;//响应
 
-    private Integer outpoints_p = 0;//输出个数量
-
     /**
      * 原始多目标pv输出数量
      */
-    private Integer numOfactiveoutpins_p = 0;
+    private Integer outpoints_p = 0;//输出个数量
     /**
      * 激活的pv引脚
      */
@@ -221,36 +219,53 @@ public class ControlModle {
 
 
     /**
-     * 模型构建函数
+     * 第一次将点号注册进opcserve
      */
-    public Boolean modleBuild() {
-        logger.info("modle id=" + modleId + " is build");
-        simulatControlModle = new SimulatControlModle(simulatorbuilddir, modleId, lastsimulaterunorstop);
-        try {
-            for (ModlePin modlePin : modlePins) {
-                /**注册opc点号*/
-                stringmodlePinsMap.put(modlePin.getModlePinName(), modlePin);//将定义的引脚按照key=pvn/mvn/spn等(n=1,2,3..8) value=pin
-                /**将引脚注册进行opcserice中*/
-                if ((opcServicConstainer.getOPcserveGroup() != null) && (modlePin != null)) {
-                    opcServicConstainer.registerModlePinAndComponent(modlePin);
-                } else {
-                    logger.warn("modle id=" + modleId + " build failed, because opc group is null");
-                }
+    private void firstTimeRegiterPinsToOPCServe() {
+        for (ModlePin modlePin : modlePins) {
+            /**注册opc点号*/
+            stringmodlePinsMap.put(modlePin.getModlePinName(), modlePin);//将定义的引脚按照key=pvn/mvn/spn等(n=1,2,3..8) value=pin
+            /**将引脚注册进行opcserice中*/
+            if ((opcServicConstainer.getOPcserveGroup() != null) && (modlePin != null)) {
+                opcServicConstainer.registerModlePinAndComponent(modlePin);
+            } else {
+                logger.warn("modle id=" + modleId + " build failed, because opc group is null");
+            }
 
-                /**
-                 * 手自动切换引脚提取
-                 * */
-                if ((modlePin != null) && (modlePin.getModlePinName().equals(ModlePin.TYPE_PIN_MODLE_AUTO))) {
-                    autoEnbalePin = modlePin;
-                }
-
-
+            /**
+             * 手自动切换引脚提取
+             * */
+            if ((modlePin != null) && (modlePin.getModlePinName().equals(ModlePin.TYPE_PIN_MODLE_AUTO))) {
+                autoEnbalePin = modlePin;
             }
 
 
-            /**
-             *引脚分类
-             * */
+        }
+    }
+
+    /**
+     * 模型构建函数
+     * @param isfirsttime 如果是第一次构建，那么需要重新注册引脚进opcserv
+     */
+    public Boolean modleBuild(boolean isfirsttime) {
+        logger.info("modle id=" + modleId + " is build");
+        simulatControlModle = new SimulatControlModle(simulatorbuilddir, modleId, lastsimulaterunorstop);
+
+        try {
+
+            /**第一次将点号注册进opcserve*/
+            if(isfirsttime){
+                firstTimeRegiterPinsToOPCServe();
+            }else {
+                if(modleEnable==1){
+                    executePythonBridge.stop();
+                }
+                if(simulatControlModle.isIssimulation()){
+                    simulatControlModle.getExecutePythonBridgeSimulate().stop();
+                }
+            }
+
+            /**引脚分类*/
 
             /**
              * pv and sp
@@ -275,7 +290,6 @@ public class ControlModle {
              * */
             for (int i = 1; i <= totalFf; ++i) {
                 ModlePin ffPin = stringmodlePinsMap.get(ModlePin.TYPE_PIN_FF + i);
-
                 if (ffPin != null) {
                     ModlePin ffdown = stringmodlePinsMap.get(ModlePin.TYPE_PIN_FFDOWN + i);
                     ModlePin ffup = stringmodlePinsMap.get(ModlePin.TYPE_PIN_FFUP + i);
@@ -309,8 +323,6 @@ public class ControlModle {
                     } else {
                         return false;
                     }
-
-
                 }
             }
 
@@ -318,9 +330,11 @@ public class ControlModle {
             /**init pvusemv and pvuseff matrix*/
             matrixPvUseMv = new int[categoryPVmodletag.size()][categoryMVmodletag.size()];
             matrixPvUseFf = new int[categoryPVmodletag.size()][categoryFFmodletag.size()];
+
             participateMVMatrix = new int[categoryMVmodletag.size()];
             participateFFMatrix = new int[categoryFFmodletag.size()];
             participatePVMatrix = new int[categoryMVmodletag.size()];
+
             for (int indexpv = 0; indexpv < categoryPVmodletag.size(); ++indexpv) {
                 if (categoryPVmodletag.get(indexpv).getPinEnable() == 1) {
                     /**激活的pv数量*/
@@ -329,7 +343,7 @@ public class ControlModle {
                 }
                 for (int indexmv = 0; indexmv < categoryMVmodletag.size(); ++indexmv) {
                     ResponTimeSerise ismapping = isPVMappingMV(categoryPVmodletag.get(indexpv).getModlePinName(), categoryMVmodletag.get(indexmv).getModlePinName());
-                    matrixPvUseMv[indexpv][indexmv] = ismapping != null ? 1 : 0;
+                    matrixPvUseMv[indexpv][indexmv] = (ismapping != null ? 1 : 0);
                     if ((categoryPVmodletag.get(indexpv).getPinEnable() == 1) && (ismapping != null)) {
                         participateMVMatrix[indexmv] = 1;
                     }
@@ -338,7 +352,7 @@ public class ControlModle {
 
                 for (int indexff = 0; indexff < categorySPmodletag.size(); ++indexff) {
                     ResponTimeSerise ismapping = isPVMappingFF(categoryPVmodletag.get(indexpv).getModlePinName(), categoryFFmodletag.get(indexff).getModlePinName());
-                    matrixPvUseFf[indexpv][indexff] = ismapping != null ? 1 : 0;
+                    matrixPvUseFf[indexpv][indexff] = (ismapping != null ? 1 : 0);
                     if ((categoryPVmodletag.get(indexpv).getPinEnable() == 1) && (ismapping != null)) {
                         participateFFMatrix[indexff] = 1;
                     }
@@ -364,30 +378,25 @@ public class ControlModle {
              * 输入输出响应对应矩阵
              * init A matrix
              * */
-//            A_timeseriseMatrix = new Double[categoryPVmodletag.size()][categoryMVmodletag.size()][timeserise_N];
             A_timeseriseMatrix = new Double[numOfEnablePVPins_pp][numOfEnableMVpins_mm][timeserise_N];
             /***
              *1、fill respon into A matrix
-             *2、and init MatrixPvUseMv
-             *3、init MatrixMvusePv  其实只要将 matrixPvUseMv进行转置就行
+             *2、and init matrixEnablePVUseMV
              * */
 
-            matrixPvUseMv = new int[numOfEnablePVPins_pp][numOfEnableMVpins_mm];
-            Q = new Double[numOfEnablePVPins_pp];
-            R = new Double[numOfEnableMVpins_mm];
-            alpheTrajectoryCoefficients = new Double[numOfEnablePVPins_pp];
-
-
-            /***
-             * 死区时间和漏洞初始值
-             * */
-            deadZones = new Double[numOfEnablePVPins_pp];
-            funelinitvalues = new Double[numOfEnablePVPins_pp];
-
+            /**predict zone params*/
+            Q = new Double[numOfEnablePVPins_pp];//use for pv
+            /**trajectry coefs*/
+            alpheTrajectoryCoefficients = new Double[numOfEnablePVPins_pp];//use for pv
+            /**死区时间和漏洞初始值*/
+            deadZones = new Double[numOfEnablePVPins_pp];//use for pv
+            funelinitvalues = new Double[numOfEnablePVPins_pp];//use for pv
             /**funnel type*/
-            funneltype = new double[numOfEnablePVPins_pp][2];
+            funneltype = new double[numOfEnablePVPins_pp][2];//use for pv
 
-            matrixEnablePVUseMV=new int[numOfEnablePVPins_pp][numOfEnableMVpins_mm];
+
+            matrixEnablePVUseMV = new int[numOfEnablePVPins_pp][numOfEnableMVpins_mm];//recording enablepv use which mvs
+
             int indexEnablePV = 0;
             for (int indexpv = 0; indexpv < categoryPVmodletag.size(); ++indexpv) {
 
@@ -395,12 +404,12 @@ public class ControlModle {
                 if (participatePVMatrix[indexpv] == 0) {
                     continue;
                 }
+
                 Q[indexEnablePV] = categoryPVmodletag.get(indexpv).getQ();
                 alpheTrajectoryCoefficients[indexEnablePV] = categoryPVmodletag.get(indexpv).getReferTrajectoryCoef();
-
-
                 deadZones[indexEnablePV] = categoryPVmodletag.get(indexpv).getDeadZone();
                 funelinitvalues[indexEnablePV] = categoryPVmodletag.get(indexpv).getFunelinitValue();
+
                 double[] fnl = new double[2];
                 if (categoryPVmodletag.get(indexpv).getFunneltype() != null) {
                     switch (categoryPVmodletag.get(indexpv).getFunneltype()) {
@@ -454,7 +463,8 @@ public class ControlModle {
             }
 
 
-            /**init R*/
+            /**init R control zone params*/
+            R = new Double[numOfEnableMVpins_mm];//use for mv
             for (int indexmv = 0; indexmv < categoryMVmodletag.size(); ++indexmv) {
                 if (participateMVMatrix[indexmv] == 0) {
                     continue;
@@ -467,7 +477,6 @@ public class ControlModle {
              * 前馈输出对应矩阵
              * init B matrix
              * */
-//            B_timeseriseMatrix = new Double[categoryPVmodletag.size()][categoryFFmodletag.size()][timeserise_N];
             B_timeseriseMatrix = new Double[numOfEnablePVPins_pp][numOfEnableFFpins_vv][timeserise_N];
 
             /**
@@ -501,15 +510,11 @@ public class ControlModle {
             }
 
 
-
             outpoints_p = categoryPVmodletag.size();
-            simulatControlModle.setSimulateOutpoints_p(outpoints_p);
 
             feedforwardpoints_v = categoryFFmodletag.size();
-            simulatControlModle.setSimulateFeedforwardpoints_v(feedforwardpoints_v);
 
             inputpoints_m = categoryMVmodletag.size();
-            simulatControlModle.setSimulateInputpoints_m(inputpoints_m);
 
             simulatControlModle.setControltime_M(controltime_M);
             simulatControlModle.setPredicttime_P(predicttime_P);
@@ -559,7 +564,6 @@ public class ControlModle {
     }
 
     public JSONObject getrealData() {
-
         try {
             /**
              * y0(pv)
@@ -571,18 +575,24 @@ public class ControlModle {
              * */
             JSONObject jsonObject = new JSONObject();
             //sp
-            Double[] sp = new Double[categorySPmodletag.size()];
+            Double[] sp = new Double[numOfEnablePVPins_pp];
             int loop = 0;
             for (ModlePin sppin : categorySPmodletag) {
+                if (participatePVMatrix[loop] == 0) {
+                    continue;
+                }
                 sp[loop] = sppin.modleGetReal();
                 loop++;
             }
             jsonObject.put("wi", sp);
 
             //pv
-            Double[] pv = new Double[categoryPVmodletag.size()];
+            Double[] pv = new Double[numOfEnablePVPins_pp];
             loop = 0;
             for (ModlePin pvpin : categoryPVmodletag) {
+                if (participatePVMatrix[loop] == 0) {
+                    continue;
+                }
                 /***
                  * 是否有滤波器，有则使用滤波器的值，不然就使用实时数据
                  * */
@@ -590,16 +600,19 @@ public class ControlModle {
             }
             jsonObject.put("y0", pv);
 
-            //limitU输入限制
-            Double[][] limitU = new Double[categoryMVmodletag.size()][2];
-            Double[][] limitDU = new Double[categoryMVmodletag.size()][2];
-            loop = 0;
-            //U执行器当前给定
-            Double[] U = new Double[categoryMVmodletag.size()];
-            //U执行器当前反馈
-            Double[] UFB = new Double[categoryMVmodletag.size()];
+            /**limitU输入限制 mv上下限*/
+            Double[][] limitU = new Double[numOfEnableMVpins_mm][2];
+            Double[][] limitDU = new Double[numOfEnableMVpins_mm][2];
+            /**U执行器当前给定*/
+            Double[] U = new Double[numOfEnableMVpins_mm];
+            /**U执行器当前反馈**/
+            Double[] UFB = new Double[numOfEnableMVpins_mm];
 
+            loop = 0;
             for (ModlePin mvpin : categoryMVmodletag) {
+                if(participateMVMatrix[loop]==0){
+                    continue;
+                }
                 Double[] mvminmax = new Double[2];
                 ModlePin mvdown = mvpin.getDownLmt();
                 ModlePin mvup = mvpin.getUpLmt();
@@ -629,10 +642,14 @@ public class ControlModle {
 
             //FF
             loop = 0;
-            if (categoryFFmodletag.size() != 0) {
-                Double[] ff = new Double[categoryFFmodletag.size()];
-                Double[] fflmt = new Double[categoryFFmodletag.size()];
+            if (numOfEnableFFpins_vv != 0) {
+                Double[] ff = new Double[numOfEnableFFpins_vv];
+                Double[] fflmt = new Double[numOfEnableFFpins_vv];
                 for (ModlePin ffpin : categoryFFmodletag) {
+                    if(participateFFMatrix[loop]==0){
+                        continue;
+                    }
+
                     ff[loop] = ffpin.modleGetReal();
                     ModlePin ffuppin = ffpin.getUpLmt();
                     ModlePin ffdownpin = ffpin.getDownLmt();
@@ -642,17 +659,6 @@ public class ControlModle {
                      * */
                     Double ffHigh = 0d;
                     Double ffLow = 0d;
-//                    if (ffuppin.getResource().equals("constant")) {
-//                        ffHigh = Double.valueOf(ffuppin.getModleOpcTag());
-//                    } else {
-//                        ffHigh = ffuppin.modleGetReal();
-//                    }
-//
-//                    if (ffdownpin.getResource().equals("constant")) {
-//                        ffLow = Double.valueOf(ffdownpin.getModleOpcTag());
-//                    } else {
-//                        ffLow = ffdownpin.modleGetReal();
-//                    }
 
                     ffHigh = ffuppin.modleGetReal();
                     ffLow = ffdownpin.modleGetReal();
@@ -662,7 +668,6 @@ public class ControlModle {
                     } else {
                         fflmt[loop] = 0d;
                     }
-
                     loop++;
                 }
 
@@ -671,7 +676,7 @@ public class ControlModle {
 
             }
 
-            jsonObject.put("enable", getModleEnable());
+            jsonObject.put("enable", modleEnable);
 
             /**
              *死区时间和漏斗初始值
@@ -701,7 +706,7 @@ public class ControlModle {
              * */
             JSONObject jsonObject = new JSONObject();
             //sp
-            Double[] sp = new Double[simulatControlModle.getExtendModleSPPins().size()];
+            Double[] sp = new Double[simulatControlModle.getSimulateOutpoints_p()];
             int loop = 0;
             for (ModlePin sppin : simulatControlModle.getExtendModleSPPins()) {
                 sp[loop] = sppin.modleGetReal();
@@ -710,25 +715,24 @@ public class ControlModle {
             jsonObject.put("wi", sp);
 
             //pv
-            Double[] pv = new Double[simulatControlModle.getExtendModlePVPins().size()];
+            Double[] pv = new Double[simulatControlModle.getSimulateOutpoints_p()];
             loop = 0;
             for (ModlePin pvpin : simulatControlModle.getExtendModlePVPins()) {
                 /***
                  * 是否有滤波器，有则使用滤波器的值，不然就使用实时数据
                  * */
                 pv[loop++] = pvpin.modleGetReal();
-
             }
             jsonObject.put("y0", pv);
 
             //limitU输入限制
-            Double[][] limitU = new Double[simulatControlModle.getExtendModleMVPins().size()][2];
-            Double[][] limitDU = new Double[simulatControlModle.getExtendModleMVPins().size()][2];
+            Double[][] limitU = new Double[simulatControlModle.getSimulateInputpoints_m()][2];
+            Double[][] limitDU = new Double[simulatControlModle.getSimulateInputpoints_m()][2];
             loop = 0;
             //U执行器当前给定
-            Double[] U = new Double[simulatControlModle.getExtendModleMVPins().size()];
+            Double[] U = new Double[simulatControlModle.getSimulateInputpoints_m()];
             //U执行器当前反馈
-            Double[] UFB = new Double[simulatControlModle.getExtendModleMVPins().size()];
+            Double[] UFB = new Double[simulatControlModle.getSimulateInputpoints_m()];
 
             for (ModlePin mvpin : simulatControlModle.getExtendModleMVPins()) {
                 Double[] mvminmax = new Double[2];
@@ -761,9 +765,12 @@ public class ControlModle {
             //FF
             loop = 0;
             if (categoryFFmodletag.size() != 0) {
-                Double[] ff = new Double[categoryFFmodletag.size()];
-                Double[] fflmt = new Double[categoryFFmodletag.size()];
+                Double[] ff = new Double[numOfEnableFFpins_vv];
+                Double[] fflmt = new Double[numOfEnableFFpins_vv];
                 for (ModlePin ffpin : categoryFFmodletag) {
+                    if(participateFFMatrix[loop]==0){
+                        continue;
+                    }
                     ff[loop] = ffpin.modleGetReal();
                     ModlePin ffuppin = ffpin.getUpLmt();
                     ModlePin ffdownpin = ffpin.getDownLmt();
@@ -796,8 +803,8 @@ public class ControlModle {
             /**
              *死区时间和漏斗初始值
              * */
-            jsonObject.put("deadZones", deadZones);
-            jsonObject.put("funelInitValues", funelinitvalues);
+            jsonObject.put("deadZones", simulatControlModle.getSimulatedeadZones());
+            jsonObject.put("funelInitValues", simulatControlModle.getSimulatefunelinitvalues());
             jsonObject.put("validekey", simulatControlModle.getSimulatevalidkey());
             return jsonObject;
 
@@ -813,6 +820,9 @@ public class ControlModle {
             int loop = 0;
             boolean result = true;
             for (ModlePin mvpin : categoryMVmodletag) {
+                if(participateMVMatrix[loop]==0){
+                    continue;
+                }
                 mvpin.setWriteValue(values[loop]);
                 result = result && opcServicConstainer.writeModlePinValie(mvpin, values[loop]);
                 loop++;
@@ -839,7 +849,7 @@ public class ControlModle {
          * 模型运算状态值
          * */
         try {
-            for (int i = 0; i < categoryPVmodletag.size(); i++) {
+            for (int i = 0; i < numOfEnablePVPins_pp; i++) {
                 this.backPVPrediction[i] = Arrays.copyOfRange(backPVPrediction, 0 + timeserise_N * i, timeserise_N + timeserise_N * i);//pv的预测曲线
                 this.backPVFunelUp[i] = Arrays.copyOfRange(funelupAnddown[0], 0 + timeserise_N * i, timeserise_N + timeserise_N * i);//PV的漏斗上限
                 this.backPVFunelDown[i] = Arrays.copyOfRange(funelupAnddown[1], 0 + timeserise_N * i, timeserise_N + timeserise_N * i);//PV的漏斗下限
@@ -849,21 +859,20 @@ public class ControlModle {
             this.backPVPredictionError = backPVPredictionError;
             this.backrawDmv = backDmvWrite;
             this.backrawDff = dff;
-            for (int indexpv = 0; indexpv < outpoints_p; indexpv++) {
+            for (int indexpv = 0; indexpv < numOfEnablePVPins_pp; indexpv++) {
 
                 /**dMV写入值*/
-                for (int indexmv = 0; indexmv < inputpoints_m; indexmv++) {
-                    if (matrixPvUseMv[indexpv][indexmv] == 1) {
+                for (int indexmv = 0; indexmv < numOfEnableMVpins_mm; indexmv++) {
+                    if (matrixEnablePVUseMV[indexpv][indexmv] == 1) {
                         this.backDmvWrite[indexpv][indexmv] = backDmvWrite[indexmv];
                     }
                 }
 
                 /**前馈增量*/
-                for (int indexff = 0; indexff < feedforwardpoints_v; indexff++) {
-                    if (matrixPvUseFf[indexpv][indexff] == 1) {
+                for (int indexff = 0; indexff < numOfEnableFFpins_vv; indexff++) {
+                    if (matrixEnablePVUseFF[indexpv][indexff] == 1) {
                         this.backDff[indexpv][indexff] = dff[indexff];
                     }
-
                 }
 
             }
@@ -1174,14 +1183,6 @@ public class ControlModle {
 
     public void setBackrawDff(double[] backrawDff) {
         this.backrawDff = backrawDff;
-    }
-
-    public Integer getNumOfactiveoutpins_p() {
-        return numOfactiveoutpins_p;
-    }
-
-    public void setNumOfactiveoutpins_p(Integer numOfactiveoutpins_p) {
-        this.numOfactiveoutpins_p = numOfactiveoutpins_p;
     }
 
     public Integer getNumOfEnablePVPins_pp() {

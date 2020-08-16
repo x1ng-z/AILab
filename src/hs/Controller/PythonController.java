@@ -35,13 +35,13 @@ public class PythonController {
         /**
          * base
          * */
-        jsonObject.put("m", modle.getInputpoints_m());
-        jsonObject.put("p", modle.getOutpoints_p());
+        jsonObject.put("m", modle.getNumOfEnableMVpins_mm());
+        jsonObject.put("p", modle.getNumOfEnablePVPins_pp());
         jsonObject.put("M", modle.getControltime_M());
         jsonObject.put("P", modle.getPredicttime_P());
         jsonObject.put("N", modle.getTimeserise_N());
-        jsonObject.put("fnum", modle.getFeedforwardpoints_v());
-        jsonObject.put("pvusemv", modle.getMatrixPvUseMv());
+        jsonObject.put("fnum", modle.getNumOfEnableFFpins_vv());
+        jsonObject.put("pvusemv", modle.getMatrixEnablePVUseMV());
         jsonObject.put("APCOutCycle", modle.getControlAPCOutCycle());
         jsonObject.put("enable", modle.getModleEnable());
         jsonObject.put("validekey", modle.getValidkey());
@@ -102,7 +102,6 @@ public class PythonController {
     public String ModelUpdateData(@RequestParam("id") int id, @RequestParam(value = "data", required = false) String data, @RequestParam("validekey") long validekey) {
         //,@RequestParam("predict") double[] predictpv,@RequestParam("mv") double[]mv,@RequestParam("e") double[]e,@RequestParam("funelupAnddown") double[][]funelupAnddown,@RequestParam("dmv") double[] dmv
         try {
-
             ControlModle controlModle = modleConstainer.getModulepool().get(id);
             if (controlModle.getValidkey() != validekey) {
                 return "false";
@@ -115,8 +114,9 @@ public class PythonController {
             JSONArray dmvJson = modlestatus.getJSONArray("dmv");
             JSONArray dffJson=modlestatus.getJSONArray("dff");
 
-            int p = controlModle.getCategoryPVmodletag().size();
-            int m = controlModle.getCategoryMVmodletag().size();
+            int p = controlModle.getNumOfEnablePVPins_pp();
+            int m = controlModle.getNumOfEnableMVpins_mm();
+            int v=controlModle.getNumOfEnableFFpins_vv();
             int N = controlModle.getTimeserise_N();
 
             double[] predictpvArray = new double[p * N];
@@ -125,8 +125,8 @@ public class PythonController {
             double[] dmvArray = new double[m];
 
             double[] dffArray=null;
-            if(controlModle.getFeedforwardpoints_v()!=0){
-                dffArray=new double[controlModle.getFeedforwardpoints_v()];
+            if(v!=0){
+                dffArray=new double[v];
             }
             for (int i = 0; i < p * N; i++) {
                 predictpvArray[i] = predictpvJson.getDouble(i);
@@ -141,7 +141,7 @@ public class PythonController {
             for (int i = 0; i < m; i++) {
                 dmvArray[i] = dmvJson.getDouble(i);
             }
-            for(int i=0;i<controlModle.getFeedforwardpoints_v();++i){
+            for(int i=0;i<v;++i){
                 dffArray[i]=dffJson.getDouble(i);
             }
 

@@ -42,8 +42,8 @@ public class PythonSimulateController {
          * base
          * */
         SimulatControlModle simulatControlModle = modle.getSimulatControlModle();
-        jsonObject.put("m", simulatControlModle.getNumOfIOMappingRelation());//映射数量
-        jsonObject.put("p", simulatControlModle.getNumOfIOMappingRelation());//映射数量
+        jsonObject.put("m", simulatControlModle.getSimulateInputpoints_m());//映射数量
+        jsonObject.put("p", simulatControlModle.getSimulateOutpoints_p());//映射数量
         jsonObject.put("M", simulatControlModle.getControltime_M());
         jsonObject.put("P", simulatControlModle.getPredicttime_P());
         jsonObject.put("N", simulatControlModle.getTimeserise_N());
@@ -99,8 +99,7 @@ public class PythonSimulateController {
             }
             JSONObject modlestatus = JSONObject.parseObject(data);
             JSONArray dmvJson = modlestatus.getJSONArray("dmv");
-            int m = controlModle.getSimulatControlModle().getNumOfIOMappingRelation();
-            controlModle.getSimulatControlModle().getMatrixSimulatePvUseMv();
+            int m = controlModle.getSimulatControlModle().getSimulateInputpoints_m();
             double[] dmvArray = new double[m];
             for (int i = 0; i < m; i++) {
                 dmvArray[i] = dmvJson.getDouble(i);

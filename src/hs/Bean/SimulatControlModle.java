@@ -99,12 +99,13 @@ public class SimulatControlModle {
      */
     private Integer predicttime_P = 12;
 
-    /**数据*/
-    private Integer p=0;
+
     /**
      * 单一控制输入未来控制M步增量(控制域)
      */
     private Integer controltime_M = 6;
+
+
     /**
      * 响应序列长度
      */
@@ -228,29 +229,27 @@ public class SimulatControlModle {
          * */
         A_SimulatetimeseriseMatrix = new Double[numOfIOMappingRelation][numOfIOMappingRelation][timeserise_N];
 
-        /***
-         *1、fill respon into 输入输出respon 仿真 matrix
-         *2、and init matrixSimulatePvUseMv
-         *3、死区时间和漏洞初始值
+        /**pv用了哪些mv,标记矩阵*/
+        matrixSimulatePvUseMv = new int[numOfIOMappingRelation][numOfIOMappingRelation];
+
+        /**仿真R
+         * 这里仿真的pv的数量肯定要和mv数量相同的，因为仿真的时候是把pv与mv一条映射线作为一个仿真单元
          * */
+        simulatR = new Double[numOfIOMappingRelation];
+
         /**仿真Q参数*/
         simulatQ = new Double[numOfIOMappingRelation];
-        /**仿真R*/
-        simulatR = new Double[numOfIOMappingRelation];
         /**仿真轨迹柔化系数*/
         simulateAlpheTrajectoryCoefficients = new Double[numOfIOMappingRelation];
-
         /**仿真死区*/
         simulatedeadZones = new Double[numOfIOMappingRelation];
         /**仿真漏斗初始值*/
         simulatefunelinitvalues = new Double[numOfIOMappingRelation];
         /**仿真漏斗类型*/
         simulatefunneltype = new Double[numOfIOMappingRelation][2];
-        /**pv用了哪些mv,标记矩阵*/
-        matrixSimulatePvUseMv = new int[numOfIOMappingRelation][numOfIOMappingRelation];
+
         int index4IOMappingRelation = 0;
         for (int indexpv = 0; indexpv < controlModle.getCategoryPVmodletag().size(); ++indexpv) {
-
 
             /**没有激活的pv直接跳过*/
             if (controlModle.getParticipatePVMatrix()[indexpv] == 0) {
@@ -270,17 +269,18 @@ public class SimulatControlModle {
                     A_SimulatetimeseriseMatrix[index4IOMappingRelation][index4IOMappingRelation] = ioRespon;
                     /**重构剥离的pv用了哪些mv*/
                     matrixSimulatePvUseMv[index4IOMappingRelation][index4IOMappingRelation] = 1;
-                    /**预测域系数*/
-                    simulatQ[index4IOMappingRelation] = controlModle.getCategoryPVmodletag().get(indexpv).getQ();
+
                     /**控制域参数*/
                     simulatR[index4IOMappingRelation] = controlModle.getCategoryMVmodletag().get(indexmv).getR();
+
+                    /**预测域系数*/
+                    simulatQ[index4IOMappingRelation] = controlModle.getCategoryPVmodletag().get(indexpv).getQ();
                     /**柔化系数*/
                     simulateAlpheTrajectoryCoefficients[index4IOMappingRelation] = controlModle.getCategoryPVmodletag().get(indexpv).getReferTrajectoryCoef();
                     /**死区*/
                     simulatedeadZones[index4IOMappingRelation] = controlModle.getCategoryPVmodletag().get(indexpv).getDeadZone();
                     /**漏斗初始值*/
                     simulatefunelinitvalues[index4IOMappingRelation] = controlModle.getCategoryPVmodletag().get(indexpv).getFunelinitValue();
-
                     /**漏斗类型*/
                     Double[] fnl = new Double[2];
                     if (controlModle.getCategoryPVmodletag().get(indexpv).getFunneltype() != null) {
@@ -333,7 +333,6 @@ public class SimulatControlModle {
          * */
         if (controlModle.getNumOfEnableFFpins_vv() > 0) {
             B_SimulatetimeseriseMatrix = new Double[numOfIOMappingRelation][controlModle.getNumOfEnableFFpins_vv()][timeserise_N];
-
             /**
              *fill respon into 前馈与输出 响应matrix
              *填入前馈输出响应矩阵
@@ -358,6 +357,10 @@ public class SimulatControlModle {
 
         }
 
+        simulateOutpoints_p=numOfIOMappingRelation;
+        simulateInputpoints_m=numOfIOMappingRelation;
+        simulateFeedforwardpoints_v=controlModle.getNumOfEnableFFpins_vv();
+
         backSimulateDmv = new double[controlModle.getNumOfEnablePVPins_pp()][controlModle.getNumOfEnableMVpins_mm()];
         generateSimulatevalidkey();
         executePythonBridgeSimulate = new ExecutePythonBridge(simulatorbuilddir, "http://localhost:8080/AILab/pythonsimulate/modlebuild/" + modleid + ".do", modleid + "");
@@ -380,6 +383,7 @@ public class SimulatControlModle {
         return numOfIOMappingRelation;
     }
 
+    /**add num of pv and mv mapping ralationship*/
     public void addNumOfIOMappingRelation() {
         ++numOfIOMappingRelation;
     }

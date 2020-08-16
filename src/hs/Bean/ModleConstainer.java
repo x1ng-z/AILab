@@ -55,7 +55,7 @@ public class ModleConstainer {
             controlModle.setOpcServicConstainer(opcServicConstainer);
             controlModle.setBaseConf(baseConf);
             controlModle.setSimulatorbuilddir(simulatordir);
-            controlModle.modleBuild();
+            controlModle.modleBuild(true);
             Modulepool.put(controlModle.getModleId(), controlModle);
             ExecutePythonBridge executePythonBridge = new ExecutePythonBridge(
                     apcdir,
@@ -73,7 +73,7 @@ public class ModleConstainer {
             controlModle.setOpcServicConstainer(opcServicConstainer);
             controlModle.setBaseConf(baseConf);
             controlModle.setSimulatorbuilddir(simulatordir);
-            controlModle.modleBuild();
+            controlModle.modleBuild(true);
             Modulepool.put(controlModle.getModleId(), controlModle);
         }
 

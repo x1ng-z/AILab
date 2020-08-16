@@ -77,11 +77,15 @@ public class ModleController {
                     /**如果当前是0,这要切入，如果当前是1,这要切除，*/
                     pvpin.setPinEnable(Integer.valueOf(onOroff)==0?1:0);
                     modleDBServe.updatepinEnable(pvpin.getModlepinsId(), Integer.valueOf(onOroff)==0?1:0);
+                    /**重新build下*/
+                    controlModle.modleBuild(false);
                     JSONObject result = new JSONObject();
                     result.put("msg", "success");
                     return result.toJSONString();
                 } catch (NumberFormatException e) {
                     logger.error(e.getMessage(), e);
+                }catch (Exception e){
+                    logger.error(e.getMessage(),e);
                 }
             }
 
@@ -125,9 +129,9 @@ public class ModleController {
 
 
         loop = 0;
-        String[] pvcurveNames = new String[controlModle.getCategoryPVmodletag().size()];
-        String[] funelUpcurveNames = new String[controlModle.getCategoryPVmodletag().size()];
-        String[] funelDowncurveNames = new String[controlModle.getCategoryPVmodletag().size()];
+        String[] pvcurveNames = new String[controlModle.getNumOfEnablePVPins_pp()];
+        String[] funelUpcurveNames = new String[controlModle.getNumOfEnablePVPins_pp()];
+        String[] funelDowncurveNames = new String[controlModle.getNumOfEnablePVPins_pp()];
         for (ModlePin pvpin : controlModle.getCategoryPVmodletag()) {
             pvcurveNames[loop] = pvpin.getModlePinName();
             funelUpcurveNames[loop] = "funelUp";
