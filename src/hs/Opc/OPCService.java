@@ -638,7 +638,7 @@ public class OPCService implements Runnable {
             pin.opcUpdateValue(Double.valueOf(valueStringstyle));
 
             //DCS手自动切换监视
-            if (pin.getModlePinName() != null && pin.getModlePinName().trim().equals(ModlePin.TYPE_PIN_AUTO)) {
+            if (pin.getModlePinName() != null && pin.getModlePinName().trim().equals(ModlePin.TYPE_PIN_MODLE_AUTO)) {
                 logger.info("modle id=" + pin.getReference_modleId() + "old value=" + pin.getOldReadValue() + ",new value=" + pin.getNewReadValue());
                 if ((pin.getOldReadValue() != null) && (pin.getOldReadValue() == 0) && (pin.getNewReadValue() != 0) /*&& (modleConstainerl != null) && (modleConstainerl.getModulepool().get(pin.getReference_modleId()).getModleEnable() == 0)*/) {
                     //run
@@ -733,104 +733,104 @@ public class OPCService implements Runnable {
     /**
      * onebyone 获取oopc点位数据，并处理
      */
-    @Deprecated
-    public void readAndProcessDataByIter() {
-        /**实时读取数据**/
-        for (Map.Entry<String, ItemUnit> integerItemEntry : itemManger.getOpcitemunitPool().entrySet()) {
-            String stringvalue = null;
-            try {
-
-                List<ModlePin> pins = opctagModlePinPool.get(integerItemEntry.getKey());
-
-                stringvalue = integerItemEntry.getValue().getItem().read(false).getValue().getObject().toString();
-
-
-                if (pins == null) {
-                    //pins列表为null说明这个不是pin引脚的tag，可能是filter的opctag，这个主要是用于反写的，不需要读取
-                    continue;
-                }
-                //logger.debug("update" + integerItemEntry.getKey() + "value: " + stringvalue);
-                if (stringvalue.equals("true") || stringvalue.equals("on")) {
-                    stringvalue = 1 + "";
-                }
-                if (stringvalue.equals("false") || stringvalue.equals("off")) {
-                    stringvalue = 0 + "";
-                }
-                for (ModlePin pin : pins) {
-                    /**更新引脚数据数据*/
-                    pin.opcUpdateValue(Double.valueOf(stringvalue));
-
-                    /**DCS手自动切换监视*/
-                    if (pin.getModlePinName() != null && pin.getModlePinName().equals(ModlePin.TYPE_PIN_AUTO)) {
-                        if (pin.getNewReadValue() == 1 && (modleConstainerl != null) && (modleConstainerl.getModulepool().get(pin.getReference_modleId()).getModleEnable() == 0)) {
-                            /**run*/
-                            ModleRunTask modleRunTask = new ModleRunTask();
-                            modleRunTask.setModleid(pin.getReference_modleId());
-                            modleStopRunMonitor.putTask(modleRunTask);
-                        } else if (pin.getNewReadValue() == 0 && (modleConstainerl != null) && (modleConstainerl.getModulepool().get(pin.getReference_modleId()).getModleEnable() == 1)) {
-                            /**stop*/
-                            ModleStopTask modleStopTask = new ModleStopTask();
-                            modleStopTask.setModleid(pin.getReference_modleId());
-                            modleStopRunMonitor.putTask(modleStopTask);
-                        } else {
-                            logger.debug("手自动位号未进行切换，modleid=" + pin.getReference_modleId());
-                        }
-                    }
-
-                    /**检查是否存在滤波器，存在的话则根据滤波器类型生成滤波器执行任务*/
-                    if (pin.getFilter() != null) {
-
-                        if (pin.getFilter() instanceof FirstOrderLagFilter) {
-
-                            FirstOrderLagFilter folf = (FirstOrderLagFilter) pin.getFilter();
-                            //更新本次数据采样数据
-                            folf.setsampledata(Double.valueOf(stringvalue));
-
-                            //新建过滤器的执行任务
-                            FiltTask folftask = new FiltTask();
-                            folftask.setFilter(folf);
-
-                            if ((folf.getBackToDCSTag() != null) && (!folf.getBackToDCSTag().equals(""))) {
-                                folftask.setItemfilterback(itemManger.getItemUnit(folf.getBackToDCSTag()).getItem());
-                            }
-
-                            folftask.setUnfiltdata(Double.valueOf(stringvalue));//未滤波的数据
-
-                            filterService.putfiltertask(folftask);
-
-                        } else if (pin.getFilter() instanceof MoveAverageFilter) {
-
-                            MoveAverageFilter mvav = (MoveAverageFilter) pin.getFilter();
-                            //更新本次采集数据
-                            mvav.setsampledata(Double.valueOf(stringvalue));
-
-                            //新建滤波器执行任务
-                            FiltTask mvavtask = new FiltTask();
-                            mvavtask.setFilter(mvav);
-
-                            if ((mvav.getBackToDCSTag() != null) && (!mvav.getBackToDCSTag().equals(""))) {
-                                mvavtask.setItemfilterback(itemManger.getItemUnit(mvav.getBackToDCSTag()).getItem());
-                            }
-
-
-                            //抽取本次需要滤波的窗口数据
-                            mvavtask.setUnfiltdatas(mvav.getUnfilterdatas());
-                            filterService.putfiltertask(mvavtask);
-                        }
-
-                    }
-                }
-            } catch (JIException e) {
-                logger.error(e.getMessage(), e);
-                connectStatus = false;
-                break;
-
-            } catch (Exception e) {
-                logger.error(e.getMessage(), e);
-                logger.error("tagname" + integerItemEntry.getKey() + "value:" + stringvalue);
-            }
-        }
-    }
+//    @Deprecated
+//    public void readAndProcessDataByIter() {
+//        /**实时读取数据**/
+//        for (Map.Entry<String, ItemUnit> integerItemEntry : itemManger.getOpcitemunitPool().entrySet()) {
+//            String stringvalue = null;
+//            try {
+//
+//                List<ModlePin> pins = opctagModlePinPool.get(integerItemEntry.getKey());
+//
+//                stringvalue = integerItemEntry.getValue().getItem().read(false).getValue().getObject().toString();
+//
+//
+//                if (pins == null) {
+//                    //pins列表为null说明这个不是pin引脚的tag，可能是filter的opctag，这个主要是用于反写的，不需要读取
+//                    continue;
+//                }
+//                //logger.debug("update" + integerItemEntry.getKey() + "value: " + stringvalue);
+//                if (stringvalue.equals("true") || stringvalue.equals("on")) {
+//                    stringvalue = 1 + "";
+//                }
+//                if (stringvalue.equals("false") || stringvalue.equals("off")) {
+//                    stringvalue = 0 + "";
+//                }
+//                for (ModlePin pin : pins) {
+//                    /**更新引脚数据数据*/
+//                    pin.opcUpdateValue(Double.valueOf(stringvalue));
+//
+//                    /**DCS手自动切换监视*/
+//                    if (pin.getModlePinName() != null && pin.getModlePinName().equals(ModlePin.TYPE_PIN_MODLE_AUTO)) {
+//                        if (pin.getNewReadValue() == 1 && (modleConstainerl != null) && (modleConstainerl.getModulepool().get(pin.getReference_modleId()).getModleEnable() == 0)) {
+//                            /**run*/
+//                            ModleRunTask modleRunTask = new ModleRunTask();
+//                            modleRunTask.setModleid(pin.getReference_modleId());
+//                            modleStopRunMonitor.putTask(modleRunTask);
+//                        } else if (pin.getNewReadValue() == 0 && (modleConstainerl != null) && (modleConstainerl.getModulepool().get(pin.getReference_modleId()).getModleEnable() == 1)) {
+//                            /**stop*/
+//                            ModleStopTask modleStopTask = new ModleStopTask();
+//                            modleStopTask.setModleid(pin.getReference_modleId());
+//                            modleStopRunMonitor.putTask(modleStopTask);
+//                        } else {
+//                            logger.debug("手自动位号未进行切换，modleid=" + pin.getReference_modleId());
+//                        }
+//                    }
+//
+//                    /**检查是否存在滤波器，存在的话则根据滤波器类型生成滤波器执行任务*/
+//                    if (pin.getFilter() != null) {
+//
+//                        if (pin.getFilter() instanceof FirstOrderLagFilter) {
+//
+//                            FirstOrderLagFilter folf = (FirstOrderLagFilter) pin.getFilter();
+//                            //更新本次数据采样数据
+//                            folf.setsampledata(Double.valueOf(stringvalue));
+//
+//                            //新建过滤器的执行任务
+//                            FiltTask folftask = new FiltTask();
+//                            folftask.setFilter(folf);
+//
+//                            if ((folf.getBackToDCSTag() != null) && (!folf.getBackToDCSTag().equals(""))) {
+//                                folftask.setItemfilterback(itemManger.getItemUnit(folf.getBackToDCSTag()).getItem());
+//                            }
+//
+//                            folftask.setUnfiltdata(Double.valueOf(stringvalue));//未滤波的数据
+//
+//                            filterService.putfiltertask(folftask);
+//
+//                        } else if (pin.getFilter() instanceof MoveAverageFilter) {
+//
+//                            MoveAverageFilter mvav = (MoveAverageFilter) pin.getFilter();
+//                            //更新本次采集数据
+//                            mvav.setsampledata(Double.valueOf(stringvalue));
+//
+//                            //新建滤波器执行任务
+//                            FiltTask mvavtask = new FiltTask();
+//                            mvavtask.setFilter(mvav);
+//
+//                            if ((mvav.getBackToDCSTag() != null) && (!mvav.getBackToDCSTag().equals(""))) {
+//                                mvavtask.setItemfilterback(itemManger.getItemUnit(mvav.getBackToDCSTag()).getItem());
+//                            }
+//
+//
+//                            //抽取本次需要滤波的窗口数据
+//                            mvavtask.setUnfiltdatas(mvav.getUnfilterdatas());
+//                            filterService.putfiltertask(mvavtask);
+//                        }
+//
+//                    }
+//                }
+//            } catch (JIException e) {
+//                logger.error(e.getMessage(), e);
+//                connectStatus = false;
+//                break;
+//
+//            } catch (Exception e) {
+//                logger.error(e.getMessage(), e);
+//                logger.error("tagname" + integerItemEntry.getKey() + "value:" + stringvalue);
+//            }
+//        }
+//    }
 
 
     public void reconnect() {
@@ -838,13 +838,13 @@ public class OPCService implements Runnable {
         try {
             server.removeGroup(group, true);
             server.disconnect();
-            itemManger = new ItemManger();
-            initAndReConnect();
         } catch (JIException jiException) {
             logger.error(jiException.getMessage(), jiException);
         } catch (Exception exception) {
             logger.error(exception.getMessage(), exception);
         }
+        itemManger = new ItemManger();
+        initAndReConnect();
     }
 
 

@@ -24,7 +24,13 @@ import java.util.regex.Pattern;
  * @date 2020/3/19 10:41
  */
 public class testJson {
+
+    private  static Pattern pvpattern = Pattern.compile("(^pv\\d+$)");
+
+
+
     private  static Pattern opcpattern = Pattern.compile("([a-zA-Z]*)([0-9|.]*)");
+
     public void  test(){
         double[] dd=new double[2];
         for(double d:dd){
@@ -41,6 +47,20 @@ public class testJson {
     }
     public static void main(String[] args) {
 
+        int[][] test_length=new int[2][3];
+
+        for(int ti:test_length[0]){
+                System.out.println(ti);
+        }
+
+        System.out.println(test_length.length);
+        System.out.println(test_length[0].length);
+
+        Matcher matcher=pvpattern.matcher("pv");
+
+        if(matcher.find()){
+            System.out.println(matcher.group());
+        }
 
         StringBuilder stringBuilder= new StringBuilder();
 

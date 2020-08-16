@@ -42,8 +42,8 @@ public class PythonSimulateController {
          * base
          * */
         SimulatControlModle simulatControlModle = modle.getSimulatControlModle();
-        jsonObject.put("m", simulatControlModle.getSimulateInputpoints_m());
-        jsonObject.put("p", simulatControlModle.getSimulateOutpoints_p());
+        jsonObject.put("m", simulatControlModle.getNumOfIOMappingRelation());//映射数量
+        jsonObject.put("p", simulatControlModle.getNumOfIOMappingRelation());//映射数量
         jsonObject.put("M", simulatControlModle.getControltime_M());
         jsonObject.put("P", simulatControlModle.getPredicttime_P());
         jsonObject.put("N", simulatControlModle.getTimeserise_N());
@@ -79,7 +79,8 @@ public class PythonSimulateController {
     @RequestMapping("/opcread/{id}")
     public String ModelReadData(@PathVariable("id") int id) {
         ControlModle controlModle = modleConstainer.getModulepool().get(id);
-        return controlModle.getrealData().toJSONString();
+        JSONObject realjson=controlModle.getrealSimulateData();
+        return realjson.toJSONString();
     }
 
 
@@ -93,17 +94,18 @@ public class PythonSimulateController {
         try {
 
             ControlModle controlModle = modleConstainer.getModulepool().get(id);
-            if (controlModle.getValidkey() != validekey) {
+            if (controlModle.getSimulatControlModle().getSimulatevalidkey() != validekey) {
                 return "false";
             }
             JSONObject modlestatus = JSONObject.parseObject(data);
             JSONArray dmvJson = modlestatus.getJSONArray("dmv");
             int m = controlModle.getSimulatControlModle().getNumOfIOMappingRelation();
+            controlModle.getSimulatControlModle().getMatrixSimulatePvUseMv();
             double[] dmvArray = new double[m];
             for (int i = 0; i < m; i++) {
                 dmvArray[i] = dmvJson.getDouble(i);
             }
-            if (!controlModle.getSimulatControlModle().uodateBackSimulateDmv(dmvArray)) {
+            if (!controlModle.getSimulatControlModle().updateBackSimulateDmv(dmvArray)) {
                 return "false";
             }
             return "true";

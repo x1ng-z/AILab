@@ -10,7 +10,6 @@ import hs.Filter.MoveAverageFilter;
 import hs.ShockDetect.ShockDetector;
 import org.apache.ibatis.annotations.Param;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
@@ -51,7 +50,12 @@ public class ModleDBServe {
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public void modifymodleEnable(int modleid, int enable) {
-        modleMapper.modifymodleEnable(modleid, enable);
+        modleMapper.updatemodleEnable(modleid, enable);
+    }
+
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    public void updatepinEnable(int pinid,int enable){
+        modleMapper.updatepinEnable(pinid, enable);
     }
 
 

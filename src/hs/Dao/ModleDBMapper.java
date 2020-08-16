@@ -49,7 +49,9 @@ public interface ModleDBMapper {
 
     void deleteModle(@Param("modleid") int modleid);
 
-    void modifymodleEnable(@Param("modleid") int modleid,@Param("enable") int enable);
+    void updatemodleEnable(@Param("modleid") int modleid, @Param("enable") int enable);
+    void updatepinEnable(@Param("pinid") int pinid, @Param("enable") int enable);
+
     ControlModle getModle(@Param("modleid") int modleid);
 //    List<ModleTag> getModle(@Param("modleidid")int modleid);
 //

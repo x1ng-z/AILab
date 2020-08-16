@@ -16,6 +16,7 @@ public class SimulatControlModle {
     public static Logger logger = Logger.getLogger(SimulatControlModle.class);
     private String simulatorbuilddir;
     private Integer modleid;
+    private ControlModle controlModle;
 
     /**
      * 模型的标识token，用于apc仿真算法判别自己的算法是否已经过去，需要停止
@@ -97,6 +98,9 @@ public class SimulatControlModle {
      * 预测时域
      */
     private Integer predicttime_P = 12;
+
+    /**数据*/
+    private Integer p=0;
     /**
      * 单一控制输入未来控制M步增量(控制域)
      */
@@ -123,6 +127,10 @@ public class SimulatControlModle {
     private List<ModlePin> modlePins;
 
 
+    public List<ModlePin> getExtendModlePVPins() {
+        return extendModlePVPins;
+    }
+
     /**
      * 扩展引脚
      * 比如pv与mv的响应矩阵为:
@@ -139,29 +147,29 @@ public class SimulatControlModle {
      * pv3 ....
      * 因此可以将这个pv1,pv1,pv2这样的顺序放入到extendModlePins中
      */
-    private List<ModlePin> extendModlePins = new ArrayList<>();
+    private List<ModlePin> extendModlePVPins = new ArrayList<>();
 
 
+    public List<ModlePin> getExtendModleSPPins() {
+        return extendModleSPPins;
+    }
+
+    public void setExtendModleSPPins(List<ModlePin> extendModleSPPins) {
+        this.extendModleSPPins = extendModleSPPins;
+    }
+
+    private List<ModlePin> extendModleSPPins = new ArrayList<>();
+
+
+    public List<ModlePin> getExtendModleMVPins() {
+        return extendModleMVPins;
+    }
+
     /**
-     * 响应
+     * 顺序与上述pv相对于
      */
-    private List<ResponTimeSerise> responTimeSerises;
-    /**
-     * 已经分类号的PV引脚
-     */
-    private List<ModlePin> categoryPVmodletag = null;
-    /**
-     * 已经分类号的SP引脚
-     */
-    private List<ModlePin> categorySPmodletag = null;
-    /**
-     * 已经分类号的MV引脚
-     */
-    private List<ModlePin> categoryMVmodletag = null;
-    /**
-     * 已经分类号的FF引脚
-     */
-    private List<ModlePin> categoryFFmodletag = null;
+    private List<ModlePin> extendModleMVPins = new ArrayList<>();
+
 
     private int[][] matrixPvUseMv = null;
 
@@ -183,7 +191,7 @@ public class SimulatControlModle {
      * 获取输入输出响应
      */
     private Double[] getSpecialIORespon(String pvpinname, String mvpinname) {
-        for (ResponTimeSerise responTimeSerise : responTimeSerises) {
+        for (ResponTimeSerise responTimeSerise : controlModle.getResponTimeSerises()) {
             if (responTimeSerise.getInputPins().equals(mvpinname) && responTimeSerise.getOutputPins().equals(pvpinname)) {
                 return responTimeSerise.responOneTimeSeries(timeserise_N, controlAPCOutCycle);
             }
@@ -196,7 +204,7 @@ public class SimulatControlModle {
      * 获取前馈输出响应
      */
     private Double[] getSpecialFORespon(String pvpinname, String ffpinname) {
-        for (ResponTimeSerise responTimeSerise : responTimeSerises) {
+        for (ResponTimeSerise responTimeSerise : controlModle.getResponTimeSerises()) {
             if (responTimeSerise.getInputPins().equals(ffpinname) && responTimeSerise.getOutputPins().equals(pvpinname)) {
                 return responTimeSerise.responOneTimeSeries(timeserise_N, controlAPCOutCycle);
             }
@@ -220,45 +228,11 @@ public class SimulatControlModle {
          * */
         A_SimulatetimeseriseMatrix = new Double[numOfIOMappingRelation][numOfIOMappingRelation][timeserise_N];
 
-        /**pv*/
-        for (int indexpv = 0; indexpv < numOfIOMappingRelation; ++indexpv) {
-            /**mv*/
-            for (int indexmv = 0; indexmv < numOfIOMappingRelation; ++indexmv) {
-                Double[] initserise = new Double[timeserise_N];
-                for (int indexn = 0; indexn < timeserise_N; indexn++) {
-                    initserise[indexn] = 0d;
-                }
-                A_SimulatetimeseriseMatrix[indexpv][indexmv] = initserise;
-            }
-        }
-
-        /***
-         * 前馈输出对应矩阵
-         * init B matrix
-         * */
-        if (simulateFeedforwardpoints_v > 0) {
-            B_SimulatetimeseriseMatrix = new Double[numOfIOMappingRelation][simulateFeedforwardpoints_v][timeserise_N];
-            for (int indexpv = 0; indexpv < numOfIOMappingRelation; ++indexpv) {
-                for (int indexff = 0; indexff < simulateFeedforwardpoints_v; ++indexff) {
-                    Double[] initserise = new Double[timeserise_N];
-                    for (int indexn = 0; indexn < timeserise_N; indexn++) {
-                        initserise[indexn] = 0d;
-                    }
-                    B_SimulatetimeseriseMatrix[indexpv][indexff] = initserise;
-                }
-
-            }
-        }
-
-
         /***
          *1、fill respon into 输入输出respon 仿真 matrix
          *2、and init matrixSimulatePvUseMv
          *3、死区时间和漏洞初始值
-         *
          * */
-
-
         /**仿真Q参数*/
         simulatQ = new Double[numOfIOMappingRelation];
         /**仿真R*/
@@ -275,29 +249,42 @@ public class SimulatControlModle {
         /**pv用了哪些mv,标记矩阵*/
         matrixSimulatePvUseMv = new int[numOfIOMappingRelation][numOfIOMappingRelation];
         int index4IOMappingRelation = 0;
-        for (int indexpv = 0; indexpv < categoryPVmodletag.size(); ++indexpv) {
-            for (int indexmv = 0; indexmv < categoryMVmodletag.size(); ++indexmv) {
-                Double[] ioRespon = getSpecialIORespon(categoryPVmodletag.get(indexpv).getModlePinName(), categoryMVmodletag.get(indexmv).getModlePinName());
+        for (int indexpv = 0; indexpv < controlModle.getCategoryPVmodletag().size(); ++indexpv) {
+
+
+            /**没有激活的pv直接跳过*/
+            if (controlModle.getParticipatePVMatrix()[indexpv] == 0) {
+                continue;
+            }
+
+            for (int indexmv = 0; indexmv < controlModle.getCategoryMVmodletag().size(); ++indexmv) {
+
+                /**激活的pv没有用到的mv直接跳过*/
+                if (controlModle.getParticipateMVMatrix()[indexmv] == 0) {
+                    continue;
+                }
+
+                Double[] ioRespon = getSpecialIORespon(controlModle.getCategoryPVmodletag().get(indexpv).getModlePinName(), controlModle.getCategoryMVmodletag().get(indexmv).getModlePinName());
                 if ((ioRespon != null) && (index4IOMappingRelation < numOfIOMappingRelation)) {
                     /**重构的响应矩阵*/
                     A_SimulatetimeseriseMatrix[index4IOMappingRelation][index4IOMappingRelation] = ioRespon;
                     /**重构剥离的pv用了哪些mv*/
                     matrixSimulatePvUseMv[index4IOMappingRelation][index4IOMappingRelation] = 1;
                     /**预测域系数*/
-                    simulatQ[index4IOMappingRelation] = categoryPVmodletag.get(indexpv).getQ();
+                    simulatQ[index4IOMappingRelation] = controlModle.getCategoryPVmodletag().get(indexpv).getQ();
                     /**控制域参数*/
-                    simulatR[index4IOMappingRelation] = categoryMVmodletag.get(indexmv).getR();
+                    simulatR[index4IOMappingRelation] = controlModle.getCategoryMVmodletag().get(indexmv).getR();
                     /**柔化系数*/
-                    simulateAlpheTrajectoryCoefficients[index4IOMappingRelation] = categoryPVmodletag.get(indexpv).getReferTrajectoryCoef();
-                    /***/
-                    simulatedeadZones[index4IOMappingRelation]=categoryPVmodletag.get(indexpv).getDeadZone();
-                    /***/
-                    simulatefunelinitvalues[index4IOMappingRelation]=categoryPVmodletag.get(indexpv).getFunelinitValue();
+                    simulateAlpheTrajectoryCoefficients[index4IOMappingRelation] = controlModle.getCategoryPVmodletag().get(indexpv).getReferTrajectoryCoef();
+                    /**死区*/
+                    simulatedeadZones[index4IOMappingRelation] = controlModle.getCategoryPVmodletag().get(indexpv).getDeadZone();
+                    /**漏斗初始值*/
+                    simulatefunelinitvalues[index4IOMappingRelation] = controlModle.getCategoryPVmodletag().get(indexpv).getFunelinitValue();
 
                     /**漏斗类型*/
                     Double[] fnl = new Double[2];
-                    if (categoryPVmodletag.get(indexpv).getFunneltype() != null) {
-                        switch (categoryPVmodletag.get(indexpv).getFunneltype()) {
+                    if (controlModle.getCategoryPVmodletag().get(indexpv).getFunneltype() != null) {
+                        switch (controlModle.getCategoryPVmodletag().get(indexpv).getFunneltype()) {
                             case ModlePin.TYPE_FUNNEL_FULL:
                                 /**全漏斗*/
                                 fnl[0] = 0d;
@@ -331,32 +318,48 @@ public class SimulatControlModle {
                         fnl[1] = 0d;
                         simulatefunneltype[index4IOMappingRelation] = fnl;
                     }
-                    extendModlePins.add(categoryPVmodletag.get(indexpv));
+                    extendModlePVPins.add(controlModle.getCategoryPVmodletag().get(indexpv));
+                    extendModleMVPins.add(controlModle.getCategoryMVmodletag().get(indexmv));
+                    extendModleSPPins.add(controlModle.getCategorySPmodletag().get(indexpv));
                     ++index4IOMappingRelation;
                 }
             }
         }
 
 
-        /**
-         *fill respon into 前馈与输出 响应matrix
-         *填入前馈输出响应矩阵
+        /***
+         * 前馈输出对应矩阵
+         * init B matrix
          * */
-//        int index4FOMappingRelation = 0;
-        for (int indexpv = 0; indexpv < numOfIOMappingRelation; ++indexpv) {
-            for (int indexff = 0; indexff < categoryFFmodletag.size(); ++indexff) {
-                Double[] foRespon = getSpecialFORespon(extendModlePins.get(indexpv).getModlePinName(), categoryFFmodletag.get(indexff).getModlePinName());
-                if (foRespon != null) {
-                    B_SimulatetimeseriseMatrix[indexpv][indexff] = foRespon;
-//                    ++index4FOMappingRelation;
+        if (controlModle.getNumOfEnableFFpins_vv() > 0) {
+            B_SimulatetimeseriseMatrix = new Double[numOfIOMappingRelation][controlModle.getNumOfEnableFFpins_vv()][timeserise_N];
+
+            /**
+             *fill respon into 前馈与输出 响应matrix
+             *填入前馈输出响应矩阵
+             * */
+            for (int indexExpv = 0; indexExpv < numOfIOMappingRelation; ++indexExpv) {
+
+                int indexEnbaleFF=0;
+                for (int indexff = 0; indexff < controlModle.getCategoryFFmodletag().size(); ++indexff) {
+
+                    if (controlModle.getParticipateFFMatrix()[indexff] == 0) {
+                        continue;
+                    }
+
+                    Double[] foRespon = getSpecialFORespon(extendModlePVPins.get(indexExpv).getModlePinName(), controlModle.getCategoryFFmodletag().get(indexff).getModlePinName());
+                    if (foRespon != null) {
+                        B_SimulatetimeseriseMatrix[indexExpv][indexEnbaleFF] = foRespon;
+                    }
+                    ++indexEnbaleFF;
                 }
 
             }
 
         }
-        backSimulateDmv = new double[simulateOutpoints_p][simulateInputpoints_m];
-        generateSimulatevalidkey();
 
+        backSimulateDmv = new double[controlModle.getNumOfEnablePVPins_pp()][controlModle.getNumOfEnableMVpins_mm()];
+        generateSimulatevalidkey();
         executePythonBridgeSimulate = new ExecutePythonBridge(simulatorbuilddir, "http://localhost:8080/AILab/pythonsimulate/modlebuild/" + modleid + ".do", modleid + "");
         if (issimulation) {
             executePythonBridgeSimulate.execute();
@@ -502,14 +505,6 @@ public class SimulatControlModle {
         this.modlePins = modlePins;
     }
 
-    public List<ResponTimeSerise> getResponTimeSerises() {
-        return responTimeSerises;
-    }
-
-    public void setResponTimeSerises(List<ResponTimeSerise> responTimeSerises) {
-        this.responTimeSerises = responTimeSerises;
-    }
-
 
     public Integer getTimeserise_N() {
         return timeserise_N;
@@ -543,37 +538,6 @@ public class SimulatControlModle {
         this.controlAPCOutCycle = controlAPCOutCycle;
     }
 
-    public List<ModlePin> getCategoryPVmodletag() {
-        return categoryPVmodletag;
-    }
-
-    public void setCategoryPVmodletag(List<ModlePin> categoryPVmodletag) {
-        this.categoryPVmodletag = categoryPVmodletag;
-    }
-
-    public List<ModlePin> getCategorySPmodletag() {
-        return categorySPmodletag;
-    }
-
-    public void setCategorySPmodletag(List<ModlePin> categorySPmodletag) {
-        this.categorySPmodletag = categorySPmodletag;
-    }
-
-    public List<ModlePin> getCategoryMVmodletag() {
-        return categoryMVmodletag;
-    }
-
-    public void setCategoryMVmodletag(List<ModlePin> categoryMVmodletag) {
-        this.categoryMVmodletag = categoryMVmodletag;
-    }
-
-    public List<ModlePin> getCategoryFFmodletag() {
-        return categoryFFmodletag;
-    }
-
-    public void setCategoryFFmodletag(List<ModlePin> categoryFFmodletag) {
-        this.categoryFFmodletag = categoryFFmodletag;
-    }
 
     public ExecutePythonBridge getExecutePythonBridgeSimulate() {
         return executePythonBridgeSimulate;
@@ -590,7 +554,7 @@ public class SimulatControlModle {
     /**
      * 更新仿真器dmv值
      */
-    public boolean uodateBackSimulateDmv(double[] simulateDmv) {
+    public boolean updateBackSimulateDmv(double[] simulateDmv) {
         int indexmappingration = 0;
         try {
             for (int indexpv = 0; indexpv < simulateOutpoints_p; indexpv++) {
@@ -611,5 +575,9 @@ public class SimulatControlModle {
 
     public void setMatrixPvUseMv(int[][] matrixPvUseMv) {
         this.matrixPvUseMv = matrixPvUseMv;
+    }
+
+    public void setControlModle(ControlModle controlModle) {
+        this.controlModle = controlModle;
     }
 }

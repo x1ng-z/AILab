@@ -18,6 +18,11 @@
 			<!--</dataSource>-->
 		<!--</environment>-->
 	<!--</environments>-->
+
+	<typeHandlers>
+		<typeHandler handler="hs.Dao.Handler.InstantHandler" javaType="java.time.Instant" jdbcType="TIMESTAMP"/>
+	</typeHandlers>
+
 	<mappers>
 		<!--<mapper resource="cn/hs/mapper/BasedataMapper.xml" />-->
 		<!--<mapper resource="cn/hs/mapper/MsgModelMapper.xml" />-->

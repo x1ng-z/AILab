@@ -37,44 +37,42 @@
         <div class="layui-row layui-col-space15"><%--layui-col-space15 列间距15--%>
 
             <c:forEach var="pv" items="${modle.categoryPVmodletag}" varStatus="Count">
-                <c:choose>
-                    <c:when test="${Count.count<=4}">
-                        <div class="layui-col-md4">
-                            <div class="layui-card">
-                                <div class="layui-card-header">${pv.modlePinName}(${pv.modleOpcTag})</div>
-                                <div class="layui-card-body">
-                                    <div id="container${Count.count}" style="height:300px;"></div>
-                                </div>
-                            </div>
+                <%--                <c:choose>--%>
+                <%--                    <c:when test="${Count.count<=4}">--%>
+                <div class="layui-col-md4">
+                    <div class="layui-card">
+                        <div class="layui-card-header">${pv.modlePinName}(${((pv.opcTagName==null)||pv.opcTagName.equals(""))?pv.modleOpcTag:pv.opcTagName})</div>
+                        <div class="layui-card-body">
+                            <div id="container${Count.count}" style="height:300px;"></div>
                         </div>
-                    </c:when>
+                    </div>
+                </div>
+                <%--                    </c:when>--%>
 
-                </c:choose>
+                <%--                </c:choose>--%>
 
             </c:forEach>
         </div>
 
-        <c:choose>
-            <c:when test="${modle.categoryPVmodletag.size()>4}">
-                <div class="layui-row layui-col-space15"><%--layui-col-space15 列间距15--%>
-                    <c:forEach var="pv" items="${modle.categoryPVmodletag}" begin="4" varStatus="Count">
-                        <div class="layui-col-md4">
-                            <div class="layui-card">
-                                <div class="layui-card-header">${pv.modlePinName}(${pv.modleOpcTag})</div>
-                                <div class="layui-card-body">
-                                    <div id="container${Count.count+4}" pinname="${pv.modlePinName}"
-                                         style="height:300px;"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </c:forEach>
-                </div>
-            </c:when>
-        </c:choose>
+        <%--        <c:choose>--%>
+        <%--            <c:when test="${modle.categoryPVmodletag.size()>4}">--%>
+        <%--                <div class="layui-row layui-col-space15">&lt;%&ndash;layui-col-space15 列间距15&ndash;%&gt;--%>
+        <%--                    <c:forEach var="pv" items="${modle.categoryPVmodletag}" begin="4" varStatus="Count">--%>
+        <%--                        <div class="layui-col-md4">--%>
+        <%--                            <div class="layui-card">--%>
+        <%--                                <div class="layui-card-header">${pv.modlePinName}(${pv.modleOpcTag})</div>--%>
+        <%--                                <div class="layui-card-body">--%>
+        <%--                                    <div id="container${Count.count+4}" pinname="${pv.modlePinName}"--%>
+        <%--                                         style="height:300px;"></div>--%>
+        <%--                                </div>--%>
+        <%--                            </div>--%>
+        <%--                        </div>--%>
+        <%--                    </c:forEach>--%>
+        <%--                </div>--%>
+        <%--            </c:when>--%>
+        <%--        </c:choose>--%>
 
     </div>
-
-    <table class="layui-hide" id="modlereadDatatab" width="900px" height="900px"></table>
 
     <div class="layui-form-item">
 
@@ -82,16 +80,18 @@
             <c:choose>
                 <c:when test="${modle.modleEnable eq 0}">
                     <button type="button"
-                            class="layui-btn layui-btn-primary layui-btn-danger">${modle.modleName}</button>
+                            class="layui-btn layui-btn-primary" id="modlestatus">${modle.modleName}</button>
                 </c:when>
                 <c:otherwise>
-                    <button type="button" class="layui-btn layui-btn-primary">${modle.modleName}</button>
+                    <button type="button" class="layui-btn layui-btn-primary" id="modlestatus"
+                    >${modle.modleName}</button>
                 </c:otherwise>
             </c:choose>
 
             <a href="" class="layui-btn"
                onclick="isdelete('${pageContext.request.contextPath}/modle/deleteModle.do?modleid=${modle.modleId}')">删除</a>
-
+            <a href="" class="layui-btn"
+               onclick="window.location.reload()">刷新</a>
             <c:choose>
                 <c:when test="${modle.simulatControlModle.issimulation==true}">
                     <a href=""
@@ -104,7 +104,6 @@
                        onclick="stopOrrun('${pageContext.request.contextPath}/modle/runSimulateModle.do?modleid=${modle.modleId}','确定运行仿真？')">仿真</a>
                 </c:otherwise>
             </c:choose>
-
 
 
             <c:choose>
@@ -123,19 +122,29 @@
             <a href=""
                class="layui-btn"
                onclick="newTab('编辑${modle.modleName}','${pageContext.request.contextPath}/modle/modifymodle.do?modleid=${modle.modleId}')">编辑</a>
-
-
-
         </div>
 
     </div>
+    <fieldset class="layui-elem-field layui-field-title" style="margin-top: 20px;">
+        <legend>主控制参数信息</legend>
+    </fieldset>
+    <table class="layui-hide" id="modlereadDatatab" width="900px" height="900px"></table>
+    <fieldset class="layui-elem-field layui-field-title" style="margin-top: 20px;">
+        <legend>仿真参数信息</legend>
+    </fieldset>
+    <table class="layui-hide" id="sdmvDatatab" width="900px" height="900px"></table>
+    <fieldset class="layui-elem-field layui-field-title" style="margin-top: 20px;">
+        <legend>前馈信息</legend>
+    </fieldset>
+    <table class="layui-hide" id="ffDatatab" width="900px" height="900px"></table>
 
 </div>
 
 
 <script type="text/html" id="switchTpl1">
-    <input type="checkbox" disabled name="auto" value="{{d.auto}}" lay-skin="switch" lay-text="自动|手动"
-           lay-filter="sexDemo" {{ d.auto=== "自动" ? 'checked' : '' }}/>
+    <%--    input 添加 就不能进行编辑 disabled--%>
+    <input type="checkbox" name="checkIO" value="{{d.checkIO}}" lay-skin="switch" lay-text="on|off" lay-filter="icheckIO"
+           lay-filter="checkIO" {{ d.checkIO.split('_')[2]== '1' ? 'checked' : '' }}/>
 </script>
 <script>
     function isdelete(url) {
@@ -146,7 +155,7 @@
                 async: true,
                 type: "POST",
                 success: function (result) {
-                    console.log(result);
+                    // console.log(result);
 
                 }
             });
@@ -165,7 +174,7 @@
                 async: true,
                 type: "POST",
                 success: function (result) {
-                    console.log(result);
+                    // console.log(result);
 
                 }
             });
@@ -174,8 +183,6 @@
 
         }
     }
-
-
 
 
 </script>
@@ -190,8 +197,13 @@
     let xData = [];
     let allchars = [];
 
+    // let table_width = $("#modlereadDatatab").width();
+    // console.log("table_width:",table_width)
+
     layui.use('table', function () {
+        let w = document
         table = layui.table;
+        form=layui.form;
         table.render({
             elem: '#modlereadDatatab'
             // , page: true
@@ -213,9 +225,9 @@
             // , limit: 10
             , jump: function (obj, first) {
                 //obj包含了当前分页的所有参数，比如：
-                console.log(obj.curr); //得到当前页，以便向服务端请求对应页的数据。
-                console.log(obj.limit); //得到每页显示的条数
-                console.log(obj)
+                // console.log(obj.curr); //得到当前页，以便向服务端请求对应页的数据。
+                // console.log(obj.limit); //得到每页显示的条数
+                // console.log(obj)
                 //首次不执行
                 if (!first) {
                     //do something
@@ -225,33 +237,100 @@
             <%--, "data":${data}//[{"id":10000,"username":"user-0","sex":"女","city":"城市-0","sign":"签名-0","experience":255,"logins":24,"wealth":82830700,"classify":"作家","score":57}]--%>
             , "cellMinWidth": 80 //全局定义常规单元格的最小宽度，layui 2.2.1 新增
             , "cols": [[
-                {field: 'modleName', title: '引脚', sort: true}
-                , {field: 'pvValue', title: '实际值'}
-                , {field: 'spValue', title: '目标值'}
-                , {field: 'e', title: '预测误差'}
-                ,{field: 'sdmv', title: 'sdmv'}
-                , {field: 'dmv', title: 'dmv'}
-                , {field: 'mvvalue', title: '给定值'}
-                , {field: 'mvFeedBack', title: '反馈'}
-                , {field: 'mvDownLmt', title: '下限'}
-                , {field: 'mvUpLmt', title: '上限'}
-                ,{field: 'dff', title: 'dff'}
-                ,{field: 'ff', title: 'ff'}
-                , {field: 'shockmv', title: 'mv幅值'}
-                , {field: 'shockpv', title: 'pv幅值'}
-                , {field: 'auto', title: '手自动', templet: '#switchTpl1', unresize: true}
+                {field: 'pinName', title: '引脚', width: '8.3%', sort: true}
+                , {field: 'pvValue', title: '实际值', width: '8.3%'}
+                , {field: 'spValue', title: '目标值', width: '8.3%'}
+                , {field: 'e', title: '预测误差', width: '8.3%'}
+                , {field: 'dmv', title: 'dmv', width: '8.3%'}
+                , {field: 'mvvalue', title: '给定值', width: '8.3%'}
+                , {field: 'mvFeedBack', title: '反馈', width: '8.3%'}
+                , {field: 'mvDownLmt', title: '下限', width: '8.3%'}
+                , {field: 'mvUpLmt', title: '上限', width: '8.3%'}
+                , {field: 'shockmv', title: 'mv幅值', width: '8.3%'}
+                , {field: 'shockpv', title: 'pv幅值', width: '8.3%'}
+                , {field: 'checkIO', title: '手自动', width: '8.3%', templet: '#switchTpl1', unresize: true}
             ]]
         });
-        //监听性别操作
-        // form.on('switch(sexDemo)', function (obj) {
-        //     layer.tips(this.value + ' ' + this.name + '：' + obj.elem.checked, obj.othis);
-        //
-        //     var index = layer.msg('修改中，请稍候', {icon: 16, time: false, shade: 0.8});
-        //     setTimeout(function () {
-        //         layer.close(index);
-        //         layer.msg(this.value + ' ' + this.name + '：' + obj.elem.checked, obj.othis + "展示状态修改成功！");
-        //     }, 2000);
-        // });
+
+
+        table.render({
+            elem: '#sdmvDatatab'
+            , data: []
+            , jump: function (obj, first) {
+                //obj包含了当前分页的所有参数，比如：
+                // console.log(obj.curr); //得到当前页，以便向服务端请求对应页的数据。
+                // console.log(obj.limit); //得到每页显示的条数
+                // console.log(obj)
+                //首次不执行
+                if (!first) {
+                    //do something
+                    console.log("not first time")
+                }
+            }
+            <%--, "data":${data}//[{"id":10000,"username":"user-0","sex":"女","city":"城市-0","sign":"签名-0","experience":255,"logins":24,"wealth":82830700,"classify":"作家","score":57}]--%>
+            , "cellMinWidth": 80 //全局定义常规单元格的最小宽度，layui 2.2.1 新增
+            , "cols": [[
+                {field: 'pinName', title: '引脚', sort: true, width: '8.3%'}
+                <c:forEach var="mv" items="${modle.categoryMVmodletag}" varStatus="Count">
+                , {field: '${mv.modlePinName}', title: 'd${mv.modlePinName}', width: '8.3%'}
+                </c:forEach>
+            ]]
+        });
+
+
+        table.render({
+            elem: '#ffDatatab'
+            , data: []
+            , jump: function (obj, first) {
+                //obj包含了当前分页的所有参数，比如：
+                // console.log(obj.curr); //得到当前页，以便向服务端请求对应页的数据。
+                // console.log(obj.limit); //得到每页显示的条数
+                // console.log(obj)
+                //首次不执行
+                if (!first) {
+                    //do something
+                    console.log("not first time")
+                }
+            }
+            <%--, "data":${data}//[{"id":10000,"username":"user-0","sex":"女","city":"城市-0","sign":"签名-0","experience":255,"logins":24,"wealth":82830700,"classify":"作家","score":57}]--%>
+            , "cellMinWidth": 80 //全局定义常规单元格的最小宽度，layui 2.2.1 新增
+            , "cols": [[
+                {field: 'pinName', title: '引脚', sort: true, width: '8.3%'}
+                <c:forEach var="ff" items="${modle.categoryFFmodletag}" varStatus="Count">
+                , {field: '${ff.modlePinName}', title: '${ff.modlePinName}', width: '8.3%'}
+                , {field: 'd${ff.modlePinName}', title: 'd${ff.modlePinName}', width: '8.3%'}
+                </c:forEach>
+            ]]
+        });
+
+
+        //监听操作
+        form.on('switch(icheckIO)', function (obj) {
+            // console.log("checkIO");
+            // layer.tips(this.value + '_' + this.name + '：' + obj.elem.checked, obj.othis);
+            let index4modlepin=this.value.split("_");
+            var r = confirm(index4modlepin[2]==1?'切除出模型控制':'切入到模型控制');
+            if (r == true) {
+                var index = layer.msg('修改中，请稍候', {icon: 16, time: false, shade: 0.8});
+                $.ajax({
+                    url: "${pageContext.request.contextPath}/modle/modlepvcheckout/"+index4modlepin[0]+"/"+index4modlepin[1]+"/"+index4modlepin[2]+".do" + "?" + Math.random(),
+                    async: true,
+                    type: "POST",
+                    success: function (result) {
+                        console.log(result);
+                        layer.close(index);
+                        let json = JSON.parse(result);
+                        if (json['msg'] == "error") {
+                            layer.msg("修改失败！");
+                        } else {
+                            layer.msg("修改成功！");
+                        }
+                    }
+                });
+            }
+
+
+        });
 
     });
 </script>
@@ -411,11 +490,11 @@
             // },
             type: "POST",
             success: function (result) {
-                console.log(result);
+                // console.log(result);
 
                 var json = JSON.parse(result);
-                console.log(json["funneltype"][0][0]);
-                console.log(typeof (json["funneltype"][0][0]));
+                // console.log(json["funneltype"][0][0]);
+                // console.log(typeof (json["funneltype"][0][0]));
                 for (let loop = 0; loop < tableSerise.length; ++loop) {
                     tableSerise[loop] = [
                         {
@@ -468,9 +547,36 @@
 
                 xData = json['xaxis'];
 
+                let table_width = $("#modlereadDatatab").width();
+                // console.log("table_width:", table_width)
+                $("#modlereadDatatab").width($(document).width());
+
+
                 table.reload('modlereadDatatab', {
                     "data": json['modleRealData'],
+                    "width": $(document).width()
                 });
+
+
+                table.reload('sdmvDatatab', {
+                    "data": json['sdmvData'],
+                    "width": $(document).width()
+                });
+
+                table.reload('ffDatatab', {
+                    "data": json['ffData'],
+                    "width": $(document).width()
+                });
+                if(json["modlestatus"]==0){
+                    $("#modlestatus").addClass("layui-btn-danger");
+                }else{
+                    $("#modlestatus").removeClass("layui-btn-danger");
+                }
+
+                // $("#modlereadDatatab").width($(document).width());
+
+                // let table_width = $("#modlereadDatatab").width();
+                // console.log("table_width:",table_width)
 
             }
         });
@@ -481,6 +587,7 @@
 </script>
 
 <script>
+
 
     function newTab(title, url) {
         let element11 = parent.layui.element;
@@ -493,15 +600,24 @@
                 id: url
             }
         );
-        // this.window.location.reload()
+        // window.location.reload()
         // var index = parent.layer.getFrameIndex(window.name); //先得到当前iframe层的索引
         // parent.layer.close(index); //再执行关闭
-        // element11.tabChange('pagetabs',url)
+        // sleep(1000);
+        // element11.tabChange('pagetabs', url)
+
+
         //newleft();
 
 
     }
 
+
+    var sleep = function (time) {
+        var startTime = new Date().getTime() + parseInt(time, 10);
+        while (new Date().getTime() < startTime) {
+        }
+    };
 
 </script>
 

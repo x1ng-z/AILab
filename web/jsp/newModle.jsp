@@ -94,6 +94,7 @@
             <h2 class="layui-colla-title">PV属性设置</h2>
             <div class="layui-colla-content layui-show">
                 <c:forEach var="pv" items="${pvlist}" varStatus="movieLoopCount">
+
                     <div class="layui-inline">
                         <label class="layui-form-label">pv${pv}</label>
                         <div class="layui-input-inline">
@@ -101,6 +102,15 @@
                                    placeholder="opc位号">
                         </div>
                     </div>
+
+                    <div class="layui-inline">
+                        <label class="layui-form-label">pv${pv}中文注释</label>
+                        <div class="layui-input-inline">
+                            <input type="text" name="pv${pv}comment" autocomplete="off" class="layui-input"
+                                   placeholder="pv${pv}中文注释">
+                        </div>
+                    </div>
+
 
                     <div class="layui-inline">
                         <label class="layui-form-label">pv${pv}来源</label>
@@ -413,6 +423,14 @@
                         </div>
 
                         <div class="layui-inline">
+                            <label class="layui-form-label">sp${sp}中文注释</label>
+                            <div class="layui-input-inline">
+                                <input type="text" name="sp${sp}comment" autocomplete="off" class="layui-input"
+                                       placeholder="sp${sp}中文注释">
+                            </div>
+                        </div>
+
+                        <div class="layui-inline">
                             <label class="layui-form-label">sp${sp}位号来源</label>
                             <div class="layui-input-inline">
                                 <select name="sp${sp}resource">
@@ -448,6 +466,13 @@
                             </div>
                         </div>
 
+                        <div class="layui-inline">
+                            <label class="layui-form-label">mv${mv}中文注释</label>
+                            <div class="layui-input-inline">
+                                <input type="text" name="mv${mv}comment" autocomplete="off" class="layui-input"
+                                       placeholder="mv${mv}中文注释">
+                            </div>
+                        </div>
 
                         <div class="layui-inline">
                             <label class="layui-form-label">mv${mv}来源</label>
@@ -590,19 +615,28 @@
             <h2 class="layui-colla-title">MV反馈属性设置</h2>
             <div class="layui-colla-content layui-show">
                 <div class="layui-form-item">
-                    <c:forEach var="mvdown" items="${mvlist}" varStatus="movieLoopCount">
+                    <c:forEach var="mvfb" items="${mvlist}" varStatus="movieLoopCount">
                         <div class="layui-inline">
-                            <label class="layui-form-label">mvfb${mvdown}</label>
+                            <label class="layui-form-label">mvfb${mvfb}</label>
                             <div class="layui-input-inline">
-                                <input type="text" name="mvfb${mvdown}" autocomplete="off" class="layui-input"
-                                       placeholder="mv${mvdown}反馈位号">
+                                <input type="text" name="mvfb${mvfb}" autocomplete="off" class="layui-input"
+                                       placeholder="mv${mvfb}反馈位号">
+                            </div>
+                        </div>
+
+
+                        <div class="layui-inline">
+                            <label class="layui-form-label">mvfb${mvfb}中文注释</label>
+                            <div class="layui-input-inline">
+                                <input type="text" name="mvfb${mvfb}comment" autocomplete="off" class="layui-input"
+                                       placeholder="mvfb${mvfb}中文注释">
                             </div>
                         </div>
 
                         <div class="layui-inline">
-                            <label class="layui-form-label">mvfb${mvdown}反馈opc位号来源</label>
+                            <label class="layui-form-label">mvfb${mvfb}反馈opc位号来源</label>
                             <div class="layui-input-inline">
-                                <select name="mvfb${mvdown}resource">
+                                <select name="mvfb${mvfb}resource">
                                     <option value="">请选择来源</option>
                                     <<c:forEach var="opcres" items="${opcresources}" varStatus="Count">
                                     <option value="${opcres}">${opcres}</option>
@@ -813,6 +847,15 @@
                             <div class="layui-input-inline">
                                 <input type="text" name="ff${ff}" autocomplete="off" class="layui-input"
                                        placeholder="ff${ff}位号">
+                            </div>
+                        </div>
+
+
+                        <div class="layui-inline">
+                            <label class="layui-form-label">ff${ff}中文注释</label>
+                            <div class="layui-input-inline">
+                                <input type="text" name="ff${ff}comment" autocomplete="off" class="layui-input"
+                                       placeholder="ff${ff}中文注释">
                             </div>
                         </div>
 

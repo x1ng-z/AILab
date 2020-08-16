@@ -153,6 +153,10 @@
 							$(this).attr("class","");
 						}
 					})
+					//
+					console.log("%%%%%%%%%%%%%")
+					console.log($(this));
+					console.log("%%%%%%%%%%%%%")
 				});
 				//顶部左侧菜单监控
 				myelement.on('nav(leftmenu)',function(elem){
@@ -230,7 +234,7 @@
 				})
 				//左侧垂直菜单监控
 				myelement.on('nav(navtree)',function(elem){
-					if($(".layui-side-menu").width()<200){
+					if($(".layui-side-menu").width()<144){//200
 						$(".layui-side-menu").animate({width:$(".layui-side-menu").width()+144+"px"});
 						$(".layui-body").animate({left:$(".layui-body").position().left+144+"px"});
 						$(".layui-footer").animate({left:$(".layui-footer").position().left+144+"px"});
@@ -262,6 +266,8 @@
 								});
 								//切换选项卡
 								myelement.tabChange('pagetabs', url);
+
+								myelement.on("tab()");
 							}
 						}
 					}

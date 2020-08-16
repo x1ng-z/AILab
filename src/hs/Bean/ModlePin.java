@@ -5,6 +5,7 @@ import hs.ShockDetect.ShockDetector;
 
 import java.time.Instant;
 import java.util.LinkedList;
+import java.util.regex.Pattern;
 
 /**
  * @author zzx
@@ -12,28 +13,47 @@ import java.util.LinkedList;
  * @date 2020/3/30 12:28
  */
 public class ModlePin {
+    private static Pattern pvenablepattern = Pattern.compile("(^pvenable\\d+$)");
+
     public final static String TYPE_PIN_PV = "pv";
     public final static String TYPE_PIN_SP = "sp";
     public final static String TYPE_PIN_MV = "mv";
     public final static String TYPE_PIN_MVFB = "mvfb";
     public final static String TYPE_PIN_FF = "ff";
-    public final static String TYPE_PIN_AUTO = "auto";
+    public final static String TYPE_PIN_MODLE_AUTO = "auto";//模型整体是否进行运行
     public final static String TYPE_PIN_FFDOWN = "ffdown";
     public final static String TYPE_PIN_FFUP = "ffup";
     public final static String TYPE_PIN_MVUP = "mvup";
     public final static String TYPE_PIN_MVDOWN = "mvdown";
-    public final static String SOURCE_TYPE = "constant";
-
-    public final static String TYPE_FUNNEL_FULL="fullfunnel";
-    public final static String TYPE_FUNNEL_UP="upfunnel";
-    public final static String TYPE_FUNNEL_DOWN="downfunnel";
-
+    public final static String TYPE_PIN_PIN_ENABLE = "pvenable";//引脚是否参与控制
+    public final static String SOURCE_TYPE_CONSTANT = "constant";
+    public final static String TYPE_FUNNEL_FULL = "fullfunnel";
+    public final static String TYPE_FUNNEL_UP = "upfunnel";
+    public final static String TYPE_FUNNEL_DOWN = "downfunnel";
 
 
     private int modlepinsId;
     private int reference_modleId;
+    /**
+     * 引脚使能位，一般用于pv，判断pv是否启用
+     */
+    private volatile int pinEnable = 1;
+    /**
+     * dcs端控制引脚是否切入控制
+     */
+    private ModlePin dcsEnabePin;
+
+    /**
+     * opc位号
+     */
     private String modleOpcTag;
-    private String modlePinName;//引脚名称 pv1,sp1...
+    /**
+     * 引脚名称 pv1,sp1...
+     */
+    private String modlePinName;
+    /**
+     * 中文注释
+     */
     private String opcTagName;
     private String resource = "";
     private ModlePin upLmt;//高限
@@ -57,6 +77,7 @@ public class ModlePin {
     private Filter filter = null;//滤波器
     private Double referTrajectoryCoef;//pv的柔化系数(参考轨迹参数)
     private ShockDetector shockDetector;
+    private Instant updateTime;
 
     public void opcUpdateValue(double value) {
         oldReadValue = newReadValue;
@@ -64,13 +85,31 @@ public class ModlePin {
         updateOpcTime = Instant.now();
     }
 
+    /**
+     *脚使能数据默认为1
+     *非脚使能数据默认数据为0
+     * **/
     public double modleGetReal() {
         //有过滤器吗，有就充过滤器中获取，没有就直接冲
         if (filter == null) {
-            if (resource.equals(SOURCE_TYPE)) {
+            if (resource.equals(SOURCE_TYPE_CONSTANT)) {
+                /***常数*/
                 return Double.valueOf(modleOpcTag);
             } else {
-                return (newReadValue == null ? 0 : newReadValue);
+                if (pvenablepattern.matcher(modlePinName).find()) {
+                    /**引脚使能数据
+                     * 如果配置了opc位号*/
+                    if ((modleOpcTag != null) && (!modleOpcTag.equals(""))) {
+                        return (newReadValue == null ? 1 : newReadValue);
+                    } else {
+                        /**如果没有配置了opc位号*/
+                        return 1;
+                    }
+                } else {
+                    /***非引脚使能数据*/
+                    return (newReadValue == null ? 0 : newReadValue);
+                }
+
             }
         } else {
             //有滤波器
@@ -264,5 +303,29 @@ public class ModlePin {
 
     public void setShockDetector(ShockDetector shockDetector) {
         this.shockDetector = shockDetector;
+    }
+
+    public int getPinEnable() {
+        return pinEnable;
+    }
+
+    public void setPinEnable(int pinEnable) {
+        this.pinEnable = pinEnable;
+    }
+
+    public Instant getUpdateTime() {
+        return updateTime;
+    }
+
+    public void setUpdateTime(Instant updateTime) {
+        this.updateTime = updateTime;
+    }
+
+    public ModlePin getDcsEnabePin() {
+        return dcsEnabePin;
+    }
+
+    public void setDcsEnabePin(ModlePin dcsEnabePin) {
+        this.dcsEnabePin = dcsEnabePin;
     }
 }

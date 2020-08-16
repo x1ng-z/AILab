@@ -123,6 +123,15 @@
                         </div>
 
                         <div class="layui-inline">
+                            <label class="layui-form-label">pv${Count.count}中文注释</label>
+                            <div class="layui-input-inline">
+                                <input type="text" name="pv${Count.count}comment" autocomplete="off" class="layui-input"
+                                       placeholder="pv${Count.count}中文注释" value="${pv.opcTagName==null?'':pv.opcTagName}">
+                            </div>
+                        </div>
+
+
+                        <div class="layui-inline">
                             <label class="layui-form-label">pv${Count.count}位号来源</label>
                             <div class="layui-input-inline">
                                 <select name="pv${Count.count}resource">
@@ -505,6 +514,17 @@
                             </div>
                         </div>
 
+
+                        <div class="layui-inline">
+                            <label class="layui-form-label">sp${Count.count}中文注释</label>
+                            <div class="layui-input-inline">
+                                <input type="text" name="sp${Count.count}comment" autocomplete="off" class="layui-input"
+                                       placeholder="sp${Count.count}中文注释" value="${sp.opcTagName==null?'':sp.opcTagName}">
+                            </div>
+                        </div>
+
+
+
                         <div class="layui-inline">
                             <label class="layui-form-label">sp${Count.count}位号来源</label>
                             <div class="layui-input-inline">
@@ -547,6 +567,17 @@
                                        placeholder="opc位号" value="${mv.modleOpcTag==null?'':mv.modleOpcTag}">
                             </div>
                         </div>
+
+
+
+                        <div class="layui-inline">
+                            <label class="layui-form-label">mv${Count.count}中文注释</label>
+                            <div class="layui-input-inline">
+                                <input type="text" name="mv${Count.count}comment" autocomplete="off" class="layui-input"
+                                       placeholder="mv${Count.count}中文注释" value="${mv.opcTagName==null?'':mv.opcTagName}">
+                            </div>
+                        </div>
+
 
                         <div class="layui-inline">
                             <label class="layui-form-label">mv${Count.count}opc位号来源</label>
@@ -721,6 +752,15 @@
                                 <input type="text" name="mvfb${Count.count}" autocomplete="off" class="layui-input"
                                        placeholder="mv${Count.count}反馈位号"
                                        value="${mvfb.modleOpcTag==null?'':mvfb.modleOpcTag}">
+                            </div>
+                        </div>
+
+
+                        <div class="layui-inline">
+                            <label class="layui-form-label">mvfb${Count.count}中文注释</label>
+                            <div class="layui-input-inline">
+                                <input type="text" name="mvfb${Count.count}comment" autocomplete="off" class="layui-input"
+                                       placeholder="mvfb${Count.count}中文注释" value="${mvfb.opcTagName==null?'':mvfb.opcTagName}">
                             </div>
                         </div>
 
@@ -981,6 +1021,15 @@
                                 <input type="text" name="ff${Count.count}" autocomplete="off" class="layui-input"
                                        placeholder="ff${Count.count}位号"
                                        value="${ff.modleOpcTag==null?'':ff.modleOpcTag}">
+                            </div>
+                        </div>
+
+
+                        <div class="layui-inline">
+                            <label class="layui-form-label">ff${Count.count}中文注释</label>
+                            <div class="layui-input-inline">
+                                <input type="text" name="ff${Count.count}comment" autocomplete="off" class="layui-input"
+                                       placeholder="ff${Count.count}中文注释" value="${ff.opcTagName==null?'':ff.opcTagName}">
                             </div>
                         </div>
 

@@ -58,6 +58,8 @@
         <result property="dmvLow" column="dmvLow"/>
         <result property="referTrajectoryCoef" column="referTrajectoryCoef"/>
         <result property="funneltype" column="funneltype"/>
+        <result property="pinEnable" column="pinEnable"/>
+        <result property="updateTime" column="updateTime" typeHandler="hs.Dao.Handler.InstantHandler"/>
         <association property="filter" javaType="hs.Filter.Filter" column="modlepinsId" select="findfilterByid"/>
         <association property="shockDetector" javaType="hs.ShockDetect.ShockDetector" column="modlepinsId" select="getShockDetetetor"/>
     </resultMap>
@@ -120,11 +122,11 @@
     </select>
 
     <insert id="insertModlePins" parameterType="hs.Bean.ModlePin" useGeneratedKeys="true" keyProperty="modlepinsId">
-        insert into modlepins(reference_modleId, modleOpcTag, modlePinName, opcTagName, resource, Q, R,deadZone,funelinitValue,dmvHigh,dmvLow,referTrajectoryCoef,funneltype)
+        insert into modlepins(reference_modleId, modleOpcTag, modlePinName, opcTagName, resource, Q, R,deadZone,funelinitValue,dmvHigh,dmvLow,referTrajectoryCoef,funneltype,pinEnable)
         values
         <foreach collection="modlePins" item="pin" separator=",">
             (#{pin.reference_modleId}, #{pin.modleOpcTag},  #{pin.modlePinName}, #{pin.opcTagName},
-            #{pin.resource}, #{pin.Q}, #{pin.R},#{pin.deadZone},#{pin.funelinitValue},#{pin.dmvHigh},#{pin.dmvLow},#{pin.referTrajectoryCoef},#{pin.funneltype})
+            #{pin.resource}, #{pin.Q}, #{pin.R},#{pin.deadZone},#{pin.funelinitValue},#{pin.dmvHigh},#{pin.dmvLow},#{pin.referTrajectoryCoef},#{pin.funneltype},#{pin.pinEnable })
         </foreach>
 
     </insert>
@@ -145,6 +147,13 @@
         update modle set modleEnable=#{enable}
         where modleId=#{modleid}
     </update>
+
+
+    <update id="updatepinEnable">
+        update modlepins set pinEnable=#{enable}
+        where modlepinsId=#{pinid}
+    </update>
+
 
     <delete id="deleteModlePins">
         delete from modlepins where reference_modleId=#{modleid}
