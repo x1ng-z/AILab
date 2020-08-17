@@ -3,9 +3,7 @@ package hs.Opc;
 import hs.Bean.ModleConstainer;
 import hs.Bean.ModlePin;
 import hs.Filter.*;
-import hs.Opc.Monitor.ModleRunTask;
-import hs.Opc.Monitor.ModleStopRunMonitor;
-import hs.Opc.Monitor.ModleStopTask;
+import hs.Opc.Monitor.*;
 import hs.ShockDetect.ShockDetector;
 import org.apache.log4j.Logger;
 import org.jinterop.dcom.common.JIException;
@@ -18,6 +16,7 @@ import org.openscada.opc.lib.da.*;
 import java.net.UnknownHostException;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.regex.Pattern;
 
 /**
  * @author zzx
@@ -27,6 +26,7 @@ import java.util.concurrent.*;
 
 public class OPCService implements Runnable {
     private static final Logger logger = Logger.getLogger(OPCService.class);
+    private static Pattern pvenablepattern = Pattern.compile("(^pvenable\\d+$)");
 
     /**
      * opc 配置信息
@@ -490,6 +490,42 @@ public class OPCService implements Runnable {
     }
 
 
+
+
+
+
+    /**移除一般的opctag*/
+    public Boolean unregisterCommonOPCTag(String opctag) {
+        /**
+         * 移除filter opciterm
+         * */
+        if ((opctag != null) && (!opctag.equals(""))) {
+            //移除filterpool中的filter
+//            opctagFilterPool.get(modlePins.getFilter().getBackToDCSTag()).remove(modlePins.getFilter());
+            //削减引用
+            itemManger.getItemUnit(opctag).minsrefrencecount();
+            logger.info("位号移除:" + opctag + "refrence:" + itemManger.getItemUnit(opctag).getRefrencecount());
+            if (itemManger.getItemUnit(opctag).isnorefrence()) {
+                ItemUnit removeItem = itemManger.removeItemUnit(opctag);
+                if (removeItem != null) {
+                    try {
+                        group.removeItem(removeItem.getItem().getId());
+                        logger.info("opcSERVE位号移除:" + opctag + "refrence:" + removeItem.getRefrencecount());
+                    } catch (UnknownHostException e) {
+                        logger.error(e.getMessage(), e);
+                    } catch (JIException e) {
+                        logger.error(e.getMessage(), e);
+                    }
+                } else {
+                    logger.info("opcSERVE位号未找到，移除失败:" + opctag + "refrence:");
+                }
+            }
+        }
+        return true;
+    }
+
+
+
     public Boolean unregisterShockdetectortag(String opctag) {
         /**
          * 移除filter opciterm
@@ -659,6 +695,32 @@ public class OPCService implements Runnable {
 //                    logger.debug("手自动位号未进行切换，modleid=" + pin.getReference_modleId());
                 }
             }
+
+
+            /**引脚使能数值监视*/
+            if(pin.getModlePinName()!=null && pvenablepattern.matcher(pin.getModlePinName()).find()){
+                logger.info("modle id=" + pin.getReference_modleId() + "old value=" + pin.getOldReadValue() + ",new value=" + pin.getNewReadValue());
+                if((pin.getOldReadValue() != null) && (pin.getOldReadValue() == 0) && (pin.getNewReadValue() != 0)){
+                    /**checkin*/
+                    logger.debug("模型运行，modleid=" + pin.getReference_modleId()+"pinid="+pin.getModlepinsId()+"切入");
+                    ModlePinCheckin modlePinCheckin=new ModlePinCheckin();
+                    modlePinCheckin.setModleid(pin.getReference_modleId());
+                    modlePinCheckin.setPinid(pin.getModlepinsId());
+                    modleStopRunMonitor.putTask(modlePinCheckin);
+
+                }else if((pin.getOldReadValue() != null) && (pin.getOldReadValue() != 0) && (pin.getNewReadValue() == 0)) {
+                    /**checkout*/
+                    logger.debug("模型运行，modleid=" + pin.getReference_modleId()+"pinid="+pin.getModlepinsId()+"切出");
+                    ModlePinCheckout modlePinCheckout=new ModlePinCheckout();
+                    modlePinCheckout.setModleid(pin.getReference_modleId());
+                    modlePinCheckout.setPinid(pin.getModlepinsId());
+                    modleStopRunMonitor.putTask(modlePinCheckout);
+                }
+
+            }
+
+
+
 
             //检查是否存在滤波器，存在的话则根据滤波器类型生成滤波器执行任务
             if (pin.getFilter() != null) {

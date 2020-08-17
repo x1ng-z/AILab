@@ -36,9 +36,9 @@
 
         <div class="layui-row layui-col-space15"><%--layui-col-space15 列间距15--%>
 
-            <c:forEach var="pv" items="${modle.categoryPVmodletag}" varStatus="Count">
+            <c:forEach var="pv" items="${enablePVPins}" varStatus="Count">
                 <%--                <c:choose>--%>
-                <%--                    <c:when test="${Count.count<=4}">--%>
+                <%--                    <c:when test="${pv==1}">--%>
                 <div class="layui-col-md4">
                     <div class="layui-card">
                         <div class="layui-card-header">${pv.modlePinName}(${((pv.opcTagName==null)||pv.opcTagName.equals(""))?pv.modleOpcTag:pv.opcTagName})</div>
@@ -80,7 +80,8 @@
             <c:choose>
                 <c:when test="${modle.modleEnable eq 0}">
                     <button type="button"
-                            class="layui-btn layui-btn-primary" id="modlestatus">${modle.modleName}</button>
+                            class="layui-btn layui-btn-primary layui-btn-danger"
+                            id="modlestatus">${modle.modleName}</button>
                 </c:when>
                 <c:otherwise>
                     <button type="button" class="layui-btn layui-btn-primary" id="modlestatus"
@@ -143,8 +144,8 @@
 
 <script type="text/html" id="switchTpl1">
     <%--    input 添加 就不能进行编辑 disabled--%>
-    <input type="checkbox" name="checkIO" value="{{d.checkIO}}" lay-skin="switch" lay-text="on|off" lay-filter="icheckIO"
-           lay-filter="checkIO" {{ d.checkIO.split('_')[2]== '1' ? 'checked' : '' }}/>
+    <input type="checkbox" name="checkIO" value="{{d.checkIO}}" lay-skin="switch" lay-text="on|off"
+           lay-filter="icheckIO" {{ d.checkIO===undefined? '': (d.checkIO.split('_')[2]== '1' ? 'checked' : '') }}/>
 </script>
 <script>
     function isdelete(url) {
@@ -178,9 +179,7 @@
 
                 }
             });
-            parent.location.reload();
-        } else {
-
+            window.location.reload();
         }
     }
 
@@ -192,7 +191,7 @@
     var form;
 
     let table_flush_t;
-    let tableSerise = [];//各个pv的图标的3条曲线
+    let mychartSerise = [];//各个pv的图标的3条曲线
     let chartNames = [];
     let xData = [];
     let allchars = [];
@@ -203,7 +202,7 @@
     layui.use('table', function () {
         let w = document
         table = layui.table;
-        form=layui.form;
+        form = layui.form;
         table.render({
             elem: '#modlereadDatatab'
             // , page: true
@@ -271,7 +270,7 @@
             , "cellMinWidth": 80 //全局定义常规单元格的最小宽度，layui 2.2.1 新增
             , "cols": [[
                 {field: 'pinName', title: '引脚', sort: true, width: '8.3%'}
-                <c:forEach var="mv" items="${modle.categoryMVmodletag}" varStatus="Count">
+                <c:forEach var="mv" items="${enableMVPins}" varStatus="Count">
                 , {field: '${mv.modlePinName}', title: 'd${mv.modlePinName}', width: '8.3%'}
                 </c:forEach>
             ]]
@@ -296,7 +295,7 @@
             , "cellMinWidth": 80 //全局定义常规单元格的最小宽度，layui 2.2.1 新增
             , "cols": [[
                 {field: 'pinName', title: '引脚', sort: true, width: '8.3%'}
-                <c:forEach var="ff" items="${modle.categoryFFmodletag}" varStatus="Count">
+                <c:forEach var="ff" items="${enableFFPins}" varStatus="Count">
                 , {field: '${ff.modlePinName}', title: '${ff.modlePinName}', width: '8.3%'}
                 , {field: 'd${ff.modlePinName}', title: 'd${ff.modlePinName}', width: '8.3%'}
                 </c:forEach>
@@ -308,12 +307,17 @@
         form.on('switch(icheckIO)', function (obj) {
             // console.log("checkIO");
             // layer.tips(this.value + '_' + this.name + '：' + obj.elem.checked, obj.othis);
-            let index4modlepin=this.value.split("_");
-            var r = confirm(index4modlepin[2]==1?'切除出模型控制':'切入到模型控制');
+            if(this.value==='undefined'){
+                //console.log('value is undefine')
+                return;
+            }
+            console.log('value is undefine out'+typeof (this.value))
+            let index4modlepin = this.value.split("_");
+            var r = confirm(index4modlepin[2] == 1 ? '切除出模型控制' : '切入到模型控制');
             if (r == true) {
                 var index = layer.msg('修改中，请稍候', {icon: 16, time: false, shade: 0.8});
                 $.ajax({
-                    url: "${pageContext.request.contextPath}/modle/modlepvcheckout/"+index4modlepin[0]+"/"+index4modlepin[1]+"/"+index4modlepin[2]+".do" + "?" + Math.random(),
+                    url: "${pageContext.request.contextPath}/modle/modlepvcheckout/" + index4modlepin[0] + "/" + index4modlepin[1] + "/" + index4modlepin[2] + ".do" + "?" + Math.random(),
                     async: true,
                     type: "POST",
                     success: function (result) {
@@ -327,6 +331,7 @@
                         }
                     }
                 });
+                window.location.reload()
             }
 
 
@@ -337,7 +342,7 @@
 
 <script>
 
-    findTableNum(${modle.categoryPVmodletag.size()});
+    findChartNum(${modle.numOfEnablePVPins_pp});
 
     function table_flush() {
         clearInterval(table_flush_t);
@@ -352,7 +357,7 @@
         <%--            ${modle.controlAPCOutCycle.intValue()*1000}--%>
     }
 
-    function findTableNum(pvsize) {
+    function findChartNum(pvsize) {
         for (let loop = 1; loop <= pvsize; ++loop) {
             var dom = document.getElementById("container" + loop);
             if (dom === undefined) {
@@ -360,7 +365,7 @@
             } else {
                 let chartserise = [];
                 let curvename = [];
-                tableSerise.push(chartserise);
+                mychartSerise.push(chartserise);
                 chartNames.push(curvename);
                 let myChart;
                 try {
@@ -368,8 +373,6 @@
                 } catch (e) {
                     console.log(e)
                 }
-
-
                 allchars.push(myChart);
             }
         }
@@ -385,14 +388,14 @@
             //     continue;
             // } else {
 
-            chart(allchars[loop - 1], tableSerise[loop - 1], chartNames[loop - 1]);
+            charttheme(allchars[loop - 1], mychartSerise[loop - 1], chartNames[loop - 1]);
             // }
         }
 
 
     }
 
-    function chart(myChart, chartserise, charname) {
+    function charttheme(myChart, chartserise, charname) {
         //var myChart = echarts.init(dom);
 
         var app = {};
@@ -495,8 +498,8 @@
                 var json = JSON.parse(result);
                 // console.log(json["funneltype"][0][0]);
                 // console.log(typeof (json["funneltype"][0][0]));
-                for (let loop = 0; loop < tableSerise.length; ++loop) {
-                    tableSerise[loop] = [
+                for (let loop = 0; loop < mychartSerise.length; ++loop) {
+                    mychartSerise[loop] = [
                         {
                             type: 'line',
                             showSymbol: false,
@@ -567,9 +570,9 @@
                     "data": json['ffData'],
                     "width": $(document).width()
                 });
-                if(json["modlestatus"]==0){
+                if (json["modlestatus"] == 0) {
                     $("#modlestatus").addClass("layui-btn-danger");
-                }else{
+                } else {
                     $("#modlestatus").removeClass("layui-btn-danger");
                 }
 

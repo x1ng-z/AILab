@@ -43,7 +43,7 @@ public class MoveAverageFilter implements Filter {
                 return temp[temp.length-1-i];
             }
         }
-        logger.error("滤波器工作失败！");
+        logger.warn("filter work error!");
         return null;
     }
 

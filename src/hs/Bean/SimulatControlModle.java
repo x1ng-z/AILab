@@ -63,11 +63,11 @@ public class SimulatControlModle {
     /**
      * 输入响应 shape=[pv][mv][resp_N]
      */
-    private Double[][][] A_SimulatetimeseriseMatrix = null;
+    private double[][][] A_SimulatetimeseriseMatrix = null;
     /**
      * 前馈响应 shape=[pv][ff][resp_N]
      */
-    private Double[][][] B_SimulatetimeseriseMatrix = null;
+    private double[][][] B_SimulatetimeseriseMatrix = null;
 
     private int[][] matrixSimulatePvUseMv = null;
 
@@ -172,7 +172,7 @@ public class SimulatControlModle {
     private List<ModlePin> extendModleMVPins = new ArrayList<>();
 
 
-    private int[][] matrixPvUseMv = null;
+//    private int[][] matrixPvUseMv = null;
 
     /**
      * 执行apc算法的仿真桥接器
@@ -191,7 +191,7 @@ public class SimulatControlModle {
     /**
      * 获取输入输出响应
      */
-    private Double[] getSpecialIORespon(String pvpinname, String mvpinname) {
+    private double[] getSpecialIORespon(String pvpinname, String mvpinname) {
         for (ResponTimeSerise responTimeSerise : controlModle.getResponTimeSerises()) {
             if (responTimeSerise.getInputPins().equals(mvpinname) && responTimeSerise.getOutputPins().equals(pvpinname)) {
                 return responTimeSerise.responOneTimeSeries(timeserise_N, controlAPCOutCycle);
@@ -204,7 +204,7 @@ public class SimulatControlModle {
     /**
      * 获取前馈输出响应
      */
-    private Double[] getSpecialFORespon(String pvpinname, String ffpinname) {
+    private double[] getSpecialFORespon(String pvpinname, String ffpinname) {
         for (ResponTimeSerise responTimeSerise : controlModle.getResponTimeSerises()) {
             if (responTimeSerise.getInputPins().equals(ffpinname) && responTimeSerise.getOutputPins().equals(pvpinname)) {
                 return responTimeSerise.responOneTimeSeries(timeserise_N, controlAPCOutCycle);
@@ -227,7 +227,7 @@ public class SimulatControlModle {
          * 输入输出响应对应矩阵
          * init A matrix
          * */
-        A_SimulatetimeseriseMatrix = new Double[numOfIOMappingRelation][numOfIOMappingRelation][timeserise_N];
+        A_SimulatetimeseriseMatrix = new double[numOfIOMappingRelation][numOfIOMappingRelation][timeserise_N];
 
         /**pv用了哪些mv,标记矩阵*/
         matrixSimulatePvUseMv = new int[numOfIOMappingRelation][numOfIOMappingRelation];
@@ -263,7 +263,7 @@ public class SimulatControlModle {
                     continue;
                 }
 
-                Double[] ioRespon = getSpecialIORespon(controlModle.getCategoryPVmodletag().get(indexpv).getModlePinName(), controlModle.getCategoryMVmodletag().get(indexmv).getModlePinName());
+                double[] ioRespon = getSpecialIORespon(controlModle.getCategoryPVmodletag().get(indexpv).getModlePinName(), controlModle.getCategoryMVmodletag().get(indexmv).getModlePinName());
                 if ((ioRespon != null) && (index4IOMappingRelation < numOfIOMappingRelation)) {
                     /**重构的响应矩阵*/
                     A_SimulatetimeseriseMatrix[index4IOMappingRelation][index4IOMappingRelation] = ioRespon;
@@ -332,7 +332,7 @@ public class SimulatControlModle {
          * init B matrix
          * */
         if (controlModle.getNumOfEnableFFpins_vv() > 0) {
-            B_SimulatetimeseriseMatrix = new Double[numOfIOMappingRelation][controlModle.getNumOfEnableFFpins_vv()][timeserise_N];
+            B_SimulatetimeseriseMatrix = new double[numOfIOMappingRelation][controlModle.getNumOfEnableFFpins_vv()][timeserise_N];
             /**
              *fill respon into 前馈与输出 响应matrix
              *填入前馈输出响应矩阵
@@ -346,7 +346,7 @@ public class SimulatControlModle {
                         continue;
                     }
 
-                    Double[] foRespon = getSpecialFORespon(extendModlePVPins.get(indexExpv).getModlePinName(), controlModle.getCategoryFFmodletag().get(indexff).getModlePinName());
+                    double[] foRespon = getSpecialFORespon(extendModlePVPins.get(indexExpv).getModlePinName(), controlModle.getCategoryFFmodletag().get(indexff).getModlePinName());
                     if (foRespon != null) {
                         B_SimulatetimeseriseMatrix[indexExpv][indexEnbaleFF] = foRespon;
                     }
@@ -407,19 +407,19 @@ public class SimulatControlModle {
     }
 
 
-    public Double[][][] getA_SimulatetimeseriseMatrix() {
+    public double[][][] getA_SimulatetimeseriseMatrix() {
         return A_SimulatetimeseriseMatrix;
     }
 
-    public void setA_SimulatetimeseriseMatrix(Double[][][] a_SimulatetimeseriseMatrix) {
+    public void setA_SimulatetimeseriseMatrix(double[][][] a_SimulatetimeseriseMatrix) {
         A_SimulatetimeseriseMatrix = a_SimulatetimeseriseMatrix;
     }
 
-    public Double[][][] getB_SimulatetimeseriseMatrix() {
+    public double[][][] getB_SimulatetimeseriseMatrix() {
         return B_SimulatetimeseriseMatrix;
     }
 
-    public void setB_SimulatetimeseriseMatrix(Double[][][] b_SimulatetimeseriseMatrix) {
+    public void setB_SimulatetimeseriseMatrix(double[][][] b_SimulatetimeseriseMatrix) {
         B_SimulatetimeseriseMatrix = b_SimulatetimeseriseMatrix;
     }
 
@@ -561,10 +561,10 @@ public class SimulatControlModle {
     public boolean updateBackSimulateDmv(double[] simulateDmv) {
         int indexmappingration = 0;
         try {
-            for (int indexpv = 0; indexpv < simulateOutpoints_p; indexpv++) {
+            for (int indexpv = 0; indexpv < controlModle.getNumOfEnablePVPins_pp(); indexpv++) {
 
-                for (int indexmv = 0; indexmv < simulateInputpoints_m; indexmv++) {
-                    if (matrixPvUseMv[indexpv][indexmv] == 1) {
+                for (int indexmv = 0; indexmv < controlModle.getNumOfEnableMVpins_mm(); indexmv++) {
+                    if (controlModle.getMatrixEnablePVUseMV()[indexpv][indexmv] == 1) {
                         this.backSimulateDmv[indexpv][indexmv] = simulateDmv[indexmappingration];
                         ++indexmappingration;
                     }
@@ -577,9 +577,6 @@ public class SimulatControlModle {
         return true;
     }
 
-    public void setMatrixPvUseMv(int[][] matrixPvUseMv) {
-        this.matrixPvUseMv = matrixPvUseMv;
-    }
 
     public void setControlModle(ControlModle controlModle) {
         this.controlModle = controlModle;

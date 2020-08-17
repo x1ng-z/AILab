@@ -51,14 +51,14 @@ public class PythonController {
         /**
          *mv
          * */
-        if (modle.getCategoryMVmodletag().size() != 0) {
+        if (modle.getNumOfEnablePVPins_pp() != 0) {
             jsonObject.put("A", modle.getA_timeseriseMatrix());
         }
 
         /**
          *ff
          */
-        if (modle.getCategoryFFmodletag().size() != 0) {
+        if (modle.getNumOfEnableFFpins_vv() != 0) {
             jsonObject.put("B", modle.getB_timeseriseMatrix());
         }
 
@@ -108,7 +108,7 @@ public class PythonController {
             }
             JSONObject modlestatus = JSONObject.parseObject(data);
             JSONArray predictpvJson = modlestatus.getJSONArray("predict");
-            JSONArray mvJson = modlestatus.getJSONArray("mv");
+//            JSONArray mvJson = modlestatus.getJSONArray("mv");
             JSONArray eJson = modlestatus.getJSONArray("e");
             JSONArray funelupAnddownJson = modlestatus.getJSONArray("funelupAnddown");
             JSONArray dmvJson = modlestatus.getJSONArray("dmv");

@@ -277,6 +277,41 @@
         </div>
 
 
+
+        <div class="layui-form-item layui-colla-item">
+            <h2 class="layui-colla-title">PV独立投切OPC位号设置</h2>
+            <div class="layui-colla-content layui-show">
+                <c:forEach var="pv" items="${pvlist}" varStatus="movieLoopCount">
+
+                    <div class="layui-inline">
+                        <label class="layui-form-label">pv${pv}</label>
+                        <div class="layui-input-inline">
+                            <input type="text" name="pvenable${pv}" autocomplete="off" class="layui-input"
+                                   placeholder="opc位号">
+                        </div>
+                    </div>
+
+
+                    <div class="layui-inline">
+                        <label class="layui-form-label">pv${pv}来源</label>
+                        <div class="layui-input-inline">
+                            <select name="pvenable${pv}resource">
+                                <option value="">请选择来源</option>
+                                <c:forEach var="opcres" items="${opcresources}" varStatus="Count">
+                                    <option value="${opcres}">${opcres}</option>
+                                </c:forEach>
+                            </select>
+                        </div>
+                    </div>
+                </c:forEach>
+
+            </div>
+        </div>
+
+
+
+
+
         <div class="layui-form-item layui-colla-item">
             <h2 class="layui-colla-title">PV震荡检测设置</h2>
             <div class="layui-colla-content">

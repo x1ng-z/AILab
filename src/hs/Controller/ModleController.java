@@ -60,6 +60,43 @@ public class ModleController {
         ModelAndView mv = new ModelAndView();
         mv.setViewName("modleStatus");
         mv.addObject("modle", controlModle);
+
+        ModlePin[] enablePVPins = new ModlePin[controlModle.getNumOfEnablePVPins_pp()];
+        int indexEnabelPV = 0;
+        for (int indexpv=0; indexpv<controlModle.getCategoryPVmodletag().size();++indexpv) {
+            if (controlModle.getParticipatePVMatrix()[indexpv] == 0) {
+                continue;
+            }
+            enablePVPins[indexEnabelPV] = controlModle.getCategoryPVmodletag().get(indexpv);
+            indexEnabelPV++;
+        }
+
+
+        mv.addObject("enablePVPins", enablePVPins);
+
+        int indexEnabelMV = 0;
+        ModlePin[] enableMVPins = new ModlePin[controlModle.getNumOfEnableMVpins_mm()];
+        for (int indexmv=0;indexmv< controlModle.getCategoryMVmodletag().size();++indexmv) {
+            if (controlModle.getParticipateMVMatrix()[indexmv] == 0) {
+                continue;
+            }
+            enableMVPins[indexEnabelMV] = controlModle.getCategoryMVmodletag().get(indexmv);
+            indexEnabelMV++;
+        }
+
+        mv.addObject("enableMVPins", enableMVPins);
+
+        int indexEnabelFF = 0;
+        ModlePin[] enableFFPins = new ModlePin[controlModle.getNumOfEnableFFpins_vv()];
+        for (int indexff=0;indexff< controlModle.getCategoryFFmodletag().size();++indexff) {
+            if (controlModle.getParticipateFFMatrix()[indexff] == 0) {
+                continue;
+            }
+            enableFFPins[indexEnabelFF] = controlModle.getCategoryFFmodletag().get(indexff);
+            indexEnabelFF++;
+        }
+        mv.addObject("enableFFPins", enableFFPins);
+
         return mv;
     }
 
@@ -72,20 +109,25 @@ public class ModleController {
     public String modelpvcheckout(@PathVariable("modleid") String modleid, @PathVariable("pinid") String pinid, @PathVariable("onOroff") String onOroff) {
         ControlModle controlModle = modleConstainer.getModulepool().get(Integer.valueOf(modleid.trim()));
         for (ModlePin pvpin : controlModle.getCategoryPVmodletag()) {
-            if(pvpin.getModlepinsId()==Integer.valueOf(pinid)){
+            if (pvpin.getModlepinsId() == Integer.valueOf(pinid)) {
                 try {
                     /**如果当前是0,这要切入，如果当前是1,这要切除，*/
-                    pvpin.setPinEnable(Integer.valueOf(onOroff)==0?1:0);
-                    modleDBServe.updatepinEnable(pvpin.getModlepinsId(), Integer.valueOf(onOroff)==0?1:0);
+                    pvpin.setPinEnable(Integer.valueOf(onOroff) == 0 ? 1 : 0);
+                    modleDBServe.updatepinEnable(pvpin.getModlepinsId(), Integer.valueOf(onOroff) == 0 ? 1 : 0);
                     /**重新build下*/
+                    controlModle.getExecutePythonBridge().stop();
+                    controlModle.getSimulatControlModle().getExecutePythonBridgeSimulate().stop();
                     controlModle.modleBuild(false);
+                    if(controlModle.getModleEnable()==1){
+                        controlModle.getExecutePythonBridge().execute();
+                    }
                     JSONObject result = new JSONObject();
                     result.put("msg", "success");
                     return result.toJSONString();
                 } catch (NumberFormatException e) {
                     logger.error(e.getMessage(), e);
-                }catch (Exception e){
-                    logger.error(e.getMessage(),e);
+                } catch (Exception e) {
+                    logger.error(e.getMessage(), e);
                 }
             }
 
@@ -100,136 +142,189 @@ public class ModleController {
     @RequestMapping("/modleRealStatus/{modleId}")
     @ResponseBody
     public String modelRealStatusforweb(@NonNull @PathVariable("modleId") String modleid) {
-        int loop = 0;
-        ControlModle controlModle = modleConstainer.getModulepool().get(Integer.valueOf(modleid.trim()));
+        try {
+            int loop = 0;
+            ControlModle controlModle = modleConstainer.getModulepool().get(Integer.valueOf(modleid.trim()));
 
-        JSONObject result = new JSONObject();
+            JSONObject result = new JSONObject();
 
-        result.put("funelUp", controlModle.getBackPVFunelUp());
-        result.put("funelDwon", controlModle.getBackPVFunelDown());
-        result.put("funneltype", controlModle.getFunneltype());
+            result.put("outSetp", controlModle.getControlAPCOutCycle());
+            /****曲线***/
 
-        result.put("predict", controlModle.getBackPVPrediction());
+            loop = 0;
+            result.put("funelUp", controlModle.getBackPVFunelUp());
+            result.put("funelDwon", controlModle.getBackPVFunelDown());
+            result.put("funneltype", controlModle.getFunneltype());
+            result.put("predict", controlModle.getBackPVPrediction());
+            int[] xaxis = new int[controlModle.getTimeserise_N()];
+            for (int i = 0; i < controlModle.getTimeserise_N(); i++) {
+                xaxis[i] = i;
+            }
+            result.put("xaxis", xaxis);
 
-        int[] xaxis = new int[controlModle.getTimeserise_N()];
-        for (int i = 0; i < controlModle.getTimeserise_N(); i++) {
-            xaxis[i] = i;
-        }
-        result.put("xaxis", xaxis);
-        result.put("outSetp", controlModle.getControlAPCOutCycle());
-
-
-        loop = 0;
-        double[] pvs = new double[controlModle.getCategoryPVmodletag().size()];
-        for (ModlePin pvpin : controlModle.getCategoryPVmodletag()) {
-            pvs[loop] = pvpin.modleGetReal();
-            loop++;
-        }
-        result.put("pv", pvs);
-
-
-        loop = 0;
-        String[] pvcurveNames = new String[controlModle.getNumOfEnablePVPins_pp()];
-        String[] funelUpcurveNames = new String[controlModle.getNumOfEnablePVPins_pp()];
-        String[] funelDowncurveNames = new String[controlModle.getNumOfEnablePVPins_pp()];
-        for (ModlePin pvpin : controlModle.getCategoryPVmodletag()) {
-            pvcurveNames[loop] = pvpin.getModlePinName();
-            funelUpcurveNames[loop] = "funelUp";
-            funelDowncurveNames[loop] = "funelDown";
-            loop++;
-        }
-        result.put("curveNames4funelUp", funelUpcurveNames);
-        result.put("curveNames4pv", pvcurveNames);
-        result.put("curveNames4funelDown", funelDowncurveNames);
-
-
-        /**表格内容*/
-        int pvnum = controlModle.getCategoryPVmodletag().size();//2
-        int mvnum = controlModle.getCategoryMVmodletag().size();//1
-        int maxrownum = Math.max(pvnum, mvnum);
-
-        JSONArray modlereadData = new JSONArray();
-        JSONArray sdmvData = new JSONArray();
-        JSONArray ffData = new JSONArray();
-
-        for (loop = 0; loop < maxrownum; loop++) {
-            JSONObject mainmodlerowcontext = new JSONObject();
-            JSONObject sdmvrowcontext = new JSONObject();
-            JSONObject ffrowcontext = new JSONObject();
-
-            String mainrowpinname = "";
-            if (loop < pvnum) {//pv
-                ModlePin pv = controlModle.getCategoryPVmodletag().get(loop);
-                ModlePin sp = controlModle.getCategorySPmodletag().get(loop);
-
-//                rowcontext.put("pvName", pv.getModleOpcTag());
-                mainmodlerowcontext.put("pvValue", Tool.getSpecalScale(3, pv.modleGetReal()));
-                mainmodlerowcontext.put("spValue", Tool.getSpecalScale(3, sp.modleGetReal()));
-                mainmodlerowcontext.put("e", Tool.getSpecalScale(3, controlModle.getBackPVPredictionError()[loop]));
-                mainmodlerowcontext.put("shockpv", pv.getShockDetector() == null ? "" : Tool.getSpecalScale(3, pv.getShockDetector().getLowhzA()));
-
-                sdmvrowcontext.put("pinName", pv.getModlePinName());
-                ffrowcontext.put("pinName", pv.getModlePinName());
-
-                mainmodlerowcontext.put("checkIO", pv.getReference_modleId()+"_"+pv.getModlepinsId()+"_"+pv.getPinEnable());
-
-                /**仿真dmv*/
-                for (int indexmv = 0; indexmv < controlModle.getInputpoints_m(); ++indexmv) {
-                    if (controlModle.getMatrixPvUseMv()[loop][indexmv] == 1) {
-                        sdmvrowcontext.put(controlModle.getCategoryMVmodletag().get(indexmv).getModlePinName(), Tool.getSpecalScale(3, controlModle.getSimulatControlModle().getBackSimulateDmv()[loop][indexmv]));
-                    }
+            loop = 0;
+            String[] pvcurveNames = new String[controlModle.getNumOfEnablePVPins_pp()];
+            String[] funelUpcurveNames = new String[controlModle.getNumOfEnablePVPins_pp()];
+            String[] funelDowncurveNames = new String[controlModle.getNumOfEnablePVPins_pp()];
+            for (ModlePin pvpin : controlModle.getCategoryPVmodletag()) {
+                if (controlModle.getParticipatePVMatrix()[loop] == 0) {
+                    continue;
                 }
 
+                pvcurveNames[loop] = pvpin.getModlePinName();
+                funelUpcurveNames[loop] = "funelUp";
+                funelDowncurveNames[loop] = "funelDown";
+                loop++;
+            }
+            result.put("curveNames4funelUp", funelUpcurveNames);
+            result.put("curveNames4pv", pvcurveNames);
+            result.put("curveNames4funelDown", funelDowncurveNames);
+
+
+            /**表格内容*/
+            loop = 0;
+//        double[] pvs = new double[controlModle.getCategoryPVmodletag().size()];
+//        for (ModlePin pvpin : controlModle.getCategoryPVmodletag()) {
+//
+//            pvs[loop] = pvpin.modleGetReal();
+//            loop++;
+//        }
+//        result.put("pv", pvs);
+
+            int pvnum = controlModle.getCategoryPVmodletag().size();//2
+            int mvnum = controlModle.getCategoryMVmodletag().size();//1
+            int maxrownum = Math.max(pvnum, mvnum);
+
+            JSONArray modlereadData = new JSONArray();
+            JSONArray sdmvData = new JSONArray();
+            JSONArray ffData = new JSONArray();
+
+            int indexEnableMV=0;
+            int indexEnablePV=0;
+            for (loop = 0; loop < maxrownum; loop++) {
+                JSONObject modlereadDatarowcontext = new JSONObject();
+
+
+                String mainrowpinname = "";
+                if (loop < pvnum) {//pv
+                    ModlePin pv = controlModle.getCategoryPVmodletag().get(loop);
+                    ModlePin sp = controlModle.getCategorySPmodletag().get(loop);
+
+    //                rowcontext.put("pvName", pv.getModleOpcTag());
+                    modlereadDatarowcontext.put("pvValue", Tool.getSpecalScale(3, pv.modleGetReal()));
+                    modlereadDatarowcontext.put("spValue", Tool.getSpecalScale(3, sp.modleGetReal()));
+                    if(controlModle.getParticipatePVMatrix()[loop]==1){
+                        modlereadDatarowcontext.put("e", Tool.getSpecalScale(3, controlModle.getBackPVPredictionError()[indexEnablePV]));
+                        ++indexEnablePV;
+                    }
+                    modlereadDatarowcontext.put("shockpv", pv.getShockDetector() == null ? "" : Tool.getSpecalScale(3, pv.getShockDetector().getLowhzA()));
+
+                    modlereadDatarowcontext.put("checkIO", pv.getReference_modleId() + "_" + pv.getModlepinsId() + "_" + pv.getPinEnable());
+
+
+                    mainrowpinname += pv.getModlePinName();
+                }
+
+
+                if (loop < mvnum) {//1,1,mv
+                    ModlePin mv = controlModle.getCategoryMVmodletag().get(loop);
+                    ModlePin mvDownLmt = mv.getDownLmt();
+                    ModlePin mvUpLmt = mv.getUpLmt();
+                    ModlePin mvFeedBack = mv.getFeedBack();
+                    modlereadDatarowcontext.put("mvvalue", Tool.getSpecalScale(3, mv.modleGetReal()));
+                    modlereadDatarowcontext.put("mvDownLmt", Tool.getSpecalScale(3, mvDownLmt.modleGetReal()));
+                    modlereadDatarowcontext.put("mvUpLmt", Tool.getSpecalScale(3, mvUpLmt.modleGetReal()));
+                    modlereadDatarowcontext.put("mvFeedBack", Tool.getSpecalScale(3, mvFeedBack.modleGetReal()));
+                    if(controlModle.getParticipateMVMatrix()[indexEnableMV]==1){
+                        modlereadDatarowcontext.put("dmv", Tool.getSpecalScale(3, controlModle.getBackrawDmv()[indexEnableMV]));
+    //                    modlereadDatarowcontext.put("shockmv", mv.getShockDetector() == null ? "" : Tool.getSpecalScale(3, mv.getShockDetector().getLowhzA()));
+                        ++indexEnableMV;
+                    }
+                    modlereadDatarowcontext.put("shockmv", mv.getShockDetector() == null ? "" : Tool.getSpecalScale(3, mv.getShockDetector().getLowhzA()));
+
+                    mainrowpinname += (mainrowpinname.equals("")?mv.getModlePinName():"|" + mv.getModlePinName());
+                }
+
+                modlereadDatarowcontext.put("pinName", mainrowpinname);
+    //            mainmodlerowcontext.put("auto", controlModle.getAutoEnbalePin() == null ? "手动" : (controlModle.getAutoEnbalePin().modleGetReal() == 0 ? "手动" : "自动"));
+                modlereadData.add(modlereadDatarowcontext);
+
+            }
+
+
+            /***仿真数据，ff数据展示*/
+            indexEnablePV = 0;
+            for (int indexpv = 0; indexpv < controlModle.getCategoryPVmodletag().size(); ++indexpv) {
+
+                if (controlModle.getParticipatePVMatrix()[indexpv] == 0) {
+                    continue;
+                }
+
+                JSONObject sdmvrowcontext = new JSONObject();
+                JSONObject ffrowcontext = new JSONObject();
+
+
+                sdmvrowcontext.put("pinName", controlModle.getCategoryPVmodletag().get(indexpv).getModlePinName());
+                ffrowcontext.put("pinName", controlModle.getCategoryPVmodletag().get(indexpv).getModlePinName());
+
+
+                indexEnableMV = 0;
+                /**仿真dmv*/
+                for (int indexmv = 0; indexmv < controlModle.getCategoryMVmodletag().size(); ++indexmv) {
+
+                    if (controlModle.getParticipateMVMatrix()[indexEnableMV] == 0) {
+                        continue;
+                    }
+
+                    if (controlModle.getMatrixEnablePVUseMV()[indexEnablePV][indexEnableMV] == 1) {
+                        sdmvrowcontext.put(controlModle.getCategoryMVmodletag().get(indexmv).getModlePinName(), Tool.getSpecalScale(3, controlModle.getSimulatControlModle().getBackSimulateDmv()[indexEnablePV][indexEnableMV]));
+                    }
+                    ++indexEnableMV;
+                }
+
+                int indexEnableFF = 0;
                 /**ff*/
                 if (controlModle.getFeedforwardpoints_v() > 0) {
                     for (int indexff = 0; indexff < controlModle.getFeedforwardpoints_v(); ++indexff) {
-                        if (controlModle.getMatrixPvUseFf()[loop][indexff] == 1) {
+
+                        if (controlModle.getParticipateFFMatrix()[indexEnableFF] == 0) {
+                            continue;
+                        }
+
+                        if (controlModle.getMatrixEnablePVUseFF()[indexEnablePV][indexEnableFF] == 1) {
                             /**dff*/
-                            ffrowcontext.put("d" + controlModle.getCategoryFFmodletag().get(indexff).getModlePinName(), Tool.getSpecalScale(3, controlModle.getBackDff()[loop][indexff]));
+                            ffrowcontext.put("d" + controlModle.getCategoryFFmodletag().get(indexff).getModlePinName(), Tool.getSpecalScale(3, controlModle.getBackDff()[indexEnablePV][indexEnableFF]));
                             /**ff值*/
                             ffrowcontext.put(controlModle.getCategoryFFmodletag().get(indexff).getModlePinName(), Tool.getSpecalScale(3, controlModle.getCategoryFFmodletag().get(indexff).modleGetReal()));
                         }
+
+                        ++indexEnableFF;
                     }
                 }
 
-                mainrowpinname += pv.getModlePinName();
+                if (!sdmvrowcontext.equals("")) {
+                    sdmvData.add(sdmvrowcontext);
+                }
+
+                ffData.add(ffrowcontext);
+                ++indexEnablePV;
             }
 
 
-            if (loop < mvnum) {//1,1,mv
-                ModlePin mv = controlModle.getCategoryMVmodletag().get(loop);
-                ModlePin mvDownLmt = mv.getDownLmt();
-                ModlePin mvUpLmt = mv.getUpLmt();
-                ModlePin mvFeedBack = mv.getFeedBack();
-                mainmodlerowcontext.put("mvvalue", Tool.getSpecalScale(3, mv.modleGetReal()));
-                mainmodlerowcontext.put("mvDownLmt", Tool.getSpecalScale(3, mvDownLmt.modleGetReal()));
-                mainmodlerowcontext.put("mvUpLmt", Tool.getSpecalScale(3, mvUpLmt.modleGetReal()));
-                mainmodlerowcontext.put("mvFeedBack", Tool.getSpecalScale(3, mvFeedBack.modleGetReal()));
-                mainmodlerowcontext.put("dmv", Tool.getSpecalScale(3, controlModle.getBackrawDmv()[loop]));
-                mainmodlerowcontext.put("shockmv", mv.getShockDetector() == null ? "" : Tool.getSpecalScale(3, mv.getShockDetector().getLowhzA()));
-                mainrowpinname += "|" + mv.getModlePinName();
+            result.put("modleRealData", modlereadData);
+            result.put("modlestatus", controlModle.getModleEnable());
+            result.put("sdmvData", sdmvData);
+
+            if (controlModle.getFeedforwardpoints_v() > 0) {
+                result.put("ffData", ffData);
             }
 
-            mainmodlerowcontext.put("pinName", mainrowpinname);
-//            mainmodlerowcontext.put("auto", controlModle.getAutoEnbalePin() == null ? "手动" : (controlModle.getAutoEnbalePin().modleGetReal() == 0 ? "手动" : "自动"));
-            modlereadData.add(mainmodlerowcontext);
-            if (!sdmvrowcontext.equals("")) {
-                sdmvData.add(sdmvrowcontext);
-            }
 
-            ffData.add(ffrowcontext);
+            return result.toJSONString();
+        } catch (Exception e) {
+            logger.error(e.getMessage(),e);
         }
-
-        result.put("modleRealData", modlereadData);
-        result.put("modlestatus",controlModle.getModleEnable());
-        result.put("sdmvData", sdmvData);
-
-        if (controlModle.getFeedforwardpoints_v() > 0) {
-            result.put("ffData", ffData);
-        }
-
-
-        return result.toJSONString();
+        return "";
 
     }
 
@@ -811,7 +906,7 @@ public class ModleController {
             fleshcontrolModle.setControlAPCOutCycle(Integer.valueOf(modlejsonObject.getString("O")));
             /**
              *记录历史的pv引脚是否使能
-             * key=引脚opc所对应的
+             * key=引脚名称 pv1 pv2
              * */
             Map<String, Integer> historyPinsEnable = new HashMap<>();
             if (modlejsonObject.getString("modleid").trim().equals("")) {
@@ -852,6 +947,9 @@ public class ModleController {
                 String spfuneltype = modlejsonObject.getString("funneltype" + i);
                 String pvtracoef = modlejsonObject.getString("tracoef" + i);//参考轨迹系数
 
+                String pvenable=modlejsonObject.getString(ModlePin.TYPE_PIN_PIN_ENABLE+i);
+                String pvenableresource=modlejsonObject.getString(ModlePin.TYPE_PIN_PIN_ENABLE+i+"resource");
+
                 /**
                  * pv震荡检测属性
                  * */
@@ -875,6 +973,9 @@ public class ModleController {
                 //pvTag!=null&&pvTag.trim()!=""
                 if ((pvTag != null && !pvTag.trim().equals("")) && (QTag != null && !QTag.trim().equals("")) && (spTag != null && !spTag.trim().equals("")) && (spDeadZone != null && !spDeadZone.trim().equals("")) && (spFunelInitValue != null && !spFunelInitValue.trim().equals(""))) {
 
+
+
+
                     ModlePin pvpin = new ModlePin();
                     pvpin.setResource(modlejsonObject.getString(ModlePin.TYPE_PIN_PV + i + "resource"));
                     pvpin.setModleOpcTag(pvTag);
@@ -885,6 +986,7 @@ public class ModleController {
                     pvpin.setFunelinitValue(Double.valueOf(spFunelInitValue));
                     pvpin.setFunneltype(spfuneltype);
                     pvpin.setOpcTagName(pvcomment);
+
 
                     /**
                      * 滤波器
@@ -938,6 +1040,17 @@ public class ModleController {
                     sppin.setModlePinName("sp" + i);
                     sppin.setOpcTagName(spcomment);
                     fleshcontrolModle.getModlePins().add(sppin);
+
+                    if(pvenableresource!=null&&!pvenableresource.equals("")&&pvenable!=null&!pvenable.equals("")){
+                        ModlePin pvenablepin=new ModlePin();
+                        pvenablepin.setModleOpcTag(pvenable);
+                        pvenablepin.setResource(pvenableresource);
+                        pvenablepin.setReference_modleId(fleshcontrolModle.getModleId());
+                        pvenablepin.setModlePinName(ModlePin.TYPE_PIN_PIN_ENABLE+i);
+                        fleshcontrolModle.getModlePins().add(pvenablepin);
+//                        pvpin.setDcsEnabePin(pvenablepin);在build中会进行关系建立
+                    }
+
 
                 }
             }
@@ -1131,9 +1244,7 @@ public class ModleController {
             }
 
 
-            /**
-             * 数据库引脚信息更新
-             * */
+            /**数据库引脚信息更新*/
             if (fleshcontrolModle.getModlePins().size() != 0) {
 
                 /**新模型*/
@@ -1176,8 +1287,8 @@ public class ModleController {
 
 
                 } else {
-                    //老模型
                     /**
+                     * 老模型
                      * 删除引脚和对应的filter 和检测计
                      * */
                     modleDBServe.deleteModlePins(Integer.valueOf(modlejsonObject.getString("modleid").trim()));
@@ -1187,7 +1298,7 @@ public class ModleController {
                     /**获取老模型的pv引脚使能情况*/
                     for (ModlePin oldmodlePin : oldmodle.getCategoryPVmodletag()) {
                         if ((oldmodlePin.getModleOpcTag() != null) && (!"".equals(oldmodlePin.getModleOpcTag()))) {
-                            historyPinsEnable.put(oldmodlePin.getModleOpcTag(), oldmodlePin.getPinEnable());
+                            historyPinsEnable.put(oldmodlePin.getModlePinName(), oldmodlePin.getPinEnable());
                         }
                     }
 
@@ -1207,15 +1318,14 @@ public class ModleController {
 
                     /**重新插入引脚
                      * 1、插入引脚之前把他设置下以前的引脚使能*/
-
                     for (ModlePin modlePin : fleshcontrolModle.getModlePins()) {
 
                         Matcher pvmatcher = pvpattern.matcher(modlePin.getModlePinName());
                         if (pvmatcher.find()) {
-                            if ((modlePin.getModleOpcTag() != null) && (!"".equals(modlePin.getModleOpcTag()))) {
-                                Integer onOroff = historyPinsEnable.get(modlePin.getModleOpcTag());
+//                            if ((modlePin.getModleOpcTag() != null) && (!"".equals(modlePin.getModleOpcTag()))) {
+                                Integer onOroff = historyPinsEnable.get(modlePin.getModlePinName());
                                 modlePin.setPinEnable(onOroff == null ? 1 : onOroff);
-                            }
+//                            }
                         }
                     }
 
@@ -1250,6 +1360,7 @@ public class ModleController {
 
             }
 
+            /**响应处理*/
             List<ResponTimeSerise> responTimeSeriseArrayList = new ArrayList<>();
             JSONArray mvrespjsonObject = JSONArray.parseArray(mvresp.trim());
 
@@ -1300,7 +1411,7 @@ public class ModleController {
                 }
             }
             /***
-             * 如果找不模型的id,那么直接从数据库中初始化模型
+             * 如果找不模型的id,说明是新模型那么直接从数据库中初始化模型
              * */
             if (modlejsonObject.getString("modleid").trim().equals("")) {
                 ControlModle controlModle1 = modleDBServe.getModle(fleshcontrolModle.getModleId());

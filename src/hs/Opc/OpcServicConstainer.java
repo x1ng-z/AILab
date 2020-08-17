@@ -253,6 +253,7 @@ public class OpcServicConstainer {
 
                     }
                 }
+                /**震荡输出位号*/
                 if ((modlePin.getShockDetector().getFilterbacktodcstag() != null) && !(modlePin.getShockDetector().getFilteropcresource().equals(""))) {
                     for (OPCService opcService : opcservepool.values()) {
                         Matcher matcher = opcpattern.matcher(modlePin.getShockDetector().getFilteropcresource());
@@ -266,6 +267,26 @@ public class OpcServicConstainer {
                 }
 
             }
+
+
+            /**pv引脚位号使能opc位号*/
+            /*for (OPCService opcService : opcservepool.values()) {
+                if((modlePin.getDcsEnabePin()!=null)&&(modlePin.getDcsEnabePin().getModleOpcTag()!=null)&&(modlePin.getDcsEnabePin().getResource()!=null)&&(!modlePin.getDcsEnabePin().getModleOpcTag().equals(""))){
+                    Matcher matcher = opcpattern.matcher(modlePin.getDcsEnabePin().getResource());
+                    if (matcher.find()) {
+                        if (matcher.group(2).equals(opcService.getOpcip())) {
+                            try {
+                                opcService.unregisterCommonOPCTag(modlePin.getDcsEnabePin().getModleOpcTag());
+                            } catch (Exception e) {
+                                logger.error("opc位号:" + modlePin.getModleOpcTag() + "移除失败");
+                                logger.error(e.getMessage(), e);
+
+                            }
+                        }
+                    }
+                }
+
+            }*/
 
 
         }

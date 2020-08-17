@@ -53,13 +53,13 @@ public class ResponTimeSerise {
      * timeserise_N = 40;//响应序列长度
      * controlAPCOutCycle = 0;//控制输出间隔周期
      * */
-    public Double[] responOneTimeSeries(int timeserise_N, int controlAPCOutCycle) {
+    public double[] responOneTimeSeries(int timeserise_N, int controlAPCOutCycle) {
         String json = stepRespJson;
         if (json == null || json.trim().equals("")) {
             return null;
         }
         JSONObject jsonmodlerespon = JSON.parseObject(json);
-        Double[] respon = new Double[timeserise_N];
+        double[] respon = new double[timeserise_N];
         /**
          * 原先是从0开始的到timeserise_N，但是我们要的事从k+1到 N+1
          * */
