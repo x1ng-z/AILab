@@ -26,7 +26,7 @@ public class ModlePinCheckout implements MonitorTask {
         if(controlModle!=null){
 
             for (ModlePin pvpin : controlModle.getCategoryPVmodletag()) {
-                if(pvpin.getModlepinsId()==pinid){
+                if(pvpin.getDcsEnabePin()!=null&&pvpin.getDcsEnabePin().getModlepinsId()==pinid){
                     try {
 
                         if(pvpin.getPinEnable()==1){

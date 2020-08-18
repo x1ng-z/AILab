@@ -25,7 +25,7 @@ import java.util.regex.Pattern;
  */
 public class testJson {
 
-    private  static Pattern pvpattern = Pattern.compile("(^pv\\d+$)");
+    private  static Pattern pvpattern = Pattern.compile("(^pvenable\\d+$)");
 
 
 
@@ -47,16 +47,7 @@ public class testJson {
     }
     public static void main(String[] args) {
 
-        int[][] test_length=new int[2][3];
-
-        for(int ti:test_length[0]){
-                System.out.println(ti);
-        }
-
-        System.out.println(test_length.length);
-        System.out.println(test_length[0].length);
-
-        Matcher matcher=pvpattern.matcher("pv");
+        Matcher matcher=pvpattern.matcher("pvenable1");
 
         if(matcher.find()){
             System.out.println(matcher.group());
