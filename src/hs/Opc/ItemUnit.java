@@ -28,12 +28,15 @@ public class ItemUnit {
     }
 
     public synchronized void  addrefrencecount(){
-        refrencecount++;
+        ++refrencecount;
     }
     public synchronized void minsrefrencecount(){
-        refrencecount--;
+        --refrencecount;
     }
 
+    /**
+     * 位号没有被引用了，那就可以被group移除
+     * */
     public  synchronized boolean isnorefrence(){
         if(refrencecount==0){
             return true;

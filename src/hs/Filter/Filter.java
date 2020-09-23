@@ -1,5 +1,6 @@
 package hs.Filter;
 
+import hs.Bean.OPCComponent;
 import hs.ShockDetect.ShockDetector;
 
 import java.util.LinkedList;
@@ -9,7 +10,7 @@ import java.util.LinkedList;
  * @version 1.0
  * @date 2020/6/10 17:35
  */
-public interface Filter {
+public interface Filter extends OPCComponent {
     void setsampledata(double sampledata);
 
     int getPk_pinid();

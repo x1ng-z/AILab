@@ -21,13 +21,26 @@
         <result property="tag" column="tag"/>
         <result property="opcserveid" column="opcserveid"/>
     </resultMap>
-    
-
 
 
 <!--    List<OPCService> getopcserves();-->
     <select id="getopcserves" resultMap="OpcserveResult">
       select * from opcserveinfo
+    </select>
+
+    <select id="pageopcserves" resultMap="OpcserveResult">
+      select * from opcserveinfo order by opcserveid  ASC  limit #{page},#{pagesize}
+    </select>
+
+    <!--    int getopcservescount();-->
+    <select id="getopcservescount" resultType="java.lang.Integer">
+      select count(*) from opcserveinfo
+    </select>
+
+
+<!--    OPCService findopcservebyid(@Param("opcserveid") int opcserveid);-->
+    <select id="findopcservebyid" resultMap="OpcserveResult">
+      select * from opcserveinfo where opcserveid=#{opcserveid}
     </select>
 
     <select id="findOpcServeVertags" resultMap="opcvertagResult">
@@ -36,7 +49,7 @@
 
 <!--    void updateopcserves(OPCService opcService);-->
     <update id="updateopcserves" parameterType="hs.Opc.OPCService">
-        update opcserveinfo set opcuser=#{opcserve.opcuser}, set opcpassword=#{opcserve.opcpassword}, set opcip=#{opcserve.opcip},set opcclsid=#{opcserve.opcclsid} where opcserveid=#{opcserve.opcserveid}
+        update opcserveinfo set opcuser=#{opcserve.opcuser}, opcpassword=#{opcserve.opcpassword}, opcip=#{opcserve.opcip}, opcclsid=#{opcserve.opcclsid} where opcserveid=#{opcserve.opcserveid}
     </update>
 
 
@@ -59,8 +72,13 @@
 
 
 <!--    void deleteopcverificationtag(int tagid);-->
-    <delete id="deleteopcverificationtag" >
+    <delete id="deleteopcverificationtagbytagid" >
         delete from opcverification where tagid=#{tagid}
+    </delete>
+
+
+    <delete id="deleteopcverificationtagbyopcserveid" >
+        delete from opcverification where opcserveid=#{opcserveid}
     </delete>
 
 
@@ -68,5 +86,26 @@
     <insert id="insertopcverificationtag" parameterType="hs.Opc.OPCService" useGeneratedKeys="true" keyProperty="tagid">
         insert into opcverification(tagName, tag, opcserveid) values (#{opcVeriTag.tagName},#{opcVeriTag.tag},#{opcVeriTag.opcserveid})
     </insert>
+
+
+
+<!--    List<OpcVeriTag> findopcverificationtagbyopcserveid(@Param("opcserveid")int opcserveid);-->
+<!--    OpcVeriTag findopcverificationtagbytagid(@Param("tagid")int tagid);-->
+
+    <select id="findopcverificationtagbyopcserveid" parameterType="java.lang.Integer" resultMap="opcvertagResult">
+      select * from opcverification where opcserveid=#{opcserveid} order by tagid  ASC limit #{page},#{pagesize}
+    </select>
+
+
+    <select id="findopcverificationtagbytagid" parameterType="java.lang.Integer" resultMap="opcvertagResult">
+      select * from opcverification where tagid=#{tagid}
+    </select>
+
+
+    <select id="countopcverificationtagbyopcserveid" parameterType="java.lang.Integer" resultType="java.lang.Integer">
+      select count(*) from opcverification where opcserveid=#{opcserveid}
+    </select>
+
+
 
 </mapper>

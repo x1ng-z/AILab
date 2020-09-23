@@ -23,6 +23,8 @@ import java.util.regex.Pattern;
  * @version 1.0
  * @date 2020/3/19 10:41
  */
+
+
 public class testJson {
 
     private  static Pattern pvpattern = Pattern.compile("(^pvenable\\d+$)");
@@ -30,6 +32,10 @@ public class testJson {
 
 
     private  static Pattern opcpattern = Pattern.compile("([a-zA-Z]*)([0-9|.]*)");
+
+    public static void change(int a){
+        a=2;
+    }
 
     public void  test(){
         double[] dd=new double[2];
@@ -46,6 +52,18 @@ public class testJson {
         jsonArray1.toArray(aa);
     }
     public static void main(String[] args) {
+
+
+        testtype.staticgetItem(new Color() {
+            @Override
+            public void drow() {
+                System.out.println("");
+            }
+        });
+        int a=0;
+        change(a);
+        System.out.println(a);
+
 
         Matcher matcher=pvpattern.matcher("pvenable1");
 

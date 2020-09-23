@@ -25,7 +25,7 @@ public class PythonSimulateController {
     @RequestMapping("/modlebuild/{id}")
     public String ModelBuild(@PathVariable("id") int id) {
 
-        ControlModle modle = modleConstainer.getModulepool().get(id);
+        ControlModle modle = modleConstainer.getRunnableModulepool().get(id);
         JSONObject jsonObject = new JSONObject();
 
         /**
@@ -78,7 +78,7 @@ public class PythonSimulateController {
 
     @RequestMapping("/opcread/{id}")
     public String ModelReadData(@PathVariable("id") int id) {
-        ControlModle controlModle = modleConstainer.getModulepool().get(id);
+        ControlModle controlModle = modleConstainer.getRunnableModulepool().get(id);
         JSONObject realjson=controlModle.getrealSimulateData();
         return realjson.toJSONString();
     }
@@ -93,7 +93,7 @@ public class PythonSimulateController {
         //,@RequestParam("predict") double[] predictpv,@RequestParam("mv") double[]mv,@RequestParam("e") double[]e,@RequestParam("funelupAnddown") double[][]funelupAnddown,@RequestParam("dmv") double[] dmv
         try {
 
-            ControlModle controlModle = modleConstainer.getModulepool().get(id);
+            ControlModle controlModle = modleConstainer.getRunnableModulepool().get(id);
             if (controlModle.getSimulatControlModle().getSimulatevalidkey() != validekey) {
                 return "false";
             }

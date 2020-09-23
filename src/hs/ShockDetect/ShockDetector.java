@@ -1,5 +1,6 @@
 package hs.ShockDetect;
 
+import hs.Bean.OPCComponent;
 import hs.Controller.ModleController;
 import hs.Filter.FirstOrderLagFilter;
 import org.apache.log4j.Logger;
@@ -13,7 +14,7 @@ import java.util.List;
  * @version 1.0
  * @date 2020/7/20 13:28
  */
-public class ShockDetector {
+public class ShockDetector implements OPCComponent {
     public static Logger logger = Logger.getLogger(ShockDetector.class);
 
     private int pk_shockdetectid ;
@@ -21,9 +22,9 @@ public class ShockDetector {
     private String backToDCSTag;//'有效幅值计算结果反写位号',
     private String opcresource;//'opc反写位号源',
     private Double dampcoeff;//'动态阻尼系数
-    private int windowstime;//'窗口时间',
+    private Integer windowstime;//'窗口时间',
     private Double filtercoeff;//'一阶滤波系数',
-    private int enable;//'是否启用'
+    private int enable=1;//'是否启用'
     private String filterbacktodcstag; //'滤波后数据反写位号',
     private String filteropcresource; // '滤波数据反写位号opc源'
     private double lowhzA=0;//低频率幅值
@@ -101,7 +102,7 @@ public class ShockDetector {
         this.dampcoeff = dampcoeff;
     }
 
-    public int getWindowstime() {
+    public Integer getWindowstime() {
         return windowstime;
     }
 
@@ -153,4 +154,8 @@ public class ShockDetector {
         return firstOrderLagFilterl;
     }
 
+    @Override
+    public String getOPCTAG() {
+        return backToDCSTag;
+    }
 }

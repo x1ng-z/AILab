@@ -52,7 +52,7 @@ public class SimulatControlModle {
     /**
      * 输入输出映射关系数量
      */
-    private int numOfIOMappingRelation = 0;
+    private volatile int numOfIOMappingRelation = 0;
 
 
     /**
@@ -128,6 +128,7 @@ public class SimulatControlModle {
     private List<ModlePin> modlePins;
 
 
+
     public List<ModlePin> getExtendModlePVPins() {
         return extendModlePVPins;
     }
@@ -182,10 +183,13 @@ public class SimulatControlModle {
     /*******************仿真属性结束**************************/
 
 
-    public SimulatControlModle(String simulatorbuilddir, Integer modleid, boolean issimulate) {
+    public SimulatControlModle(int M,int P,int N,int controlAPCOutCycle,String simulatorbuilddir, Integer modleid) {
         this.simulatorbuilddir = simulatorbuilddir;
         this.modleid = modleid;
-        this.issimulation = issimulate;
+        this.controltime_M=M;
+        this.predicttime_P=P;
+        this.timeserise_N=N;
+        this.controlAPCOutCycle=controlAPCOutCycle;
     }
 
     /**
@@ -251,15 +255,15 @@ public class SimulatControlModle {
         int index4IOMappingRelation = 0;
         for (int indexpv = 0; indexpv < controlModle.getCategoryPVmodletag().size(); ++indexpv) {
 
-            /**没有激活的pv直接跳过*/
-            if (controlModle.getParticipatePVMatrix()[indexpv] == 0) {
+            /**没有可运行的pv直接跳过*/
+            if (0==controlModle.getMaskisRunnablePVMatrix()[indexpv]) {
                 continue;
             }
 
             for (int indexmv = 0; indexmv < controlModle.getCategoryMVmodletag().size(); ++indexmv) {
 
                 /**激活的pv没有用到的mv直接跳过*/
-                if (controlModle.getParticipateMVMatrix()[indexmv] == 0) {
+                if (controlModle.getMaskisRunnableMVMatrix()[indexmv] == 0) {
                     continue;
                 }
 
@@ -331,8 +335,8 @@ public class SimulatControlModle {
          * 前馈输出对应矩阵
          * init B matrix
          * */
-        if (controlModle.getNumOfEnableFFpins_vv() > 0) {
-            B_SimulatetimeseriseMatrix = new double[numOfIOMappingRelation][controlModle.getNumOfEnableFFpins_vv()][timeserise_N];
+        if (controlModle.getNumOfRunnableFFpins_vv() > 0) {
+            B_SimulatetimeseriseMatrix = new double[numOfIOMappingRelation][controlModle.getNumOfRunnableFFpins_vv()][timeserise_N];
             /**
              *fill respon into 前馈与输出 响应matrix
              *填入前馈输出响应矩阵
@@ -342,7 +346,7 @@ public class SimulatControlModle {
                 int indexEnbaleFF=0;
                 for (int indexff = 0; indexff < controlModle.getCategoryFFmodletag().size(); ++indexff) {
 
-                    if (controlModle.getParticipateFFMatrix()[indexff] == 0) {
+                    if (controlModle.getMaskisRunnableFFMatrix()[indexff] == 0) {
                         continue;
                     }
 
@@ -359,32 +363,45 @@ public class SimulatControlModle {
 
         simulateOutpoints_p=numOfIOMappingRelation;
         simulateInputpoints_m=numOfIOMappingRelation;
-        simulateFeedforwardpoints_v=controlModle.getNumOfEnableFFpins_vv();
+        simulateFeedforwardpoints_v=controlModle.getNumOfRunnableFFpins_vv();
 
-        backSimulateDmv = new double[controlModle.getNumOfEnablePVPins_pp()][controlModle.getNumOfEnableMVpins_mm()];
+        backSimulateDmv = new double[controlModle.getNumOfRunnablePVPins_pp()][controlModle.getNumOfRunnableMVpins_mm()];
         generateSimulatevalidkey();
         executePythonBridgeSimulate = new ExecutePythonBridge(simulatorbuilddir, "http://localhost:8080/AILab/pythonsimulate/modlebuild/" + modleid + ".do", modleid + "");
-        if (issimulation) {
+    }
+
+    public void simulateModleRun(){
+        if(!isIssimulation()){
+            generateSimulatevalidkey();
             executePythonBridgeSimulate.execute();
+            setIssimulation(true);
+        }
+    }
+
+    public void simulateModleStop(){
+        if(isIssimulation()){
+            generateSimulatevalidkey();
+            executePythonBridgeSimulate.stop();
+            setIssimulation(false);
         }
     }
 
 
-    public boolean isIssimulation() {
+    public synchronized boolean isIssimulation() {
         return issimulation;
     }
 
-    public void setIssimulation(boolean issimulation) {
+    public synchronized void  setIssimulation(boolean issimulation) {
         this.issimulation = issimulation;
     }
 
 
-    public int getNumOfIOMappingRelation() {
+    public synchronized int getNumOfIOMappingRelation() {
         return numOfIOMappingRelation;
     }
 
     /**add num of pv and mv mapping ralationship*/
-    public void addNumOfIOMappingRelation() {
+    public synchronized void addNumOfIOMappingRelation() {
         ++numOfIOMappingRelation;
     }
 
@@ -561,10 +578,10 @@ public class SimulatControlModle {
     public boolean updateBackSimulateDmv(double[] simulateDmv) {
         int indexmappingration = 0;
         try {
-            for (int indexpv = 0; indexpv < controlModle.getNumOfEnablePVPins_pp(); indexpv++) {
+            for (int indexpv = 0; indexpv < controlModle.getNumOfRunnablePVPins_pp(); indexpv++) {
 
-                for (int indexmv = 0; indexmv < controlModle.getNumOfEnableMVpins_mm(); indexmv++) {
-                    if (controlModle.getMatrixEnablePVUseMV()[indexpv][indexmv] == 1) {
+                for (int indexmv = 0; indexmv < controlModle.getNumOfRunnableMVpins_mm(); indexmv++) {
+                    if (controlModle.getMaskMatrixRunnablePVUseMV()[indexpv][indexmv] == 1) {
                         this.backSimulateDmv[indexpv][indexmv] = simulateDmv[indexmappingration];
                         ++indexmappingration;
                     }

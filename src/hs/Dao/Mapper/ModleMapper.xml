@@ -41,8 +41,6 @@
     </resultMap>
 
 
-
-
     <resultMap id="pinResult" type="hs.Bean.ModlePin">
         <id property="modlepinsId" column="modlepinsId"/>
         <result property="reference_modleId" column="reference_modleId"/>
@@ -58,12 +56,14 @@
         <result property="dmvLow" column="dmvLow"/>
         <result property="referTrajectoryCoef" column="referTrajectoryCoef"/>
         <result property="funneltype" column="funneltype"/>
+        <result property="pintype" column="pintype"/>
         <result property="pinEnable" column="pinEnable"/>
         <result property="updateTime" column="updateTime" typeHandler="hs.Dao.Handler.InstantHandler"/>
         <association property="filter" javaType="hs.Filter.Filter" column="modlepinsId" select="findfilterByid"/>
-        <association property="shockDetector" javaType="hs.ShockDetect.ShockDetector" column="modlepinsId" select="getShockDetetetor"/>
+        <association property="shockDetector" javaType="hs.ShockDetect.ShockDetector" column="modlepinsId"
+                     select="getShockDetetetor"/>
     </resultMap>
-    
+
     <resultMap id="filterResult" type="hs.Filter.Filter">
         <id property="pk_filterid" column="pk_filterid"/>
         <result property="pk_pinid" column="pk_pinid"/>
@@ -102,6 +102,23 @@
     </select>
 
 
+    <!--    List<ModlePin> pagePVpinsbymodleid(@Param("modleid")int modleid);-->
+    <select id="pagepinsbymodleid" resultType="hs.Bean.ModlePin">
+        select * from modlepins where pintype=#{pintype} and reference_modleId=#{modleid} order by modlePinName ASC limit #{page},#{pagesize}
+    </select>
+
+
+    <select id="pinsbypintype" resultType="hs.Bean.ModlePin">
+        select * from modlepins where pintype=#{pintype} and reference_modleId=#{modleid} order by modlePinName ASC
+    </select>
+
+
+    <!--    int countPVpinsbymodleid(@Param("modleid")int modleid,@Param("page") int page);-->
+
+    <select id="countpinsbymodleid" resultType="java.lang.Integer">
+        select count(*) from modlepins where pintype=#{pintype} and reference_modleId=#{modleid}
+    </select>
+
 
     <select id="findModlePin" parameterType="java.util.Map" resultType="hs.Bean.ModlePin">
         select * from modlepins where modlepinsId=#{id} and reference_modleId=#{modleId}
@@ -111,6 +128,22 @@
         select * from modlepins where reference_modleId=#{modleId}
     </select>
 
+
+    <insert id="insertModle" parameterType="hs.Bean.ControlModle" useGeneratedKeys="true" keyColumn="modleId"
+            keyProperty="modleId">
+        insert into modle(modleName, controlAPCOutCycle, predicttime_P, timeserise_N, controltime_M, modleEnable) values
+        (#{controlModle.modleName},#{controlModle.controlAPCOutCycle},#{controlModle.predicttime_P},#{controlModle.timeserise_N},#{controlModle.controltime_M},#{controlModle.modleEnable})
+    </insert>
+
+    <update id="modifymodle">
+        update modle set modleName=#{controlModle.modleName}, controlAPCOutCycle=#{controlModle.controlAPCOutCycle}, predicttime_P=#{controlModle.predicttime_P}, timeserise_N=#{controlModle.timeserise_N}, controltime_M=#{controlModle.controltime_M}
+        where modleId=#{modleid}
+    </update>
+
+    <update id="updatemodleEnable">
+        update modle set modleEnable=#{enable}
+        where modleId=#{modleid}
+    </update>
 
 
     <select id="findModleRespon" resultType="hs.Bean.ResponTimeSerise">
@@ -122,31 +155,23 @@
     </select>
 
     <insert id="insertModlePins" parameterType="hs.Bean.ModlePin" useGeneratedKeys="true" keyProperty="modlepinsId">
-        insert into modlepins(reference_modleId, modleOpcTag, modlePinName, opcTagName, resource, Q, R,deadZone,funelinitValue,dmvHigh,dmvLow,referTrajectoryCoef,funneltype,pinEnable)
+        insert into modlepins(reference_modleId, modleOpcTag, modlePinName, opcTagName, resource, Q,
+        R,deadZone,funelinitValue,dmvHigh,dmvLow,referTrajectoryCoef,funneltype,pinEnable,pintype)
         values
         <foreach collection="modlePins" item="pin" separator=",">
-            (#{pin.reference_modleId}, #{pin.modleOpcTag},  #{pin.modlePinName}, #{pin.opcTagName},
-            #{pin.resource}, #{pin.Q}, #{pin.R},#{pin.deadZone},#{pin.funelinitValue},#{pin.dmvHigh},#{pin.dmvLow},#{pin.referTrajectoryCoef},#{pin.funneltype},#{pin.pinEnable })
+            (#{pin.reference_modleId}, #{pin.modleOpcTag}, #{pin.modlePinName}, #{pin.opcTagName},
+            #{pin.resource}, #{pin.Q},
+            #{pin.R},#{pin.deadZone},#{pin.funelinitValue},#{pin.dmvHigh},#{pin.dmvLow},#{pin.referTrajectoryCoef},#{pin.funneltype},#{pin.pinEnable},#{pin.pintype})
         </foreach>
 
     </insert>
 
 
-    <insert id="insertModle" parameterType="hs.Bean.ControlModle" useGeneratedKeys="true" keyColumn="modleId"
-            keyProperty="modleId">
-        insert into modle(modleName, controlAPCOutCycle, predicttime_P, timeserise_N, controltime_M, modleEnable) values
-        (#{controlModle.modleName},#{controlModle.controlAPCOutCycle},#{controlModle.predicttime_P},#{controlModle.timeserise_N},#{controlModle.controltime_M},0)
+    <insert id="insertModlePin" parameterType="hs.Bean.ModlePin" useGeneratedKeys="true" keyProperty="modlepinsId">
+        insert into modlepins(reference_modleId, modleOpcTag, modlePinName, opcTagName, resource, Q, R,deadZone,funelinitValue,dmvHigh,dmvLow,referTrajectoryCoef,funneltype,pinEnable,pintype)
+        value (#{pin.reference_modleId}, #{pin.modleOpcTag},  #{pin.modlePinName}, #{pin.opcTagName},
+            #{pin.resource}, #{pin.Q}, #{pin.R},#{pin.deadZone},#{pin.funelinitValue},#{pin.dmvHigh},#{pin.dmvLow},#{pin.referTrajectoryCoef},#{pin.funneltype},#{pin.pinEnable},#{pin.pintype})
     </insert>
-
-    <update id="modifymodle">
-        update modle set modleName=#{controlModle.modleName}, controlAPCOutCycle=#{controlModle.controlAPCOutCycle}, predicttime_P=#{controlModle.predicttime_P}, timeserise_N=#{controlModle.timeserise_N}, controltime_M=#{controlModle.controltime_M}
-        where modleId=#{modleid}
-    </update>
-
-    <update id="modifymodleEnable">
-        update modle set modleEnable=#{enable}
-        where modleId=#{modleid}
-    </update>
 
 
     <update id="updatepinEnable">
@@ -155,9 +180,33 @@
     </update>
 
 
+    <update id="updatepin" parameterType="hs.Bean.ModlePin">
+        update modlepins set modleOpcTag=#{pin.modleOpcTag},
+                            modlePinName=#{pin.modlePinName},
+                            opcTagName=#{pin.opcTagName},
+                            resource=#{pin.resource},
+                            Q=#{pin.Q},
+                            dmvHigh=#{pin.dmvHigh},
+                            deadZone=#{pin.deadZone},
+                            funelinitValue=#{pin.funelinitValue},
+                            R=#{pin.R},
+                            dmvLow=#{pin.dmvLow},
+                            referTrajectoryCoef=#{pin.referTrajectoryCoef},
+                            funneltype=#{pin.funneltype},
+                            updateTime=current_timestamp()
+        where modlepinsId=#{pin.modlepinsId}
+    </update>
+
+
     <delete id="deleteModlePins">
         delete from modlepins where reference_modleId=#{modleid}
     </delete>
+
+
+    <delete id="deleteModlePinbypinid">
+        delete from modlepins where modlepinsId=#{pinid}
+    </delete>
+
 
     <insert id="insertModleResp" useGeneratedKeys="true" keyColumn="modletagId" keyProperty="modletagId">
         insert into modlerespon(refrencemodleId, stepRespJson, inputPins, outputPins) values
@@ -170,19 +219,56 @@
         delete from modlerespon where refrencemodleId=#{modleid}
     </delete>
 
+<!--    List<ResponTimeSerise> pageresponymodleid(@Param("modleid") int modleid,@Param("page") int page, @Param("pagesize") int pagesize);-->
+
+    <select id="pageresponymodleid" resultType="hs.Bean.ResponTimeSerise">
+        select * from modlerespon where refrencemodleId=#{modleid} order by inputPins ASC limit #{page},#{pagesize}
+    </select>
+
+
+<!--    int countresponbymodleid(@Param("modleid") int modleid);-->
+
+    <select id="countresponbymodleid" resultType="java.lang.Integer">
+        select count(*) from modlerespon where refrencemodleId=#{modleid}
+    </select>
+
+
     <delete id="deleteModle">
         delete from modle where modleId=#{modleid}
     </delete>
 
-    <insert id="insertPinsFODLFilter" parameterType="hs.Filter.FirstOrderLagFilter" useGeneratedKeys="true" keyProperty="pk_filterid">
+    <insert id="insertPinsFODLFilter" parameterType="hs.Filter.FirstOrderLagFilter" useGeneratedKeys="true"
+            keyProperty="pk_filterid">
         insert into filter(filtername, filter_alphe, pk_pinid,backToDCSTag,opcresource)
         values (#{filter.filtername},#{filter.filter_alphe},#{filter.pk_pinid},#{filter.backToDCSTag},#{filter.opcresource})
     </insert>
 
-    <insert id="insertPinsMVAVFilter" parameterType="hs.Filter.MoveAverageFilter" useGeneratedKeys="true" keyProperty="pk_filterid">
+    <insert id="insertPinsMVAVFilter" parameterType="hs.Filter.MoveAverageFilter" useGeneratedKeys="true"
+            keyProperty="pk_filterid">
         insert into filter(filtername, filter_time, pk_pinid,backToDCSTag,opcresource)
         values (#{filter.filtername},#{filter.capacity},#{filter.pk_pinid},#{filter.backToDCSTag},#{filter.opcresource})
     </insert>
+
+
+
+    <update id="updatePinsFODLFilter" parameterType="hs.Filter.FirstOrderLagFilter">
+        update filter set filtername=#{filter.filtername},
+         filter_alphe=#{filter.filter_alphe},
+         pk_pinid=#{filter.pk_pinid},
+         backToDCSTag=#{filter.backToDCSTag},
+         opcresource=#{filter.opcresource}
+         where pk_filterid=#{filter.pk_filterid}
+    </update>
+
+    <update id="updatePinsMVAVFilter" parameterType="hs.Filter.MoveAverageFilter">
+        update filter set filtername=#{filter.filtername},
+        filter_time=#{filter.capacity},
+        pk_pinid=#{filter.pk_pinid},
+        backToDCSTag=#{filter.backToDCSTag},
+        opcresource=#{filter.opcresource}
+       where pk_filterid=#{filter.pk_filterid}
+    </update>
+
 
     <select id="findfilterByid" resultMap="filterResult">
         select * from filter where pk_pinid=#{modlepinsId}
@@ -194,7 +280,15 @@
     </delete>
 
 
-    <insert id="insertShockDetetetor" parameterType="hs.ShockDetect.ShockDetector" useGeneratedKeys="true" keyProperty="pk_shockdetectid">
+    <delete id="deletePinsFilterbyfilterid">
+        delete from filter where pk_filterid=#{filterid}
+    </delete>
+
+
+
+
+    <insert id="insertShockDetetetor" parameterType="hs.ShockDetect.ShockDetector" useGeneratedKeys="true"
+            keyProperty="pk_shockdetectid">
         insert into shockdetect(pk_pinid,backToDCSTag,opcresource,dampcoeff,windowstime,filtercoeff,enable,filterbacktodcstag,filteropcresource) value (#{detector.pk_pinid},#{detector.backToDCSTag},#{detector.opcresource},#{detector.dampcoeff},#{detector.windowstime},#{detector.filtercoeff},#{detector.enable},#{detector.filterbacktodcstag},#{detector.filteropcresource})
     </insert>
 
@@ -203,11 +297,47 @@
     </select>
 
     <delete id="removeShockDetetetor">
-        delete from shockdetect where pk_shockdetectid=#{id}
+        delete from shockdetect where pk_shockdetectid=#{shockid}
     </delete>
 
     <update id="updateShockDetetetor" parameterType="hs.ShockDetect.ShockDetector">
         update shockdetect set pk_pinid=#{detector.pk_pinid},backToDCSTag=#{detector.backToDCSTag},opcresource=#{detector.opcresource},opcresource=#{detector.opcresource},dampcoeff=#{detector.dampcoeff},windowstime=#{detector.windowstime},filtercoeff=#{detector.filtercoeff},enable=#{detector.enable},filterbacktodcstag=#{detector.filterbacktodcstag},filteropcresource=#{detector.filteropcresource} where pk_shockdetectid=#{detector.pk_shockdetectid}
     </update>
+
+
+
+
+<!--    ModlePin  findPinbypinid(@Param("pinid") int pinid);-->
+    <select id="findPinbypinid" resultMap="pinResult" >
+        select * from modlepins where modlepinsId=#{pinid}
+    </select>
+
+<!--    ModlePin  findPinbypinmodleidAndpinname(@Param("modleid") int modleid,@Param("pinname")String pinname);-->
+
+    <select id="findPinbypinmodleidAndpinname" resultMap="pinResult" >
+        select * from modlepins where reference_modleId=#{modleid} and modlePinName=#{pinname}
+    </select>
+
+
+    <!--    void updateallpinip(@Param("oldip") String oldip, @Param("newip") String newip);-->
+
+    <update id="updateallpinip">
+        update modlepins set resource=#{newip} where resource=#{oldip}
+    </update>
+
+    <!--    void updateallfilterip(@Param("oldip") String oldip, @Param("newip") String newip);-->
+    <update id="updateallfilterip">
+        update filter set opcresource=#{newip} where opcresource=#{oldip}
+    </update>
+
+
+    <!--    void updateallshockdetectip(@Param("oldip") String oldip, @Param("newip") String newip);-->
+    <update id="updateallshockdetectip">
+        update shockdetect set opcresource=#{newip} where opcresource=#{oldip}
+    </update>
+    <update id="updateallshockdetectfilterip">
+        update shockdetect set filteropcresource=#{newip} where filteropcresource=#{oldip}
+    </update>
+
 
 </mapper>

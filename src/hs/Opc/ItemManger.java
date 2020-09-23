@@ -20,7 +20,7 @@ public class ItemManger {
 
     private Map<String, ItemUnit> opcitemunitPool = new ConcurrentHashMap<>();//key=标签，value=ItemUnit
     private Map<String, Item> opcitemPool = new ConcurrentHashMap<>();//key=标签，value=ItemUnit
-    private Map<Item,String> itemAndTag=new ConcurrentHashMap<>();
+    private Map<Item,String> itemAndTag=new ConcurrentHashMap<>();//为了方便通过item来找到opc位号
 
     public boolean iscontainstag(String tagname){
         return opcitemunitPool.containsKey(tagname);
@@ -83,6 +83,7 @@ public class ItemManger {
         }
         return result;
     }
+
 
 
 }

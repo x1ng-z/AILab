@@ -1,6 +1,7 @@
-package hs.Filter;
+package hs.ServiceBus;
 
 
+import hs.Filter.Filter;
 import hs.ShockDetect.ShockDetector;
 import org.openscada.opc.lib.da.Item;
 

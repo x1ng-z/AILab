@@ -47,7 +47,8 @@
         <div class="layui-inline">
             <label class="layui-form-label">预测步数</label>
             <div class="layui-input-inline">
-                <input type="number" name="P" lay-verify="required|number" autocomplete="off" class="layui-input" onmousewheel='scrollFunc()'>
+                <input type="number" name="P" lay-verify="required|number" autocomplete="off" class="layui-input"
+                       onmousewheel='scrollFunc()'>
             </div>
         </div>
         <div class="layui-inline">
@@ -60,14 +61,15 @@
         <div class="layui-inline">
             <label class="layui-form-label">输出间隔(秒)</label>
             <div class="layui-input-inline">
-                <input type="number" name="O" lay-verify="required|number" autocomplete="off" class="layui-input" onmousewheel='scrollFunc()'>
+                <input type="number" name="O" lay-verify="required|number" autocomplete="off" class="layui-input"
+                       onmousewheel='scrollFunc()'>
             </div>
         </div>
 
         <div class="layui-inline">
             <label class="layui-form-label">手自动位号</label>
             <div class="layui-input-inline">
-                <input type="text" name="autoTag"  autocomplete="off" class="layui-input"
+                <input type="text" name="autoTag" autocomplete="off" class="layui-input"
                        placeholder="opc位号">
             </div>
         </div>
@@ -77,9 +79,9 @@
             <div class="layui-input-inline">
                 <select name="autoresource">
                     <option value="">请选择来源</option>
-                    <<c:forEach var="opcres" items="${opcresources}" varStatus="Count">
-                    <option value="${opcres}">${opcres}</option>
-                </c:forEach>
+                    <c:forEach var="opcres" items="${opcresources}" varStatus="Count">
+                        <option value="${opcres}">${opcres}</option>
+                    </c:forEach>
                 </select>
             </div>
         </div>
@@ -168,7 +170,8 @@
         <div class="layui-colla-item">
             <h2 class="layui-colla-title">PV漏斗类型选择</h2>
             <div class="layui-colla-content layui-show">
-                <p style="font-weight: bolder;font-size: 1.1rem"> 全漏斗(区间控制)，上漏斗(保留上漏斗线，下漏斗线为负无穷)，下漏斗(保留下漏斗线，上漏斗线为正无穷)</p>
+                <p style="font-weight: bolder;font-size: 1.1rem">
+                    全漏斗(区间控制)，上漏斗(保留上漏斗线，下漏斗线为负无穷)，下漏斗(保留下漏斗线，上漏斗线为正无穷)</p>
                 <div class="layui-form-item">
                     <c:forEach var="pv" items="${pvlist}" varStatus="Count">
                         <div class="layui-inline">
@@ -229,7 +232,8 @@
         <div class="layui-colla-item">
             <h2 class="layui-colla-title">PV滤波器设置</h2>
             <div class="layui-colla-content layui-show">
-                <p style="font-weight: bolder;font-size: 1.1rem">一阶滤波(滤波系数0&ltalphe&lt1，数值越小滤波越强)和移动平均滤波(滤波系数0&ltalphe的整数，数值越大滤波越强)</p>
+                <p style="font-weight: bolder;font-size: 1.1rem">
+                    一阶滤波(滤波系数0&ltalphe&lt1，数值越小滤波越强)和移动平均滤波(滤波系数0&ltalphe的整数，数值越大滤波越强)</p>
                 <div class="layui-form-item">
                     <c:forEach var="pv" items="${pvlist}" varStatus="Count">
 
@@ -277,7 +281,6 @@
         </div>
 
 
-
         <div class="layui-form-item layui-colla-item">
             <h2 class="layui-colla-title">PV独立投切OPC位号设置</h2>
             <div class="layui-colla-content layui-show">
@@ -307,9 +310,6 @@
 
             </div>
         </div>
-
-
-
 
 
         <div class="layui-form-item layui-colla-item">
@@ -354,7 +354,7 @@
                     <div class="layui-colla-item">
                         <h2 class="layui-colla-title">一阶滤波系数(0&ltalphe&lt;=1)</h2>
                         <div class="layui-colla-content">
-                            <p  style="font-weight: bolder;font-size: 1.1rem">系数越小滤波效果越好,为1则无滤波效果</p>
+                            <p style="font-weight: bolder;font-size: 1.1rem">系数越小滤波效果越好,为1则无滤波效果</p>
                             <c:forEach var="pv" items="${pvlist}" varStatus="Count">
                                 <div class="layui-inline">
                                     <label class="layui-form-label">pv${pv}一阶滤波系数</label>
@@ -690,7 +690,8 @@
         <div class="layui-colla-item">
             <h2 class="layui-colla-title">MVFB反馈滤波器设置</h2>
             <div class="layui-colla-content layui-show">
-                <p style="font-weight: bolder;font-size: 1.1rem">一阶滤波(滤波系数0&ltalphe&lt1，数值越小滤波越强)和移动平均(滤波系数0&ltalphe的整数，数值越大滤波越强)</p>
+                <p style="font-weight: bolder;font-size: 1.1rem">
+                    一阶滤波(滤波系数0&ltalphe&lt1，数值越小滤波越强)和移动平均(滤波系数0&ltalphe的整数，数值越大滤波越强)</p>
                 <div class="layui-form-item">
                     <c:forEach var="mv" items="${mvlist}" varStatus="Count">
                         <div class="layui-inline">
@@ -738,8 +739,6 @@
         </div>
 
 
-
-
         <div class="layui-form-item layui-colla-item">
             <h2 class="layui-colla-title">MV震荡检测设置</h2>
             <div class="layui-colla-content">
@@ -781,7 +780,7 @@
                     <div class="layui-colla-item">
                         <h2 class="layui-colla-title">一阶滤波系数(0&ltalphe&lt;=1)</h2>
                         <div class="layui-colla-content">
-                            <p  style="font-weight: bolder;font-size: 1.1rem">系数越小滤波效果越好,为1则无滤波效果</p>
+                            <p style="font-weight: bolder;font-size: 1.1rem">系数越小滤波效果越好,为1则无滤波效果</p>
                             <c:forEach var="mv" items="${mvlist}" varStatus="Count">
                                 <div class="layui-inline">
                                     <label class="layui-form-label">mv${mv}一阶滤波系数</label>
@@ -863,8 +862,6 @@
         </div>
 
 
-
-
     </div>
 
 
@@ -914,7 +911,8 @@
         <div class="layui-colla-item">
             <h2 class="layui-colla-title">FF(前馈)滤波器设置</h2>
             <div class="layui-colla-content">
-                <p style="font-weight: bolder;font-size: 1.1rem">一阶滤波(滤波系数0&ltalphe&lt1，数值越小滤波越强)和移动平均(滤波系数0&ltalphe的整数，数值越大滤波越强)</p>
+                <p style="font-weight: bolder;font-size: 1.1rem">
+                    一阶滤波(滤波系数0&ltalphe&lt1，数值越小滤波越强)和移动平均(滤波系数0&ltalphe的整数，数值越大滤波越强)</p>
                 <div class="layui-form-item">
                     <c:forEach var="ff" items="${fflist}" varStatus="Count">
 
@@ -1212,16 +1210,15 @@
     }
 
 
-
     function scrollFunc(evt) {
         evt = evt || window.event;
-        if(evt.preventDefault) {
+        if (evt.preventDefault) {
             // Firefox
             evt.preventDefault();
             evt.stopPropagation();
         } else {
             // IE
-            evt.cancelBubble=true;
+            evt.cancelBubble = true;
             evt.returnValue = false;
         }
         return false;

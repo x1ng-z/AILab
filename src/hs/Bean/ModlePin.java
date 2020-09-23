@@ -12,10 +12,11 @@ import java.util.regex.Pattern;
  * @version 1.0
  * @date 2020/3/30 12:28
  */
-public class ModlePin {
+public class ModlePin implements ModleProperty {
     private static Pattern pvenablepattern = Pattern.compile("(^pvenable\\d+$)");
-
     public final static String TYPE_PIN_PV = "pv";
+    public final static String TYPE_PIN_PVDOWN = "pvdown";
+    public final static String TYPE_PIN_PVUP = "pvup";
     public final static String TYPE_PIN_SP = "sp";
     public final static String TYPE_PIN_MV = "mv";
     public final static String TYPE_PIN_MVFB = "mvfb";
@@ -25,7 +26,9 @@ public class ModlePin {
     public final static String TYPE_PIN_FFUP = "ffup";
     public final static String TYPE_PIN_MVUP = "mvup";
     public final static String TYPE_PIN_MVDOWN = "mvdown";
-    public final static String TYPE_PIN_PIN_ENABLE = "pvenable";//引脚是否参与控制
+    public final static String TYPE_PIN_PIN_PVENABLE = "pvenable";//pv引脚是否启用,控制方为dcs
+    public final static String TYPE_PIN_PIN_FFENABLE = "ffenable";//ff引脚是否启用,控制方为dcs
+    public final static String TYPE_PIN_PIN_MVENABLE = "mvenable";//mv引脚是否启用,控制方为dcs
     public final static String SOURCE_TYPE_CONSTANT = "constant";
     public final static String TYPE_FUNNEL_FULL = "fullfunnel";
     public final static String TYPE_FUNNEL_UP = "upfunnel";
@@ -36,12 +39,9 @@ public class ModlePin {
     private int reference_modleId;
     /**
      * 引脚使能位，一般用于pv，判断pv是否启用
+     * 标志位引脚是否参与控制
      */
     private volatile int pinEnable = 1;
-    /**
-     * dcs端控制引脚是否切入控制
-     */
-    private ModlePin dcsEnabePin;
 
     /**
      * opc位号
@@ -54,6 +54,7 @@ public class ModlePin {
     /**
      * 中文注释
      */
+    private String pintype;
     private String opcTagName;
     private String resource = "";
     private ModlePin upLmt;//高限
@@ -63,8 +64,8 @@ public class ModlePin {
     private Double R;
     private Double deadZone;//死区时间
     private Double funelinitValue;//漏洞初始值
-    private String funneltype;
-    private Double writeValue;
+    private String funneltype;//漏斗类型
+    private Double writeValue;//写入的值
     private Double newReadValue;//opc更新的新值
     private Double oldReadValue;//opc更新旧值
     private Double lastTimeValue;//上一次客户端算法进行读取
@@ -78,6 +79,23 @@ public class ModlePin {
     private Double referTrajectoryCoef;//pv的柔化系数(参考轨迹参数)
     private ShockDetector shockDetector;
     private Instant updateTime;
+
+
+    /**运行时钟，用于判断引脚是否进行run*/
+    private Instant runClock;
+
+
+
+
+    /**由于计算环境的变化，有些不在置信区间内的引脚需要移除控制，
+     * 改标识符是用于查看现在引脚是否参与控制
+     * */
+    private volatile boolean thisTimeParticipate=true;
+    /**
+     * dcs端控制引脚是否切入控制
+     */
+    private ModlePin dcsEnabePin;
+
 
     public void opcUpdateValue(double value) {
         oldReadValue = newReadValue;
@@ -102,7 +120,7 @@ public class ModlePin {
         /**有过滤器吗，有就充过滤器中获取，没有就直接opc更新来的newvalue中获取值就行*/
         if (filter == null) {
             if (pvenablepattern.matcher(modlePinName).find()) {
-                /**引脚使能数据
+                /**引脚使能类型的引脚 pin type :enablepin,no pv mv..
                  * 如果配置了opc位号*/
                 if ((modleOpcTag != null) && (!modleOpcTag.equals(""))) {
                     return (newReadValue == null ? 1 : newReadValue);
@@ -124,6 +142,22 @@ public class ModlePin {
             }
         }
     }
+
+    /**
+     * 判断是否超过的上下界限
+     * @return true 突破了;false 没有突破
+     * */
+    public boolean isBreakLimit(){
+        //判断是否超过置信区间
+        boolean breaklow=((downLmt!=null)&&(modleGetReal()<downLmt.modleGetReal()));
+        boolean breakup=((upLmt!=null)&&(modleGetReal()>upLmt.modleGetReal()));
+        return (breaklow||breakup);
+    }
+
+
+
+
+
 
 
     public int getModlepinsId() {
@@ -307,11 +341,11 @@ public class ModlePin {
         this.shockDetector = shockDetector;
     }
 
-    public int getPinEnable() {
+    public synchronized int getPinEnable() {
         return pinEnable;
     }
 
-    public void setPinEnable(int pinEnable) {
+    public synchronized void setPinEnable(int pinEnable) {
         this.pinEnable = pinEnable;
     }
 
@@ -329,5 +363,44 @@ public class ModlePin {
 
     public void setDcsEnabePin(ModlePin dcsEnabePin) {
         this.dcsEnabePin = dcsEnabePin;
+    }
+
+    public synchronized boolean isThisTimeParticipate() {
+        return thisTimeParticipate;
+    }
+    public synchronized void setThisTimeParticipate(boolean thisTimeParticipate) {
+        this.thisTimeParticipate = thisTimeParticipate;
+    }
+
+    public Instant getRunClock() {
+        return runClock;
+    }
+
+    public void setRunClock(Instant runClock) {
+        this.runClock = runClock;
+    }
+
+    public void clearRunClock() {
+        this.runClock = null;
+    }
+
+    /**
+     * 检测引脚闹铃时间到了，可以就可以运行引脚了
+     * */
+    public boolean clockAlarm(){
+        return Instant.now().isAfter(runClock);
+    }
+
+    @Override
+    public String getOPCTAG() {
+        return modleOpcTag;
+    }
+
+    public String getPintype() {
+        return pintype;
+    }
+
+    public void setPintype(String pintype) {
+        this.pintype = pintype;
     }
 }

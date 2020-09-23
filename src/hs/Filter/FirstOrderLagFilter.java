@@ -70,7 +70,7 @@ public class FirstOrderLagFilter implements Filter {
         }
         unfilterdatapool.offer(sampledata);
         unfilterdatalength++;
-        //第一个初始值线放到已滤波的列表中
+        //第一个初始值先放到已滤波的列表中
         if(filterdatalength==0){
             putDataTofilterdatas(sampledata);
             filterdatalength++;
@@ -154,5 +154,10 @@ public class FirstOrderLagFilter implements Filter {
 
     public ConcurrentLinkedQueue<Double> getFilterdataspool() {
         return filterdataspool;
+    }
+
+    @Override
+    public String getOPCTAG() {
+        return backToDCSTag;
     }
 }

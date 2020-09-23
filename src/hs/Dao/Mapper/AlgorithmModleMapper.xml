@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="hs.Dao.AlgorithmModleDBMapper">
+    <resultMap id="modleResult" type="hs.Bean.Algorithm.AlgorithmModle">
+        <id property="modleid" column="modleid"/>
+        <result property="algorithmName" column="algorithmName"/>
+        <result property="updatetime" column="updatetime" typeHandler="hs.Dao.Handler.InstantHandler"/>
+        <collection property="algorithmProperties" column="modleId" ofType="hs.Bean.Algorithm.AlgorithmProperty"
+                    select="findAlgorithmProperties"/>
+    </resultMap>
+
+
+    <resultMap id="propertyResult" type="hs.Bean.Algorithm.AlgorithmProperty">
+        <id property="propertyid" column="propertyid"/>
+        <result property="propertyName" column="propertyName"/>
+        <result property="property" column="property"/>
+        <result property="refrencealgorithmid" column="refrencealgorithmid"/>
+        <result property="resource" column="resource"/>
+        <result property="opctag" column="opctag"/>
+        <result property="datatype" column="datatype"/>
+        <association property="filter" javaType="hs.Filter.Filter" column="propertyid" select="findfilterByid"/>
+
+    </resultMap>
+
+    <resultMap id="filterResult" type="hs.Filter.Filter">
+        <id property="pk_filterid" column="filterid"/>
+        <result property="pk_pinid" column="referencepropertyid"/>
+        <result property="backToDCSTag" column="backtodcstag"/>
+        <result property="filtername" column="filtername"/>
+        <result property="opcresource" column="resource"/>
+        <discriminator javaType="string" column="filtername">
+            <case value="mvav" resultType="hs.Filter.MoveAverageFilter">
+                <result property="capacity" column="filtertime"/>
+            </case>
+            <case value="fodl" resultType="hs.Filter.FirstOrderLagFilter">
+                <result property="filter_alphe" column="filteralphe"/>
+            </case>
+        </discriminator>
+    </resultMap>
+
+
+    <select id="findAlgorithmProperties" resultMap="propertyResult">
+        select * from algorithmproperties where refrencealgorithmid=#{modleId}
+    </select>
+
+
+    <select id="findfilterByid" resultMap="filterResult">
+        select * from algorithmfilter where referencepropertyid=#{propertyid}
+    </select>
+
+
+    <select id="getAlgorithmModles" resultMap="modleResult">
+      select * from algorithmmodle
+    </select>
+
+    <select id="findAlgorithmModlebyId" resultMap="modleResult">
+        select * from algorithmmodle where modleid=#{modleid}
+    </select>
+
+
+    <insert id="insertAlgorithmModles" parameterType="hs.Bean.Algorithm.AlgorithmModle" useGeneratedKeys="true"
+            keyColumn="modleid"
+            keyProperty="modleid">
+        insert into algorithmmodle(algorithmName) value (#{modle.algorithmName})
+    </insert>
+
+    <delete id="deleteAlgorithmModles">
+        delete from algorithmmodle where modleid=#{modleid}
+    </delete>
+
+    <update id="updateAlgorithmModles">
+        update algorithmmodle set algorithmName=#{modle.algorithmName} where modleid=#{modle.modleid}
+    </update>
+
+
+    <insert id="insertAlgorithmProperty" useGeneratedKeys="true" keyColumn="propertyid" keyProperty="propertyid">
+        insert into algorithmproperties(propertyName, property,refrencealgorithmid,resource,opctag,datatype) value
+        (#{property.propertyName}, #{property.property}, #{property.refrencealgorithmid}, #{property.resource},#{property.opctag},#{property.datatype})
+    </insert>
+
+
+    <delete id="deleteAlgorithmProperty">
+        delete from algorithmproperties where propertyid=#{propertyid}
+    </delete>
+
+
+    <select id="findAlgorithmPropertybyId" resultMap="propertyResult">
+      select * from algorithmproperties where propertyid=#{propertyid}
+    </select>
+
+    <select id="getAlgorithmPropertys" resultMap="propertyResult">
+        select * from algorithmproperties  where refrencealgorithmid=#{modleid}  order by propertyid ASC  limit #{page},#{pagesize}
+    </select>
+
+
+    <select id="getAlgorithmPropertyscount" resultType="java.lang.Integer">
+        select count(*) from algorithmproperties  where refrencealgorithmid=#{modleid}
+    </select>
+
+
+    <update id="updateAlgorithmProperty" parameterType="hs.Bean.Algorithm.AlgorithmProperty">
+        update algorithmproperties set
+        property=#{property.property},
+        resource=#{property.resource},
+        opctag=#{property.opctag},
+        datatype=#{property.datatype},
+        propertyName=#{property.propertyName}
+        where propertyid=#{property.propertyid}
+    </update>
+
+
+    <insert id="insertAlgorithmMVAVFilter" parameterType="hs.Filter.MoveAverageFilter" useGeneratedKeys="true"
+            keyProperty="pk_filterid">
+        insert into algorithmfilter(filtername, filtertime, referencepropertyid,backtodcstag,resource)
+        values (#{filter.filtername},#{filter.capacity},#{filter.pk_pinid},#{filter.backToDCSTag},#{filter.opcresource})
+    </insert>
+
+
+    <insert id="insertAlgorithmFODLFilter" parameterType="hs.Filter.FirstOrderLagFilter" useGeneratedKeys="true"
+            keyProperty="pk_filterid">
+        insert into algorithmfilter(filtername, filteralphe, referencepropertyid,backtodcstag,resource)
+        values (#{filter.filtername},#{filter.filter_alphe},#{filter.pk_pinid},#{filter.backToDCSTag},#{filter.opcresource})
+    </insert>
+
+
+    <update id="updateAlgorithmPropertyMVAVFilter" parameterType="hs.Filter.MoveAverageFilter">
+        update algorithmfilter set
+        filtername=#{filter.filtername},
+        filtertime=#{filter.capacity},
+        backtodcstag=#{filter.backToDCSTag},
+        resource=#{filter.opcresource}
+        where filterid=#{filter.pk_filterid}
+    </update>
+
+
+    <update id="updateAlgorithmPropertyFODLFilter" parameterType="hs.Filter.FirstOrderLagFilter">
+        update algorithmfilter set
+        filtername=#{filter.filtername},
+        filteralphe=#{filter.filter_alphe},
+        backtodcstag=#{filter.backToDCSTag},
+        resource=#{filter.opcresource}
+        where filterid=#{filter.pk_filterid}
+    </update>
+
+
+    <delete id="deleteAlgorithmfilterbyfilterid">
+        delete from algorithmfilter where filterid=#{filterid}
+    </delete>
+
+
+    <delete id="deleteAlgorithmfilterbypropertyid">
+        delete from algorithmfilter where referencepropertyid=#{propertyid}
+    </delete>
+
+
+<!--    void updateallshockdetectalgorithmfilterip(@Param("oldip") String oldip, @Param("newip") String newip);-->
+    <update id="updateallshockdetectalgorithmfilterip">
+        update algorithmfilter set resource=#{newip} where resource=#{oldip}
+    </update>
+
+
+<!--    void updateallshockdetectalgorithmpropertiesip(@Param("oldip") String oldip, @Param("newip") String newip);-->
+    <update id="updateallshockdetectalgorithmpropertiesip">
+        update algorithmproperties set resource=#{newip} where resource=#{oldip}
+    </update>
+
+</mapper>

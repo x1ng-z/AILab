@@ -342,7 +342,7 @@
 
 <script>
 
-    findChartNum(${modle.numOfEnablePVPins_pp});
+    findChartNum(${modle.numOfRunnablePVPins_pp});
 
     function table_flush() {
         clearInterval(table_flush_t);

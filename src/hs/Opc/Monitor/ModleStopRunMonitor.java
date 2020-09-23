@@ -2,10 +2,7 @@ package hs.Opc.Monitor;
 
 import hs.Bean.ModleConstainer;
 import hs.Dao.Service.ModleDBServe;
-import hs.Filter.*;
 import org.apache.log4j.Logger;
-import org.jinterop.dcom.common.JIException;
-import org.jinterop.dcom.core.JIVariant;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -16,7 +13,6 @@ import java.util.concurrent.*;
  * @version 1.0
  * @date 2020/7/14 0:22
  */
-@Component
 public class ModleStopRunMonitor implements Runnable {
     private static final Logger logger = Logger.getLogger(ModleStopRunMonitor.class);
     private LinkedBlockingQueue<MonitorTask> taskpool = new LinkedBlockingQueue<>(100);
@@ -34,7 +30,7 @@ public class ModleStopRunMonitor implements Runnable {
      * and put task
      * */
     public void putTask(MonitorTask task){
-        task.setControlModle(modleConstainer.getModulepool().get(task.getModleid()));
+        task.setControlModle(modleConstainer.getRunnableModulepool().get(task.getModleid()));
         task.setModleDBServe(modleDBServe);
         taskpool.offer(task);
     }

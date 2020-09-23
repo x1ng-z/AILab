@@ -5,6 +5,8 @@ import org.apache.log4j.Logger;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.*;
+import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
  * @author zzx
@@ -13,6 +15,8 @@ import org.springframework.context.annotation.*;
  */
 @Configuration
 //@EnableAspectJAutoProxy
+@EnableScheduling
+@EnableAsync
 @ImportResource("classpath:applicationContext.xml")
 public class SpringAnnotationConfigure {
     private static final Logger logger=Logger.getLogger(SpringAnnotationConfigure.class);

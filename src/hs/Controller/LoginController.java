@@ -1,12 +1,17 @@
 package hs.Controller;
 
+import hs.Bean.Algorithm.AIModleConstainer;
+import hs.Bean.Algorithm.AlgorithmModle;
 import hs.Bean.BaseConf;
 import hs.Bean.ModleConstainer;
+import hs.Dao.Service.AlgorithmDBServe;
 import hs.Dao.Service.ModleDBServe;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.ModelAndView;
+
+import java.util.List;
 
 /**
  * web 前段试用的
@@ -23,12 +28,19 @@ public class LoginController {
     private ModleDBServe modleDBServe;
     @Autowired
     private ModleConstainer modleConstainer;
+    @Autowired
+    private AIModleConstainer aiModleConstainer;
+
+    @Autowired
+    private AlgorithmDBServe algorithmDBServe;
+
+
 
     @RequestMapping("/login")
 //    @ResponseBody
     public ModelAndView userlogin(){
         ModelAndView mv=new ModelAndView();
-        mv.setViewName("login");
+        mv.setViewName("/login");
         mv.addObject("companyName",baseConf.getCommenName());
         return mv;
     }
@@ -39,7 +51,11 @@ public class LoginController {
         ModelAndView mv=new ModelAndView();
         mv.setViewName("index");
         mv.addObject("companyName",baseConf.getCommenName());
-        mv.addObject("modles",modleConstainer.getModulepool().values());
+        mv.addObject("contrlmodles",modleDBServe.getAllModle());
+
+
+        List<AlgorithmModle> algorithmModles=algorithmDBServe.getAlgorithmModles();
+        mv.addObject("aimodle",algorithmModles);
         return mv;
     }
 
@@ -49,8 +65,9 @@ public class LoginController {
 
         ModelAndView mv=new ModelAndView();
         mv.setViewName("home");
-        mv.addObject("modles",modleConstainer.getModulepool().values());
+        mv.addObject("modles",modleConstainer.getRunnableModulepool().values());
         mv.addObject("basedata",baseConf);
+
         return mv;
     }
 

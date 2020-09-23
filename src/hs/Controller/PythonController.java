@@ -29,19 +29,19 @@ public class PythonController {
     public String ModelBuild(@PathVariable("id") int id) {
 
 //        ModelAndView andView=new ModelAndView();
-        ControlModle modle = modleConstainer.getModulepool().get(id);
+        ControlModle modle = modleConstainer.getRunnableModulepool().get(id);
 
         JSONObject jsonObject = new JSONObject();
         /**
          * base
          * */
-        jsonObject.put("m", modle.getNumOfEnableMVpins_mm());
-        jsonObject.put("p", modle.getNumOfEnablePVPins_pp());
+        jsonObject.put("m", modle.getNumOfRunnableMVpins_mm());
+        jsonObject.put("p", modle.getNumOfRunnablePVPins_pp());
         jsonObject.put("M", modle.getControltime_M());
         jsonObject.put("P", modle.getPredicttime_P());
         jsonObject.put("N", modle.getTimeserise_N());
-        jsonObject.put("fnum", modle.getNumOfEnableFFpins_vv());
-        jsonObject.put("pvusemv", modle.getMatrixEnablePVUseMV());
+        jsonObject.put("fnum", modle.getNumOfRunnableFFpins_vv());
+        jsonObject.put("pvusemv", modle.getMaskMatrixRunnablePVUseMV());
         jsonObject.put("APCOutCycle", modle.getControlAPCOutCycle());
         jsonObject.put("enable", modle.getModleEnable());
         jsonObject.put("validekey", modle.getValidkey());
@@ -51,15 +51,15 @@ public class PythonController {
         /**
          *mv
          * */
-        if (modle.getNumOfEnablePVPins_pp() != 0) {
-            jsonObject.put("A", modle.getA_timeseriseMatrix());
+        if (modle.getNumOfRunnablePVPins_pp() != 0) {
+            jsonObject.put("A", modle.getA_RunnabletimeseriseMatrix());
         }
 
         /**
          *ff
          */
-        if (modle.getNumOfEnableFFpins_vv() != 0) {
-            jsonObject.put("B", modle.getB_timeseriseMatrix());
+        if (modle.getNumOfRunnableFFpins_vv() != 0) {
+            jsonObject.put("B", modle.getB_RunnabletimeseriseMatrix());
         }
 
         jsonObject.put("Q", modle.getQ());
@@ -74,7 +74,7 @@ public class PythonController {
     @RequestMapping("/opcread/{id}")
     @ResponseBody
     public String ModelReadData(@PathVariable("id") int id) {
-        ControlModle controlModle = modleConstainer.getModulepool().get(id);
+        ControlModle controlModle = modleConstainer.getRunnableModulepool().get(id);
         return controlModle.getrealData().toJSONString();
     }
 
@@ -82,7 +82,7 @@ public class PythonController {
     @ResponseBody
     public String ModelWriteData(@RequestParam("id") int id, @RequestParam("U") Double[] u, @RequestParam("validekey") long validekey) {
 
-        ControlModle controlModle = modleConstainer.getModulepool().get(id);
+        ControlModle controlModle = modleConstainer.getRunnableModulepool().get(id);
         if (validekey != controlModle.getValidkey()) {
             return "false";
         }
@@ -102,7 +102,7 @@ public class PythonController {
     public String ModelUpdateData(@RequestParam("id") int id, @RequestParam(value = "data", required = false) String data, @RequestParam("validekey") long validekey) {
         //,@RequestParam("predict") double[] predictpv,@RequestParam("mv") double[]mv,@RequestParam("e") double[]e,@RequestParam("funelupAnddown") double[][]funelupAnddown,@RequestParam("dmv") double[] dmv
         try {
-            ControlModle controlModle = modleConstainer.getModulepool().get(id);
+            ControlModle controlModle = modleConstainer.getRunnableModulepool().get(id);
             if (controlModle.getValidkey() != validekey) {
                 return "false";
             }
@@ -114,9 +114,9 @@ public class PythonController {
             JSONArray dmvJson = modlestatus.getJSONArray("dmv");
             JSONArray dffJson=modlestatus.getJSONArray("dff");
 
-            int p = controlModle.getNumOfEnablePVPins_pp();
-            int m = controlModle.getNumOfEnableMVpins_mm();
-            int v=controlModle.getNumOfEnableFFpins_vv();
+            int p = controlModle.getNumOfRunnablePVPins_pp();
+            int m = controlModle.getNumOfRunnableMVpins_mm();
+            int v=controlModle.getNumOfRunnableFFpins_vv();
             int N = controlModle.getTimeserise_N();
 
             double[] predictpvArray = new double[p * N];

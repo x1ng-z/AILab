@@ -16,11 +16,20 @@ import java.util.List;
 @Repository
 public interface OpcServeDBMapper {
     List<OPCService> getopcserves();
+    int getopcservescount();
+    List<OPCService> pageopcserves(@Param("page") int page,@Param("pagesize") int pagesize);
+
+    OPCService findopcservebyid(@Param("opcserveid") int opcserveid);
     void updateopcserves(@Param("opcserve")OPCService opcserve);
     void deleteopcserves(int opcserveid);
     void insertopcserves(@Param("opcserve")OPCService opcserve);
 
     void updateopcverificationtag(@Param("opcVeriTag")OpcVeriTag opcVeriTag);
-    void deleteopcverificationtag(int tagid);
+    void deleteopcverificationtagbytagid(@Param("tagid")int tagid);
+    void deleteopcverificationtagbyopcserveid(@Param("opcserveid")int opcserveid);
     void insertopcverificationtag(@Param("opcVeriTag")OpcVeriTag opcVeriTag);
+    List<OpcVeriTag> findopcverificationtagbyopcserveid(@Param("opcserveid")int opcserveid,@Param("page") int page,@Param("pagesize")int pagesize);
+    OpcVeriTag findopcverificationtagbytagid(@Param("tagid")int tagid);
+    int countopcverificationtagbyopcserveid(@Param("opcserveid")int opcserveid);
+
 }

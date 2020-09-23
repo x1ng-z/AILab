@@ -2,7 +2,6 @@ package hs.Bean;
 
 import hs.ApcAlgorithm.ExecutePythonBridge;
 import hs.Dao.Service.ModleDBServe;
-import hs.Opc.Monitor.ModleStopRunMonitor;
 import hs.Opc.OpcServicConstainer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,9 +25,14 @@ import java.util.concurrent.ConcurrentHashMap;
 @PropertySource("classpath:apc.properties")
 @DependsOn("opcServicConstainer")
 public class ModleConstainer {
+    @Autowired
+    public void setOpcServicConstainer(OpcServicConstainer opcServicConstainer) {
+        this.opcServicConstainer = opcServicConstainer;
+    }
 
     private OpcServicConstainer opcServicConstainer;
-    private Map<Integer, ControlModle> Modulepool;
+    /**可运行模型池*/
+    private Map<Integer, ControlModle> runnableModulepool;
     private ModleDBServe modleDBServe;
     private BaseConf baseConf;
     @Value("${apc.dir}")
@@ -40,23 +44,27 @@ public class ModleConstainer {
     private String simulatordir;
 
     @Autowired
-    public ModleConstainer(OpcServicConstainer opcServicConstainer, ModleStopRunMonitor modleStopRunMonitor, ModleDBServe modleDBServe, BaseConf baseConf) {
-        this.opcServicConstainer = opcServicConstainer;
+    public ModleConstainer(ModleDBServe modleDBServe, BaseConf baseConf) {
+
         this.modleDBServe = modleDBServe;
         this.baseConf = baseConf;
-        Modulepool = new ConcurrentHashMap<>();
-        modleStopRunMonitor.setModleConstainer(this);
-        opcServicConstainer.setModleConstainerl(this);
+        runnableModulepool = new ConcurrentHashMap<>();
     }
 
     public void selfinit() {
         List<ControlModle> controlModleList = modleDBServe.getAllModle();
         for (ControlModle controlModle : controlModleList) {
-            controlModle.setOpcServicConstainer(opcServicConstainer);
-            controlModle.setBaseConf(baseConf);
-            controlModle.setSimulatorbuilddir(simulatordir);
-            controlModle.modleBuild(true);
-            Modulepool.put(controlModle.getModleId(), controlModle);
+            /**
+             * 1初始化控制模型的重要属性，使其成为真正的控制器
+             * 2、对控制器进行构建
+             * 3放置到模型池中
+             * */
+            controlModle.toBeRealControlModle(opcServicConstainer,baseConf,simulatordir);
+            if(controlModle.modleBuild(true)){
+                /**只有构建成功的模型才可以加入到可运行模型池*/
+                runnableModulepool.put(controlModle.getModleId(), controlModle);
+            }
+
             ExecutePythonBridge executePythonBridge = new ExecutePythonBridge(
                     apcdir,
                     "http://localhost:8080/AILab/python/modlebuild/" + controlModle.getModleId() + ".do", controlModle.getModleId() + "");
@@ -69,30 +77,32 @@ public class ModleConstainer {
     }
 
     public void registerModle(ControlModle controlModle) {
-        if (!Modulepool.containsKey(controlModle.getModleId())) {
+        if (!runnableModulepool.containsKey(controlModle.getModleId())) {
             controlModle.setOpcServicConstainer(opcServicConstainer);
             controlModle.setBaseConf(baseConf);
             controlModle.setSimulatorbuilddir(simulatordir);
             controlModle.modleBuild(true);
-            Modulepool.put(controlModle.getModleId(), controlModle);
+            runnableModulepool.put(controlModle.getModleId(), controlModle);
         }
 
         ExecutePythonBridge executePythonBridge = new ExecutePythonBridge(apcdir,
                 "http://localhost:8080/AILab/python/modlebuild/" + controlModle.getModleId() + ".do", controlModle.getModleId() + "");
         controlModle.setExecutePythonBridge(executePythonBridge);
         if (controlModle.getModleEnable() == 1) {
-            executePythonBridge.execute();
+            controlModle.modleCheckStatusRun();
+            controlModle.getSimulatControlModle().simulateModleRun();
         }
 
     }
 
+
     public void selfclose() {
-        for (ControlModle controlModle : Modulepool.values()) {
+        for (ControlModle controlModle : runnableModulepool.values()) {
             controlModle.getExecutePythonBridge().stop();
         }
     }
 
-    public Map<Integer, ControlModle> getModulepool() {
-        return Modulepool;
+    public Map<Integer, ControlModle> getRunnableModulepool() {
+        return runnableModulepool;
     }
 }

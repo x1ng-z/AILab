@@ -139,4 +139,9 @@ public class MoveAverageFilter implements Filter {
     public void setOpcresource(String opcresource) {
         this.opcresource = opcresource;
     }
+
+    @Override
+    public String getOPCTAG() {
+        return backToDCSTag;
+    }
 }

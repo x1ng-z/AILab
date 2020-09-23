@@ -1,9 +1,10 @@
 package hs.Opc;
 
-import hs.Bean.ModleConstainer;
+import hs.Bean.Algorithm.AlgorithmProperty;
 import hs.Bean.ModlePin;
+import hs.Bean.OPCComponent;
 import hs.Filter.*;
-import hs.Opc.Monitor.*;
+import hs.ServiceBus.*;
 import hs.ShockDetect.ShockDetector;
 import org.apache.log4j.Logger;
 import org.jinterop.dcom.common.JIException;
@@ -14,6 +15,7 @@ import org.openscada.opc.lib.common.NotConnectedException;
 import org.openscada.opc.lib.da.*;
 
 import java.net.UnknownHostException;
+import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.regex.Pattern;
@@ -27,6 +29,11 @@ import java.util.regex.Pattern;
 public class OPCService implements Runnable {
     private static final Logger logger = Logger.getLogger(OPCService.class);
     private static Pattern pvenablepattern = Pattern.compile("(^pvenable\\d+$)");
+    private static Pattern pvpattern = Pattern.compile("(^pv\\d+$)");
+    private static Pattern ffpattern = Pattern.compile("(^ff\\d+$)");
+    private static Pattern mvpattern = Pattern.compile("(^mv\\d+$)");
+
+    private Pattern opcpattern = Pattern.compile("([a-zA-Z]*)([0-9|.]*)");
 
     /**
      * opc 配置信息
@@ -36,8 +43,10 @@ public class OPCService implements Runnable {
     private String opcpassword;
     private String opcip;
     private String opcclsid;
+    private List<OpcVeriTag> initopcVeriTagsInDB;//直接mabaties中初始化来的
+
+
     private Server server;
-    private ItemManger itemManger = new ItemManger();
     /**
      * 引脚pool,索引是opctag
      * key=标签,value=引脚s
@@ -49,37 +58,128 @@ public class OPCService implements Runnable {
      */
     private Map<String, List<Filter>> opctagFilterPool = new ConcurrentHashMap();
 
+
+    /**
+     * 引脚中的shock detect
+     */
+    private Map<String, List<ShockDetector>> opctagShockDetectPool = new ConcurrentHashMap();
+
+
+    /**
+     * 引脚中的shock detect，滤波器反写
+     */
+    private Map<String, List<Filter>> opctagShockDetectFilterPool = new ConcurrentHashMap();
+
+
+    /**
+     * 引脚pool,索引是opctag
+     * key=标签
+     * ai模型的属性
+     */
+    private Map<String, List<AlgorithmProperty>> opctagAIModlePropertyPool = new ConcurrentHashMap();
+
+
+    /**
+     * 引脚中的过滤器的pool,索引是opctag
+     * key=filetr反写的opctag,value=filter
+     * ai模型的属性的过滤器
+     */
+    private Map<String, List<Filter>> opctagAIModlePropertyFilterPool = new ConcurrentHashMap();
+
+
     private Group group = null;
+
+
     /**
      * opc serve中group添加以后的item pool
+     * key=tag
      */
-    private ConcurrentHashMap<String, OpcVeriTag> varytag = new ConcurrentHashMap();
+    private ConcurrentHashMap<String, OpcVeriTag> alreadregistervarytagpool = new ConcurrentHashMap();
 
-    private List<OpcVeriTag> initopcVeriTagsInDB;
 
     /**
      * 实时滤波服务
      */
     private FilterService filterService = null;
 
-    private ModleStopRunMonitor modleStopRunMonitor;
+    private ModleRebuildService modleRebuildService;
 
+    private ItemManger itemManger = null;
     /**
      * 链接状态
      */
     private boolean connectStatus = false;
 
 
-    private ModleConstainer modleConstainerl;
+    private ItemMangerContext itemMangerContext;
 
-    public void initAndConnect(FilterService filterService, ModleStopRunMonitor modleStopRunMonitor) {
-        this.filterService = filterService;
-        this.modleStopRunMonitor = modleStopRunMonitor;
-        if (initopcVeriTagsInDB != null) {
-            for (OpcVeriTag opcVeriTag : initopcVeriTagsInDB) {
-                varytag.put(opcVeriTag.getTag(), opcVeriTag);
+
+    /**
+     * add ver tag in opc serve group
+     *
+     * @param opcVeriTag      验证位号
+     * @param isneedaddvertag 是否注册进验证位号 dblist
+     */
+    public void addvertag(OpcVeriTag opcVeriTag, boolean isneedaddvertag) {
+        if (opcVeriTag.getTag() != null && !opcVeriTag.getTag().trim().equals("")) {
+            try {
+
+                if (!alreadregistervarytagpool.containsKey(opcVeriTag.getTag())) {
+                    /**不包含改位号，则进行注册*/
+                    opcVeriTag.setItem(group.addItem(opcVeriTag.getTag().trim()));
+                    alreadregistervarytagpool.put(opcVeriTag.getTag(), opcVeriTag);
+                } else {
+                    logger.warn(opcVeriTag.getTag() + "已经加入了");
+                }
+                if (isneedaddvertag) {
+                    initopcVeriTagsInDB.add(opcVeriTag);
+                }
+            } catch (JIException e) {
+                logger.error(e.getMessage(), e);
+            } catch (AddFailedException e) {
+                logger.error(e.getMessage(), e);
+            }
+
+        }
+
+    }
+
+
+    /**
+     * add ver tag in opc serve group
+     *
+     * @param opctag 验证位号
+     */
+    public void removevertag(String opctag) {
+        if (opctag != null && !opctag.trim().equals("")) {
+            try {
+                if (alreadregistervarytagpool.containsKey(opctag)) {
+                    /**包含该位号、进行移除操作*/
+                    OpcVeriTag opcvertag = alreadregistervarytagpool.get(opctag);
+                    group.removeItem(opcvertag.getItem().getId());
+
+                    initopcVeriTagsInDB.remove(opcvertag);
+                    alreadregistervarytagpool.remove(opcvertag.getTag());
+                }
+            } catch (UnknownHostException e) {
+                logger.error(e.getMessage(), e);
+            } catch (JIException e) {
+                logger.error(e.getMessage(), e);
             }
         }
+
+    }
+
+
+    public void initAndConnect(FilterService filterService, ModleRebuildService modleRebuildService, ItemMangerContext itemMangerContext) {
+        this.filterService = filterService;
+        this.modleRebuildService = modleRebuildService;
+        this.itemMangerContext = itemMangerContext;
+
+        itemManger = itemMangerContext.generateNewItemManger(opcip);
+
+        alreadregistervarytagpool = new ConcurrentHashMap<>();
+
 
         ConnectionInformation ci = new ConnectionInformation();
         ci.setHost(opcip);
@@ -104,18 +204,8 @@ public class OPCService implements Runnable {
         try {
             group = server.addGroup("opc");
             /**设置平台通信验证点号，这个要实时写入*/
-
-            for (OpcVeriTag opcVeriTag : varytag.values()) {
-                if (opcVeriTag.getTag() != null && !opcVeriTag.getTag().trim().equals("")) {
-                    try {
-                        opcVeriTag.setItem(group.addItem(opcVeriTag.getTag().trim()));
-
-                    } catch (JIException e) {
-                        logger.error(e.getMessage(), e);
-                    } catch (AddFailedException e) {
-                        logger.error(e.getMessage(), e);
-                    }
-                }
+            for (OpcVeriTag opcVeriTag : initopcVeriTagsInDB) {
+                addvertag(opcVeriTag, false);
             }
 
         } catch (UnknownHostException e) {
@@ -128,31 +218,7 @@ public class OPCService implements Runnable {
             logger.error(e.getMessage(), e);
         }
         if (group != null) {
-            logger.debug("group no null");
-            for (String tag : opctagModlePinPool.keySet()) {
-                try {
-                    //新位号
-                    if (!itemManger.iscontainstag(tag)) {
-                        Item item = group.addItem(tag);
-
-                        ItemUnit itemUnit = new ItemUnit();
-                        itemUnit.setItem(item);
-                        itemUnit.addrefrencecount();
-
-                        itemManger.addItemUnit(tag, itemUnit);
-                    } else {
-                        //位号已添加
-                        itemManger.getItemUnit(tag).addrefrencecount();
-                    }
-
-                    logger.debug("register " + tag + " success");
-                } catch (JIException e) {
-                    logger.error(e.getMessage(), e);
-                } catch (AddFailedException e) {
-                    logger.error(e.getMessage(), e);
-                }
-            }
-
+            logger.debug("opc connect success");
         }
 
 
@@ -163,13 +229,10 @@ public class OPCService implements Runnable {
      * 重连初始化
      */
     public void initAndReConnect() {
-        //
-        if (initopcVeriTagsInDB != null) {
-            for (OpcVeriTag opcVeriTag : initopcVeriTagsInDB) {
-                varytag.put(opcVeriTag.getTag(), opcVeriTag);
-            }
-        }
-
+        /**数据管理器*/
+        itemManger = itemMangerContext.generateNewItemManger(opcip);
+        /**覆盖验证表*/
+        alreadregistervarytagpool = new ConcurrentHashMap();
         ConnectionInformation ci = new ConnectionInformation();
         ci.setHost(opcip);
         ci.setUser(opcuser);
@@ -192,18 +255,8 @@ public class OPCService implements Runnable {
         try {
             group = server.addGroup("opc");
             /**设置平台通信验证点号，这个要实时写入*/
-
-            for (OpcVeriTag opcVeriTag : varytag.values()) {
-                if (opcVeriTag.getTag() != null && !opcVeriTag.getTag().trim().equals("")) {
-                    try {
-                        opcVeriTag.setItem(group.addItem(opcVeriTag.getTag().trim()));
-
-                    } catch (JIException e) {
-                        logger.error(e.getMessage(), e);
-                    } catch (AddFailedException e) {
-                        logger.error(e.getMessage(), e);
-                    }
-                }
+            for (OpcVeriTag opcVeriTag : initopcVeriTagsInDB) {
+                addvertag(opcVeriTag, false);
             }
 
         } catch (UnknownHostException e) {
@@ -216,38 +269,147 @@ public class OPCService implements Runnable {
             logger.error(e.getMessage(), e);
         }
         if (group != null) {
-            logger.debug("group no null");
-            for (String tag : opctagModlePinPool.keySet()) {
-                try {
-                    //新位号
-                    if (!itemManger.iscontainstag(tag)) {
-
-                        Item item = group.addItem(tag);
-
-                        ItemUnit itemUnit = new ItemUnit();
-                        itemUnit.setItem(item);
-                        itemUnit.addrefrencecount();
-
-                        itemManger.addItemUnit(tag, itemUnit);
-                    } else {
-                        //位号已添加
-                        itemManger.getItemUnit(tag).addrefrencecount();
+            logger.debug("reconnect success");
+            logger.debug("begin to register pin opc tag");
+            for (Map.Entry<String, List<ModlePin>> entrypin : opctagModlePinPool.entrySet()) {
+                List<ModlePin> pinlist = entrypin.getValue();
+                for (ModlePin pin : pinlist) {
+                    /**pin register*/
+                    try {
+                        registertagtoItemManger(pin.getModleOpcTag());
+                    } catch (JIException e) {
+                        logger.error(e.getMessage(), e);
+                    } catch (AddFailedException e) {
+                        logger.error(e.getMessage(), e);
                     }
-
-                    logger.debug("register " + tag + " success");
-                } catch (JIException e) {
-                    logger.error(e.getMessage(), e);
-                } catch (AddFailedException e) {
-                    logger.error(e.getMessage(), e);
                 }
             }
 
-        }
+            logger.debug("begin to register filter opc tag");
+            for (Map.Entry<String, List<Filter>> opcpinentry : opctagFilterPool.entrySet()) {
+                List<Filter> filterswithsameopctag = opcpinentry.getValue();
+                for (Filter filter : filterswithsameopctag) {
+                    try {
+                        registertagtoItemManger(filter.getBackToDCSTag());
+                    } catch (JIException e) {
+                        logger.error(e.getMessage(), e);
+                    } catch (AddFailedException e) {
+                        logger.error(e.getMessage(), e);
+                    }
 
+                }
+
+            }
+
+
+            logger.debug("begin to register pin shock detect tag");
+            for (Map.Entry<String, List<ShockDetector>> entydetector : opctagShockDetectPool.entrySet()) {
+                List<ShockDetector> shockdetectorlist = entydetector.getValue();
+                for (ShockDetector sheock : shockdetectorlist) {
+                    try {
+                        registertagtoItemManger(sheock.getBackToDCSTag());
+                    } catch (JIException e) {
+                        logger.error(e.getMessage(), e);
+                    } catch (AddFailedException e) {
+                        logger.error(e.getMessage(), e);
+                    }
+                }
+            }
+
+            logger.debug("begin to register pin shock detect filter tag");
+            for (Map.Entry<String, List<Filter>> entydetectorfilter : opctagShockDetectFilterPool.entrySet()) {
+                List<Filter> shockdetectorFilterlist = entydetectorfilter.getValue();
+                for (Filter sheockfilter : shockdetectorFilterlist) {
+                    try {
+                        registertagtoItemManger(sheockfilter.getBackToDCSTag());
+                    } catch (JIException e) {
+                        logger.error(e.getMessage(), e);
+                    } catch (AddFailedException e) {
+                        logger.error(e.getMessage(), e);
+                    }
+                }
+            }
+
+
+            logger.debug("begin to register aimodle propeties tag");
+            for (Map.Entry<String, List<AlgorithmProperty>> entyaimodleproperty : opctagAIModlePropertyPool.entrySet()) {
+                List<AlgorithmProperty> algorithmproperties = entyaimodleproperty.getValue();
+                for (AlgorithmProperty algorithmProperty : algorithmproperties) {
+                    try {
+                        registertagtoItemManger(algorithmProperty.getOpctag());
+                    } catch (JIException e) {
+                        logger.error(e.getMessage(), e);
+                    } catch (AddFailedException e) {
+                        logger.error(e.getMessage(), e);
+                    }
+                }
+            }
+
+
+            logger.debug("begin to register aimodle propeties filter tag");
+            for (Map.Entry<String, List<Filter>> entyaimodlepropertyfilter : opctagAIModlePropertyFilterPool.entrySet()) {
+                List<Filter> algorithmpropertyfilter = entyaimodlepropertyfilter.getValue();
+                for (Filter propertyfilter : algorithmpropertyfilter) {
+                    try {
+                        registertagtoItemManger(propertyfilter.getBackToDCSTag());
+                    } catch (JIException e) {
+                        logger.error(e.getMessage(), e);
+                    } catch (AddFailedException e) {
+                        logger.error(e.getMessage(), e);
+                    }
+                }
+            }
+
+
+        } else {
+            connectStatus = false;
+            logger.warn("opc serve reconnect failed!");
+        }
 
     }
 
 
+    public <T extends OPCComponent> Boolean registerOPCComphoned(Map<String, List<T>> pool, T comphone) {
+        /**
+         * pinpool中将opc位号对应的pin容器获取出来
+         * 如果没有的，创建一个pin容器，将pin的opc位号添加进opcgroup，并添加进pin的容器中
+         * */
+        List<T> modlePinsList = pool.get(comphone.getOPCTAG());
+        if (modlePinsList != null) {
+            //添加pins至list
+            modlePinsList.add(comphone);
+            //增加引用
+            itemManger.getItemUnit(comphone.getOPCTAG()).addrefrencecount();
+            logger.info(comphone.getOPCTAG() + "位号注册成功" + " refrence:" + itemManger.getItemUnit(comphone.getOPCTAG()).getRefrencecount());
+        } else {
+            try {
+                /***
+                 *加入到opc获取数据group
+                 * */
+                registertagtoItemManger(comphone.getOPCTAG());
+                modlePinsList = new CopyOnWriteArrayList<>();
+                /**注册*/
+                modlePinsList.add(comphone);
+                pool.put(comphone.getOPCTAG(), modlePinsList);
+            } catch (JIException e) {
+                logger.error("位号添加失败: " + comphone.getOPCTAG());
+                logger.error(e.getMessage(), e);
+                return false;
+            } catch (AddFailedException e) {
+                logger.error("位号添加失败: " + comphone.getOPCTAG());
+                logger.error(e.getMessage(), e);
+                return false;
+            } catch (Exception e) {
+                logger.error("位号添加失败: " + comphone.getOPCTAG());
+                logger.error(e.getMessage(), e);
+                return false;
+            }
+        }
+        return true;
+    }
+
+
+    @Deprecated
     public Boolean registerModlePin(ModlePin modlePins) {
         /**
          * pinpool中将opc位号对应的pin容器获取出来
@@ -265,22 +427,10 @@ public class OPCService implements Runnable {
                 /***
                  *加入到opc获取数据group
                  * */
-                if (!itemManger.iscontainstag(modlePins.getModleOpcTag())) {
-                    //添加opc位号至service
-                    Item item = group.addItem(modlePins.getModleOpcTag());
 
-                    ItemUnit itemUnit = new ItemUnit();
-                    itemUnit.setItem(item);
-                    itemUnit.addrefrencecount();//
+                registertagtoItemManger(modlePins.getModleOpcTag());
 
-                    itemManger.addItemUnit(modlePins.getModleOpcTag(), itemUnit);
-                    logger.debug(modlePins.getModleOpcTag() + "新位号注册成功" + " refrence:" + itemUnit.getRefrencecount());
-                } else {
-                    //位号已添加
-                    itemManger.getItemUnit(modlePins.getModleOpcTag()).addrefrencecount();
-                    logger.debug(modlePins.getModleOpcTag() + "位号已添加" + "refrence:" + itemManger.getItemUnit(modlePins.getModleOpcTag()).getRefrencecount());
-                }
-                modlePinsList = new ArrayList<>();
+                modlePinsList = new CopyOnWriteArrayList<>();
                 /**
                  * 注册
                  * */
@@ -305,7 +455,106 @@ public class OPCService implements Runnable {
 
     }
 
+
+    @Deprecated
+    public Boolean registerAIModleProperty(AlgorithmProperty property) {
+        /**
+         * pinpool中将opc位号对应的pin容器获取出来
+         * 如果没有的，创建一个pin容器，将pin的opc位号添加进opcgroup，并添加进pin的容器中
+         * */
+        List<AlgorithmProperty> modlepropertyList = opctagAIModlePropertyPool.get(property.getOpctag());
+        if (modlepropertyList != null) {
+            //添加pins至list
+            modlepropertyList.add(property);
+            //增加引用
+            itemManger.getItemUnit(property.getOpctag()).addrefrencecount();
+            logger.info(property.getOpctag() + "位号注册成功" + " refrence:" + itemManger.getItemUnit(property.getOpctag()).getRefrencecount());
+        } else {
+            try {
+                /***
+                 *加入到opc获取数据group
+                 * */
+                registertagtoItemManger(property.getOpctag());
+
+                modlepropertyList = new CopyOnWriteArrayList<>();
+                /**
+                 * 注册
+                 * */
+                modlepropertyList.add(property);
+                opctagAIModlePropertyPool.put(property.getOpctag(), modlepropertyList);
+            } catch (JIException e) {
+                logger.error("位号添加失败: " + property.getOpctag());
+                logger.error(e.getMessage(), e);
+                return false;
+            } catch (AddFailedException e) {
+                logger.error("位号添加失败: " + property.getOpctag());
+                logger.error(e.getMessage(), e);
+                return false;
+            } catch (Exception e) {
+                logger.error("位号添加失败: " + property.getOpctag());
+                logger.error(e.getMessage(), e);
+                return false;
+            }
+
+        }
+        return true;
+
+    }
+
+    @Deprecated
+    public Boolean registerAIModlePropertyFilter(Filter filter) {
+        /**
+         * pinpool中将opc位号对应的pin容器获取出来
+         * 如果没有的，创建一个pin容器，将pin的opc位号添加进opcgroup，并添加进pin的容器中
+         * */
+        List<Filter> filterList = opctagAIModlePropertyFilterPool.get(filter.getBackToDCSTag());
+        if (filterList != null) {
+            //添加pins至list
+            filterList.add(filter);
+            //增加引用
+            itemManger.getItemUnit(filter.getBackToDCSTag()).addrefrencecount();
+            logger.info(filter.getBackToDCSTag() + "位号注册成功" + " refrence:" + itemManger.getItemUnit(filter.getBackToDCSTag()).getRefrencecount());
+        } else {
+            try {
+                /***
+                 *加入到opc获取数据group
+                 * */
+
+                registertagtoItemManger(filter.getBackToDCSTag());
+
+                filterList = new CopyOnWriteArrayList<>();
+                /**
+                 * 注册
+                 * */
+                filterList.add(filter);
+                opctagAIModlePropertyFilterPool.put(filter.getBackToDCSTag(), filterList);
+            } catch (JIException e) {
+                logger.error("位号添加失败: " + filter.getBackToDCSTag());
+                logger.error(e.getMessage(), e);
+                return false;
+            } catch (AddFailedException e) {
+                logger.error("位号添加失败: " + filter.getBackToDCSTag());
+                logger.error(e.getMessage(), e);
+                return false;
+            } catch (Exception e) {
+                logger.error("位号添加失败: " + filter.getBackToDCSTag());
+                logger.error(e.getMessage(), e);
+                return false;
+            }
+
+        }
+        return true;
+
+    }
+
+
+    @Deprecated
     public Boolean registerFilter(ModlePin modlePins) {
+        return registerFilter(modlePins.getFilter());
+    }
+
+    @Deprecated
+    public Boolean registerFilter(Filter filter) {
         /**
          *
          *滤波器位号
@@ -313,101 +562,160 @@ public class OPCService implements Runnable {
          * 2、否，则加入group，并新建一个list，放入filter，并添加至opctagFilterPool
          *
          * */
-        if ((modlePins.getFilter() != null) && (modlePins.getFilter().getBackToDCSTag() != null) && (!modlePins.getFilter().getBackToDCSTag().trim().equals(""))) {
+        if ((filter != null) && (filter.getBackToDCSTag() != null) && (!filter.getBackToDCSTag().trim().equals(""))) {
 
-            List<Filter> filterList = opctagFilterPool.get(modlePins.getFilter().getBackToDCSTag());
+            List<Filter> filterList = opctagFilterPool.get(filter.getBackToDCSTag());
 
             if (filterList != null) {
                 //有相同位号的filter了
-                filterList.add(modlePins.getFilter());
-                itemManger.getItemUnit(modlePins.getFilter().getBackToDCSTag()).addrefrencecount();
-                logger.info(modlePins.getFilter().getBackToDCSTag() + "位号注册成功" + " refrence:" + itemManger.getItemUnit(modlePins.getFilter().getBackToDCSTag()).getRefrencecount());
+                filterList.add(filter);
+                itemManger.getItemUnit(filter.getBackToDCSTag()).addrefrencecount();
+                logger.info(filter.getBackToDCSTag() + "位号注册成功" + " refrence:" + itemManger.getItemUnit(filter.getBackToDCSTag()).getRefrencecount());
             } else {
                 try {
 
-                    if (!itemManger.iscontainstag(modlePins.getFilter().getBackToDCSTag())) {
-                        //加入group
-                        Item item = group.addItem(modlePins.getFilter().getBackToDCSTag());
+                    registertagtoItemManger(filter.getBackToDCSTag());
 
-                        ItemUnit itemUnit = new ItemUnit();
-                        itemUnit.setItem(item);
-                        itemUnit.addrefrencecount();
-
-                        itemManger.addItemUnit(modlePins.getFilter().getBackToDCSTag(), itemUnit);
-                        logger.info(modlePins.getFilter().getBackToDCSTag() + "新位号注册成功" + " refrence:" + itemUnit.getRefrencecount());
-                    } else {
-                        //位号已添加
-                        itemManger.getItemUnit(modlePins.getFilter().getBackToDCSTag()).addrefrencecount();
-                        logger.warn(modlePins.getFilter().getBackToDCSTag() + "位号已添加");
-                    }
-
-                    filterList = new LinkedList();
-                    filterList.add(modlePins.getFilter());
-                    opctagFilterPool.put(modlePins.getFilter().getBackToDCSTag(), filterList);
+                    filterList = new CopyOnWriteArrayList<>();
+                    filterList.add(filter);
+                    opctagFilterPool.put(filter.getBackToDCSTag(), filterList);
                 } catch (JIException e) {
-                    logger.error("位号添加失败: " + modlePins.getFilter().getBackToDCSTag());
+                    logger.error("位号添加失败: " + filter.getBackToDCSTag());
                     logger.error(e.getMessage(), e);
                     return false;
                 } catch (AddFailedException e) {
-                    logger.error("位号添加失败: " + modlePins.getFilter().getBackToDCSTag());
+                    logger.error("位号添加失败: " + filter.getBackToDCSTag());
                     logger.error(e.getMessage(), e);
                     return false;
                 } catch (Exception e) {
-                    logger.error("位号添加时候报错: " + modlePins.getFilter().getBackToDCSTag());
+                    logger.error("位号添加时候报错: " + filter.getBackToDCSTag());
                     logger.error(e.getMessage(), e);
                     return false;
                 }
-
-
             }
-
         }
         return true;
-
     }
 
+    /**
+     * 注册振荡器的幅值反写
+     */
+    @Deprecated
+    public Boolean registerShockDetector(ModlePin modlePin) {
+        if ((modlePin.getShockDetector() != null)) {
+            /**注册振荡器的幅值反写*/
+            if ((modlePin.getShockDetector().getBackToDCSTag() != null) && (!modlePin.getShockDetector().getBackToDCSTag().trim().equals(""))) {
+                List<ShockDetector> shockDetectorList = opctagShockDetectPool.get(modlePin.getShockDetector().getBackToDCSTag());
 
-    public Boolean registerShockDetectortag(String opctag) {
-        /**
-         * 2、否，则加入group，并新建一个list，放入filter，并添加至opctagFilterPool
-         *
-         * */
-        if ((opctag != null) && (!opctag.trim().equals(""))) {
-            try {
-                if (!itemManger.iscontainstag(opctag)) {
-                    //加入group
-                    Item item = group.addItem(opctag);
-                    ItemUnit itemUnit = new ItemUnit();
-                    itemUnit.setItem(item);
-                    itemUnit.addrefrencecount();
-
-                    itemManger.addItemUnit(opctag, itemUnit);
-                    logger.info(opctag + "新位号注册成功" + " refrence:" + itemUnit.getRefrencecount());
+                if (shockDetectorList != null) {
+                    //有相同位号的filter了
+                    shockDetectorList.add(modlePin.getShockDetector());
+                    itemManger.getItemUnit(modlePin.getShockDetector().getBackToDCSTag()).addrefrencecount();
+                    logger.info(modlePin.getShockDetector().getBackToDCSTag() + "位号注册成功" + " refrence:" + itemManger.getItemUnit(modlePin.getShockDetector().getBackToDCSTag()).getRefrencecount());
                 } else {
-                    //位号已添加
-                    itemManger.getItemUnit(opctag).addrefrencecount();
-                    logger.warn(opctag + "位号已添加");
+                    try {
+
+                        registertagtoItemManger(modlePin.getShockDetector().getBackToDCSTag());
+
+
+                        shockDetectorList = new CopyOnWriteArrayList<>();
+                        shockDetectorList.add(modlePin.getShockDetector());
+                        opctagShockDetectPool.put(modlePin.getShockDetector().getBackToDCSTag(), shockDetectorList);
+                    } catch (JIException e) {
+                        logger.error("位号添加失败: " + modlePin.getShockDetector().getBackToDCSTag());
+                        logger.error(e.getMessage(), e);
+                        return false;
+                    } catch (AddFailedException e) {
+                        logger.error("位号添加失败: " + modlePin.getShockDetector().getBackToDCSTag());
+                        logger.error(e.getMessage(), e);
+                        return false;
+                    } catch (Exception e) {
+                        logger.error("位号添加时候报错: " + modlePin.getShockDetector().getBackToDCSTag());
+                        logger.error(e.getMessage(), e);
+                        return false;
+                    }
+
                 }
 
-            } catch (JIException e) {
-                logger.error("位号添加失败: " + opctag);
-                logger.error(e.getMessage(), e);
-                return false;
-            } catch (AddFailedException e) {
-                logger.error("位号添加失败: " + opctag);
-                logger.error(e.getMessage(), e);
-                return false;
-            } catch (Exception e) {
-                logger.error("位号添加时候报错: " + opctag);
-                logger.error(e.getMessage(), e);
-                return false;
             }
+
         }
         return true;
     }
 
+    @Deprecated
+    public Boolean registerShockDetectorFilter(ModlePin modlePin) {
+        /**
+         *滤波器位号
+         * 1注册振荡器滤波值反写
+         * */
+        if ((modlePin.getShockDetector() != null)) {
 
+            /**1注册振荡器的幅值反写*/
+            if ((modlePin.getShockDetector().getFirstOrderLagFilterl().getBackToDCSTag() != null) && (!modlePin.getShockDetector().getFirstOrderLagFilterl().getBackToDCSTag().trim().equals(""))) {
+                List<Filter> shockDetectorFilterList = opctagShockDetectFilterPool.get(modlePin.getShockDetector().getFirstOrderLagFilterl().getBackToDCSTag());
+
+                if (shockDetectorFilterList != null) {
+                    //有相同位号的filter了
+                    shockDetectorFilterList.add(modlePin.getShockDetector().getFirstOrderLagFilterl());
+                    itemManger.getItemUnit(modlePin.getShockDetector().getFirstOrderLagFilterl().getBackToDCSTag()).addrefrencecount();
+                    logger.info(modlePin.getShockDetector().getFirstOrderLagFilterl().getBackToDCSTag() + "位号注册成功" + " refrence:" + itemManger.getItemUnit(modlePin.getShockDetector().getFirstOrderLagFilterl().getBackToDCSTag()).getRefrencecount());
+                } else {
+                    try {
+
+                        registertagtoItemManger(modlePin.getShockDetector().getFirstOrderLagFilterl().getBackToDCSTag());
+
+                        shockDetectorFilterList = new CopyOnWriteArrayList<>();
+                        shockDetectorFilterList.add(modlePin.getShockDetector().getFirstOrderLagFilterl());
+                        opctagShockDetectFilterPool.put(modlePin.getShockDetector().getFirstOrderLagFilterl().getBackToDCSTag(), shockDetectorFilterList);
+                    } catch (JIException e) {
+                        logger.error("位号添加失败: " + modlePin.getShockDetector().getFirstOrderLagFilterl().getBackToDCSTag());
+                        logger.error(e.getMessage(), e);
+                        return false;
+                    } catch (AddFailedException e) {
+                        logger.error("位号添加失败: " + modlePin.getShockDetector().getFirstOrderLagFilterl().getBackToDCSTag());
+                        logger.error(e.getMessage(), e);
+                        return false;
+                    } catch (Exception e) {
+                        logger.error("位号添加时候报错: " + modlePin.getShockDetector().getFirstOrderLagFilterl().getBackToDCSTag());
+                        logger.error(e.getMessage(), e);
+                        return false;
+                    }
+                }
+
+            }
+
+        }
+        return true;
+    }
+
+    public <T extends OPCComponent> Boolean unregisterOPCComphoned(Map<String, List<T>> pool, T comphone) {
+        List<T> modlePinsList = pool.get(comphone.getOPCTAG());
+        if (modlePinsList != null) {
+            modlePinsList.remove(comphone);
+            itemManger.getItemUnit(comphone.getOPCTAG()).minsrefrencecount();
+            logger.info("位号移除成功:" + comphone.getOPCTAG() + "refence" + itemManger.getItemUnit(comphone.getOPCTAG()).getRefrencecount());
+            /* 当移除opc点位时候，如果对应的点位没有任何的模型引脚了，那么需要移除opc点位*/
+            isNeedRemoveTagFromoItemManger(comphone.getOPCTAG());
+            if (modlePinsList.size() == 0) {//pins的pool里为0，那么肯定没有其他pins引用这个位号了
+                /**
+                 * 2如果引用用完： 2.1、移除opc点位池  2.2、移除group中item
+                 * 3、移除tag模型引脚池中的引脚列表
+                 * */
+                pool.remove(comphone.getOPCTAG());
+                logger.info(comphone.getOPCTAG() + "所有引脚全部移除");
+            }
+            return true;
+        } else {
+            logger.info("位号不存在,移除失败:" + comphone.getOPCTAG());
+            return false;
+        }
+
+    }
+
+    @Deprecated
     public Boolean unregisterModlePin(ModlePin modlePins) {
+
         List<ModlePin> modlePinsList = opctagModlePinPool.get(modlePins.getModleOpcTag());
         if (modlePinsList != null) {
             modlePinsList.remove(modlePins);
@@ -419,24 +727,9 @@ public class OPCService implements Runnable {
                  * 2如果引用用完： 2.1、移除opc点位池  2.2、移除group中item
                  * 3、移除tag模型引脚池中的引脚列表
                  * */
-                if (itemManger.getItemUnit(modlePins.getModleOpcTag()).isnorefrence()) {
-                    ItemUnit removeItem = itemManger.removeItemUnit(modlePins.getModleOpcTag());
-                    if (removeItem != null) {
-                        try {
-                            group.removeItem(removeItem.getItem().getId());
-                            logger.info("opcSERVE位号:" + modlePins.getModleOpcTag() + "refrence:" + removeItem.getRefrencecount());
-                        } catch (UnknownHostException e) {
-                            logger.error(e.getMessage(), e);
-                        } catch (JIException e) {
-                            logger.error(e.getMessage(), e);
-                        } catch (Exception e) {
-                            logger.error(e.getMessage(), e);
-                        }
-                    } else {
-                        logger.info("opcSERVE位号未找到，移除失败:" + modlePins.getModleOpcTag());
-                    }
 
-                }
+                isNeedRemoveTagFromoItemManger(modlePins.getModleOpcTag());
+
                 opctagModlePinPool.remove(modlePins.getModleOpcTag());
                 logger.info(modlePins.getModleOpcTag() + "所有引脚全部移除");
             }
@@ -449,107 +742,131 @@ public class OPCService implements Runnable {
 
     }
 
+    @Deprecated
+    public Boolean unregisterAIModleProperty(AlgorithmProperty property) {
+        List<AlgorithmProperty> algorithmProperties = opctagAIModlePropertyPool.get(property.getOpctag());
+        if (algorithmProperties != null) {
+            algorithmProperties.remove(property);
+            itemManger.getItemUnit(property.getOpctag()).minsrefrencecount();
+            logger.info("位号移除成功:" + property.getOpctag() + "refence" + itemManger.getItemUnit(property.getOpctag()).getRefrencecount());
+            if (algorithmProperties.size() == 0) {//pins的pool里为0，那么肯定没有其他pins引用这个位号了
+                /**
+                 * 当移除opc点位时候，如果对应的点位没有任何的模型引脚了，那么需要移除opc点位
+                 * 2如果引用用完： 2.1、移除opc点位池  2.2、移除group中item
+                 * 3、移除tag模型引脚池中的引脚列表
+                 * */
+                isNeedRemoveTagFromoItemManger(property.getOpctag());
 
+                opctagAIModlePropertyPool.remove(property.getOpctag());
+                logger.info(property.getOpctag() + "所有引脚全部移除");
+            }
+            return true;
+        } else {
+            logger.info("位号不存在,移除失败:" + property.getOpctag());
+            return false;
+        }
+
+
+    }
+
+    @Deprecated
+    public Boolean unregisterAIModlePropertyFilter(Filter filter) {
+        List<Filter> algorithmPropertyfilters = opctagAIModlePropertyFilterPool.get(filter.getBackToDCSTag());
+        if (algorithmPropertyfilters != null) {
+            algorithmPropertyfilters.remove(filter);
+            itemManger.getItemUnit(filter.getBackToDCSTag()).minsrefrencecount();
+            logger.info("位号移除成功:" + filter.getBackToDCSTag() + "refence" + itemManger.getItemUnit(filter.getBackToDCSTag()).getRefrencecount());
+            if (algorithmPropertyfilters.size() == 0) {//pins的pool里为0，那么肯定没有其他pins引用这个位号了
+                /**
+                 * 当移除opc点位时候，如果对应的点位没有任何的模型引脚了，那么需要移除opc点位
+                 * 2如果引用用完： 2.1、移除opc点位池  2.2、移除group中item
+                 * 3、移除tag模型引脚池中的引脚列表
+                 * */
+                isNeedRemoveTagFromoItemManger(filter.getBackToDCSTag());
+
+                opctagAIModlePropertyFilterPool.remove(filter.getBackToDCSTag());
+                logger.info(filter.getBackToDCSTag() + "所有引脚全部移除");
+            }
+            return true;
+        } else {
+            logger.info("位号不存在,移除失败:" + filter.getBackToDCSTag());
+            return false;
+        }
+
+
+    }
+
+    @Deprecated
     public Boolean unregisterFilter(ModlePin modlePins) {
+        return unregisterFilter(modlePins.getFilter());
+    }
+
+    @Deprecated
+    public Boolean unregisterFilter(Filter filter) {
         /**
          * 移除filter opciterm
          * */
-        if ((modlePins.getFilter() != null) && (modlePins.getFilter().getBackToDCSTag() != null) && (!modlePins.getFilter().getBackToDCSTag().equals(""))) {
+        if ((filter != null) && (filter.getBackToDCSTag() != null) && (!filter.getBackToDCSTag().equals(""))) {
             //移除filterpool中的filter
-            opctagFilterPool.get(modlePins.getFilter().getBackToDCSTag()).remove(modlePins.getFilter());
+            opctagFilterPool.get(filter.getBackToDCSTag()).remove(filter);
             //削减引用
-            itemManger.getItemUnit(modlePins.getFilter().getBackToDCSTag()).minsrefrencecount();
-            logger.info("位号移除:" + modlePins.getModleOpcTag() + "refrence:" + itemManger.getItemUnit(modlePins.getFilter().getBackToDCSTag()).getRefrencecount());
+            itemManger.getItemUnit(filter.getBackToDCSTag()).minsrefrencecount();
+            logger.info("位号移除:" + filter.getBackToDCSTag() + "refrence:" + itemManger.getItemUnit(filter.getBackToDCSTag()).getRefrencecount());
 
-            if (itemManger.getItemUnit(modlePins.getFilter().getBackToDCSTag()).isnorefrence()) {
+            isNeedRemoveTagFromoItemManger(filter.getBackToDCSTag());
 
-                ItemUnit removeItem = itemManger.removeItemUnit(modlePins.getFilter().getBackToDCSTag());
-                if (removeItem != null) {
-                    try {
-                        group.removeItem(removeItem.getItem().getId());
-                        logger.info("opcSERVE位号移除:" + modlePins.getFilter().getBackToDCSTag() + "refrence:" + removeItem.getRefrencecount());
-                    } catch (UnknownHostException e) {
-                        logger.error(e.getMessage(), e);
-                    } catch (JIException e) {
-                        logger.error(e.getMessage(), e);
-                    }
-                } else {
-                    logger.info("opcSERVE位号未找到，移除失败:" + modlePins.getFilter().getBackToDCSTag() + "refrence:" + removeItem.getRefrencecount());
-                }
-
-            }
-
-            if (opctagFilterPool.get(modlePins.getFilter().getBackToDCSTag()).size() == 0) {
+            if (opctagFilterPool.get(filter.getBackToDCSTag()).size() == 0) {
                 //如果引用全部用完，那么把pool中的list也移除
-                opctagFilterPool.remove(modlePins.getFilter().getBackToDCSTag());
-                logger.info(modlePins.getFilter().getBackToDCSTag() + "所有引脚全部移除");
+                opctagFilterPool.remove(filter.getBackToDCSTag());
+                logger.info(filter.getBackToDCSTag() + "所有引脚全部移除");
             }
         }
 
         return true;
+
     }
 
-
-
-
-
-
-    /**移除一般的opctag*/
-    public Boolean unregisterCommonOPCTag(String opctag) {
+    @Deprecated
+    public Boolean unregisterShockdetector(ModlePin pin) {
         /**
          * 移除filter opciterm
          * */
-        if ((opctag != null) && (!opctag.equals(""))) {
+        if ((pin.getShockDetector() != null) && (pin.getShockDetector().getBackToDCSTag() != null) && (!pin.getShockDetector().getBackToDCSTag().equals(""))) {
             //移除filterpool中的filter
-//            opctagFilterPool.get(modlePins.getFilter().getBackToDCSTag()).remove(modlePins.getFilter());
+            opctagShockDetectPool.get(pin.getShockDetector().getBackToDCSTag()).remove(pin.getShockDetector());
             //削减引用
-            itemManger.getItemUnit(opctag).minsrefrencecount();
-            logger.info("位号移除:" + opctag + "refrence:" + itemManger.getItemUnit(opctag).getRefrencecount());
-            if (itemManger.getItemUnit(opctag).isnorefrence()) {
-                ItemUnit removeItem = itemManger.removeItemUnit(opctag);
-                if (removeItem != null) {
-                    try {
-                        group.removeItem(removeItem.getItem().getId());
-                        logger.info("opcSERVE位号移除:" + opctag + "refrence:" + removeItem.getRefrencecount());
-                    } catch (UnknownHostException e) {
-                        logger.error(e.getMessage(), e);
-                    } catch (JIException e) {
-                        logger.error(e.getMessage(), e);
-                    }
-                } else {
-                    logger.info("opcSERVE位号未找到，移除失败:" + opctag + "refrence:");
-                }
+            itemManger.getItemUnit(pin.getShockDetector().getBackToDCSTag()).minsrefrencecount();
+            logger.info("位号移除:" + pin.getShockDetector().getBackToDCSTag() + "refrence:" + itemManger.getItemUnit(pin.getShockDetector().getBackToDCSTag()).getRefrencecount());
+
+            isNeedRemoveTagFromoItemManger(pin.getShockDetector().getBackToDCSTag());
+
+            if (opctagShockDetectPool.get(pin.getShockDetector().getBackToDCSTag()).size() == 0) {
+                //如果引用全部用完，那么把pool中的list也移除
+                opctagShockDetectPool.remove(pin.getShockDetector().getBackToDCSTag());
+                logger.info(pin.getShockDetector().getBackToDCSTag() + "所有引脚全部移除");
             }
         }
         return true;
     }
 
-
-
-    public Boolean unregisterShockdetectortag(String opctag) {
+    @Deprecated
+    public Boolean unregisterShockdetectorFilter(ModlePin pin) {
         /**
          * 移除filter opciterm
          * */
-        if ((opctag != null) && (!opctag.equals(""))) {
+        if ((pin.getShockDetector() != null) && (pin.getShockDetector().getFirstOrderLagFilterl().getBackToDCSTag() != null) && (!pin.getShockDetector().getFirstOrderLagFilterl().getBackToDCSTag().equals(""))) {
             //移除filterpool中的filter
-//            opctagFilterPool.get(modlePins.getFilter().getBackToDCSTag()).remove(modlePins.getFilter());
+            opctagShockDetectFilterPool.get(pin.getShockDetector().getFirstOrderLagFilterl().getBackToDCSTag()).remove(pin.getShockDetector().getFirstOrderLagFilterl());
             //削减引用
-            itemManger.getItemUnit(opctag).minsrefrencecount();
-            logger.info("位号移除:" + opctag + "refrence:" + itemManger.getItemUnit(opctag).getRefrencecount());
-            if (itemManger.getItemUnit(opctag).isnorefrence()) {
-                ItemUnit removeItem = itemManger.removeItemUnit(opctag);
-                if (removeItem != null) {
-                    try {
-                        group.removeItem(removeItem.getItem().getId());
-                        logger.info("opcSERVE位号移除:" + opctag + "refrence:" + removeItem.getRefrencecount());
-                    } catch (UnknownHostException e) {
-                        logger.error(e.getMessage(), e);
-                    } catch (JIException e) {
-                        logger.error(e.getMessage(), e);
-                    }
-                } else {
-                    logger.info("opcSERVE位号未找到，移除失败:" + opctag + "refrence:");
-                }
+            itemManger.getItemUnit(pin.getShockDetector().getFirstOrderLagFilterl().getBackToDCSTag()).minsrefrencecount();
+            logger.info("位号移除:" + pin.getShockDetector().getFirstOrderLagFilterl().getBackToDCSTag() + "refrence:" + itemManger.getItemUnit(pin.getShockDetector().getFirstOrderLagFilterl().getBackToDCSTag()).getRefrencecount());
+
+            isNeedRemoveTagFromoItemManger(pin.getShockDetector().getFirstOrderLagFilterl().getBackToDCSTag());
+
+            if (opctagShockDetectFilterPool.get(pin.getShockDetector().getFirstOrderLagFilterl().getBackToDCSTag()).size() == 0) {
+                //如果引用全部用完，那么把pool中的list也移除
+                opctagShockDetectFilterPool.remove(pin.getShockDetector().getFirstOrderLagFilterl().getBackToDCSTag());
+                logger.info(pin.getShockDetector().getFirstOrderLagFilterl().getBackToDCSTag() + "所有引脚全部移除");
             }
         }
         return true;
@@ -575,7 +892,7 @@ public class OPCService implements Runnable {
             logger.debug("opc serve run" + itemManger.getOpcitemunitPool().size());
 
             /**平台通信校验位号写入数据*/
-            for (OpcVeriTag opcVeriTag : varytag.values()) {
+            for (OpcVeriTag opcVeriTag : alreadregistervarytagpool.values()) {
                 if (opcVeriTag.getTag() != null && !opcVeriTag.getTag().trim().equals("") && (opcVeriTag.getItem() != null)) {
                     try {
                         opcVeriTag.getItem().write(new JIVariant(new JIVariant((Float) writevloop.floatValue())));
@@ -591,7 +908,7 @@ public class OPCService implements Runnable {
             }
 
 
-            //数据读取
+            //数据读取统计数据读取
             long startgetdate = System.currentTimeMillis();
             if (itemManger.getOpcitemunitPool().size() > 0) {
                 try {
@@ -648,7 +965,7 @@ public class OPCService implements Runnable {
     /**
      * s数据处理分发
      */
-    public void pinValueUpdate(Item item, ItemState itemState) throws JIException {
+    private void pinValueUpdate(Item item, ItemState itemState) throws JIException {
 
         String valueStringstyle = itemState.getValue().getObject().toString();
         String opcname = itemManger.findTagnamebyItem(item);
@@ -673,118 +990,26 @@ public class OPCService implements Runnable {
             //更新引脚数据数据
             pin.opcUpdateValue(Double.valueOf(valueStringstyle));
 
-            //DCS手自动切换监视
-            if (pin.getModlePinName() != null && pin.getModlePinName().trim().equals(ModlePin.TYPE_PIN_MODLE_AUTO)) {
-                logger.info("modle id=" + pin.getReference_modleId() + "old value=" + pin.getOldReadValue() + ",new value=" + pin.getNewReadValue());
-                if ((pin.getOldReadValue() != null) && (pin.getOldReadValue() == 0) && (pin.getNewReadValue() != 0) /*&& (modleConstainerl != null) && (modleConstainerl.getModulepool().get(pin.getReference_modleId()).getModleEnable() == 0)*/) {
-                    //run
-                    logger.debug("模型运行，modleid=" + pin.getReference_modleId());
-                    ModleRunTask modleRunTask = new ModleRunTask();
-                    modleRunTask.setModleid(pin.getReference_modleId());
-                    modleStopRunMonitor.putTask(modleRunTask);
-                    logger.debug("模型运行，modleid=" + pin.getReference_modleId());
+            //DCS手自动切换监视,监视模型是否运行
+            modleDisOrEnableByDCS(pin);
 
-                } else if ((pin.getOldReadValue() != null) && (pin.getOldReadValue() != 0) && (pin.getNewReadValue() == 0) /*&& (modleConstainerl != null) && (modleConstainerl.getModulepool().get(pin.getReference_modleId()).getModleEnable() == 1)*/) {
-                    //stop
-                    logger.debug("模型停止，modleid=" + pin.getReference_modleId());
-                    ModleStopTask modleStopTask = new ModleStopTask();
-                    modleStopTask.setModleid(pin.getReference_modleId());
-                    modleStopRunMonitor.putTask(modleStopTask);
-                    logger.debug("模型停止，modleid=" + pin.getReference_modleId());
-                } else {
-//                    logger.debug("手自动位号未进行切换，modleid=" + pin.getReference_modleId());
-                }
-            }
+            //检测模型的引脚是否需要停止启用
+            modlepinDisOrEnableByDCS(pin);
 
-
-            /**引脚使能数值监视*/
-            if(pin.getModlePinName()!=null && pvenablepattern.matcher(pin.getModlePinName()).find()){
-                logger.info("modle id=" + pin.getReference_modleId() + "old value=" + pin.getOldReadValue() + ",new value=" + pin.getNewReadValue());
-                if((pin.getOldReadValue() != null) && (pin.getOldReadValue() == 0) && (pin.getNewReadValue() != 0)){
-                    /**checkin*/
-                    logger.debug("模型运行，modleid=" + pin.getReference_modleId()+"pinid="+pin.getModlepinsId()+"切入");
-                    ModlePinCheckin modlePinCheckin=new ModlePinCheckin();
-                    modlePinCheckin.setModleid(pin.getReference_modleId());
-                    modlePinCheckin.setPinid(pin.getModlepinsId());
-                    modleStopRunMonitor.putTask(modlePinCheckin);
-
-                }else if((pin.getOldReadValue() != null) && (pin.getOldReadValue() != 0) && (pin.getNewReadValue() == 0)) {
-                    /**checkout*/
-                    logger.debug("模型运行，modleid=" + pin.getReference_modleId()+"pinid="+pin.getModlepinsId()+"切出");
-                    ModlePinCheckout modlePinCheckout=new ModlePinCheckout();
-                    modlePinCheckout.setModleid(pin.getReference_modleId());
-                    modlePinCheckout.setPinid(pin.getModlepinsId());
-                    modleStopRunMonitor.putTask(modlePinCheckout);
-                }
-
-            }
-
-
+            //检测模型引脚是否不运行
+            modlepinDisOrRunnableByDCS(pin);
 
 
             //检查是否存在滤波器，存在的话则根据滤波器类型生成滤波器执行任务
             if (pin.getFilter() != null) {
-
-                if (pin.getFilter() instanceof FirstOrderLagFilter) {
-
-                    FirstOrderLagFilter folf = (FirstOrderLagFilter) pin.getFilter();
-                    //更新本次数据采样数据
-                    folf.setsampledata(Double.valueOf(valueStringstyle));
-
-                    //新建过滤器的执行任务
-                    FiltTask folftask = new FiltTask();
-                    folftask.setFilter(folf);
-
-                    if ((folf.getBackToDCSTag() != null) && (!folf.getBackToDCSTag().equals(""))) {
-                        folftask.setItemfilterback(itemManger.getItemUnit(folf.getBackToDCSTag()).getItem());
-                    }
-
-                    folftask.setUnfiltdata(Double.valueOf(valueStringstyle));//未滤波的数据
-
-                    filterService.putfiltertask(folftask);
-
-                } else if (pin.getFilter() instanceof MoveAverageFilter) {
-
-                    MoveAverageFilter mvav = (MoveAverageFilter) pin.getFilter();
-                    //更新本次采集数据
-                    mvav.setsampledata(Double.valueOf(valueStringstyle));
-
-                    //新建滤波器执行任务
-                    FiltTask mvavtask = new FiltTask();
-                    mvavtask.setFilter(mvav);
-
-                    if ((mvav.getBackToDCSTag() != null) && (!mvav.getBackToDCSTag().equals(""))) {
-                        mvavtask.setItemfilterback(itemManger.getItemUnit(mvav.getBackToDCSTag()).getItem());
-                    }
-
-                    //抽取本次需要滤波的窗口数据
-                    mvavtask.setUnfiltdatas(mvav.getUnfilterdatas());
-                    filterService.putfiltertask(mvavtask);
-                }
-
+                filterService.creatFilterTaskAndPut(pin.getFilter(), Double.valueOf(valueStringstyle), null);
             }
 
             //震荡检测器
             if (pin.getShockDetector() != null) {
                 ShockDetector shockDetector = pin.getShockDetector();
                 FirstOrderLagFilter filterindetect = pin.getShockDetector().getFirstOrderLagFilterl();
-
-                filterindetect.setsampledata(Double.valueOf(valueStringstyle));
-                FiltTask folftask = new FiltTask();
-                folftask.setFilter(filterindetect);
-
-                if ((filterindetect.getBackToDCSTag() != null) && (!filterindetect.getBackToDCSTag().trim().equals(""))) {
-                    folftask.setItemfilterback(itemManger.getItemUnit(filterindetect.getBackToDCSTag()).getItem());
-                }
-                if ((shockDetector.getBackToDCSTag() != null) && (!shockDetector.getBackToDCSTag().trim().equals(""))) {
-                    folftask.setItemshockback(itemManger.getItemUnit(shockDetector.getBackToDCSTag()).getItem());
-                }
-
-                folftask.setUnfiltdata(Double.valueOf(valueStringstyle));//未滤波的数据
-
-                folftask.setShockDetector(pin.getShockDetector());
-
-                filterService.putfiltertask(folftask);
+                filterService.creatFilterTaskAndPut(filterindetect, Double.valueOf(valueStringstyle), shockDetector);
             }
 
 
@@ -793,106 +1018,114 @@ public class OPCService implements Runnable {
 
 
     /**
-     * onebyone 获取oopc点位数据，并处理
+     * 监视模型是否从dcs端控制停止和运行
      */
-//    @Deprecated
-//    public void readAndProcessDataByIter() {
-//        /**实时读取数据**/
-//        for (Map.Entry<String, ItemUnit> integerItemEntry : itemManger.getOpcitemunitPool().entrySet()) {
-//            String stringvalue = null;
-//            try {
-//
-//                List<ModlePin> pins = opctagModlePinPool.get(integerItemEntry.getKey());
-//
-//                stringvalue = integerItemEntry.getValue().getItem().read(false).getValue().getObject().toString();
-//
-//
-//                if (pins == null) {
-//                    //pins列表为null说明这个不是pin引脚的tag，可能是filter的opctag，这个主要是用于反写的，不需要读取
-//                    continue;
-//                }
-//                //logger.debug("update" + integerItemEntry.getKey() + "value: " + stringvalue);
-//                if (stringvalue.equals("true") || stringvalue.equals("on")) {
-//                    stringvalue = 1 + "";
-//                }
-//                if (stringvalue.equals("false") || stringvalue.equals("off")) {
-//                    stringvalue = 0 + "";
-//                }
-//                for (ModlePin pin : pins) {
-//                    /**更新引脚数据数据*/
-//                    pin.opcUpdateValue(Double.valueOf(stringvalue));
-//
-//                    /**DCS手自动切换监视*/
-//                    if (pin.getModlePinName() != null && pin.getModlePinName().equals(ModlePin.TYPE_PIN_MODLE_AUTO)) {
-//                        if (pin.getNewReadValue() == 1 && (modleConstainerl != null) && (modleConstainerl.getModulepool().get(pin.getReference_modleId()).getModleEnable() == 0)) {
-//                            /**run*/
-//                            ModleRunTask modleRunTask = new ModleRunTask();
-//                            modleRunTask.setModleid(pin.getReference_modleId());
-//                            modleStopRunMonitor.putTask(modleRunTask);
-//                        } else if (pin.getNewReadValue() == 0 && (modleConstainerl != null) && (modleConstainerl.getModulepool().get(pin.getReference_modleId()).getModleEnable() == 1)) {
-//                            /**stop*/
-//                            ModleStopTask modleStopTask = new ModleStopTask();
-//                            modleStopTask.setModleid(pin.getReference_modleId());
-//                            modleStopRunMonitor.putTask(modleStopTask);
-//                        } else {
-//                            logger.debug("手自动位号未进行切换，modleid=" + pin.getReference_modleId());
-//                        }
-//                    }
-//
-//                    /**检查是否存在滤波器，存在的话则根据滤波器类型生成滤波器执行任务*/
-//                    if (pin.getFilter() != null) {
-//
-//                        if (pin.getFilter() instanceof FirstOrderLagFilter) {
-//
-//                            FirstOrderLagFilter folf = (FirstOrderLagFilter) pin.getFilter();
-//                            //更新本次数据采样数据
-//                            folf.setsampledata(Double.valueOf(stringvalue));
-//
-//                            //新建过滤器的执行任务
-//                            FiltTask folftask = new FiltTask();
-//                            folftask.setFilter(folf);
-//
-//                            if ((folf.getBackToDCSTag() != null) && (!folf.getBackToDCSTag().equals(""))) {
-//                                folftask.setItemfilterback(itemManger.getItemUnit(folf.getBackToDCSTag()).getItem());
-//                            }
-//
-//                            folftask.setUnfiltdata(Double.valueOf(stringvalue));//未滤波的数据
-//
-//                            filterService.putfiltertask(folftask);
-//
-//                        } else if (pin.getFilter() instanceof MoveAverageFilter) {
-//
-//                            MoveAverageFilter mvav = (MoveAverageFilter) pin.getFilter();
-//                            //更新本次采集数据
-//                            mvav.setsampledata(Double.valueOf(stringvalue));
-//
-//                            //新建滤波器执行任务
-//                            FiltTask mvavtask = new FiltTask();
-//                            mvavtask.setFilter(mvav);
-//
-//                            if ((mvav.getBackToDCSTag() != null) && (!mvav.getBackToDCSTag().equals(""))) {
-//                                mvavtask.setItemfilterback(itemManger.getItemUnit(mvav.getBackToDCSTag()).getItem());
-//                            }
-//
-//
-//                            //抽取本次需要滤波的窗口数据
-//                            mvavtask.setUnfiltdatas(mvav.getUnfilterdatas());
-//                            filterService.putfiltertask(mvavtask);
-//                        }
-//
-//                    }
-//                }
-//            } catch (JIException e) {
-//                logger.error(e.getMessage(), e);
-//                connectStatus = false;
-//                break;
-//
-//            } catch (Exception e) {
-//                logger.error(e.getMessage(), e);
-//                logger.error("tagname" + integerItemEntry.getKey() + "value:" + stringvalue);
-//            }
-//        }
-//    }
+    private void modleDisOrEnableByDCS(ModlePin pin) {
+        /**首先需要匹配到模型手自动位号*/
+        if (pin.getModlePinName() != null && pin.getModlePinName().trim().equals(ModlePin.TYPE_PIN_MODLE_AUTO)) {
+            logger.info("modle id=" + pin.getReference_modleId() + "old value=" + pin.getOldReadValue() + ",new value=" + pin.getNewReadValue());
+            if ((pin.getOldReadValue() != null) && (pin.getOldReadValue() == 0) && (pin.getNewReadValue() != 0) /*&& (modleConstainerl != null) && (modleConstainerl.getModulepool().get(pin.getReference_modleId()).getModleEnable() == 0)*/) {
+                //run
+                logger.debug("模型运行，modleid=" + pin.getReference_modleId());
+                modleRebuildService.putRebuildstak(new ModleEnableTask(0, pin.getReference_modleId()));
+                logger.debug("模型运行，modleid=" + pin.getReference_modleId());
+            } else if ((pin.getOldReadValue() != null) && (pin.getOldReadValue() != 0) && (pin.getNewReadValue() == 0) /*&& (modleConstainerl != null) && (modleConstainerl.getModulepool().get(pin.getReference_modleId()).getModleEnable() == 1)*/) {
+                //stop
+                logger.debug("模型停止，modleid=" + pin.getReference_modleId());
+
+                modleRebuildService.putRebuildstak(new ModleDisEnableTask(0, pin.getReference_modleId()));
+                logger.debug("模型停止，modleid=" + pin.getReference_modleId());
+            } else {
+//                    logger.debug("手自动位号未进行切换，modleid=" + pin.getReference_modleId());
+            }
+        }
+
+    }
+
+
+    /**
+     * 模型引脚启用停用
+     */
+    private void modlepinDisOrEnableByDCS(ModlePin pin) {
+
+        /**匹配到Enable引脚**/
+        if (null != pin.getDcsEnabePin()) {
+            /**有dcs端启用引脚的组件*/
+            logger.info("modle id=" + pin.getDcsEnabePin().getReference_modleId() + "old value=" + pin.getDcsEnabePin().getOldReadValue() + ",new value=" + pin.getDcsEnabePin().getNewReadValue());
+            if ((pin.getDcsEnabePin().getOldReadValue() != null) && (pin.getDcsEnabePin().getOldReadValue() == 0) && (pin.getDcsEnabePin().getNewReadValue() != 0)) {
+                /**pin enable*/
+                logger.debug("模型运行，modleid=" + pin.getReference_modleId() + "pinid=" + pin.getModlepinsId() + "启用");
+
+                modleRebuildService.putRebuildstak(new ModlePinEnableTask(0, pin));
+
+            } else if ((pin.getDcsEnabePin().getOldReadValue() != null) && (pin.getDcsEnabePin().getOldReadValue() != 0) && (pin.getDcsEnabePin().getNewReadValue() == 0)) {
+                /**pv disenable*/
+                logger.debug("模型运行，modleid=" + pin.getReference_modleId() + "pinid=" + pin.getModlepinsId() + "切出");
+                modleRebuildService.putRebuildstak(new ModlePinDisEnableTask(0, pin));
+            }
+
+        }
+    }
+
+
+    /**
+     * 模型引脚启用停用
+     * 0判断是pv、ff类型的引脚
+     * 1停止
+     * 1-1、如果是则设置模型引脚停运，新建一个引脚停止运行的任务
+     * 2运行
+     * 2-1设置引脚运行,设置引脚，并设置引脚下次正真参与控制的时间
+     */
+    private void modlepinDisOrRunnableByDCS(ModlePin pin) {
+        /**引脚类型判断，筛选出pv或者ff引脚，这里限制了pv和ff这个范围，因为如果是mv也是有上下限的，二mv是不需要通过这个进行设置引脚运行还是停止*/
+        if ((0 != pin.getPinEnable()) && (pvpattern.matcher(pin.getModlePinName()).find() || ffpattern.matcher(pin.getModlePinName()).find())) {
+            /**模型引脚停止*/
+
+            /**
+             * 判断是否超过置信区间
+             * 是否正在运行
+             * */
+            if (pin.isBreakLimit()) {
+                /**突破边界*/
+                logger.warn("break limit ! modle id=" + pin.getReference_modleId() + "value=" + pin.getOldReadValue());
+                if (pin.isThisTimeParticipate()) {
+                    /*参与控制了，停止他*/
+                    pin.setThisTimeParticipate(false);
+                    modleRebuildService.putRebuildstak(new ModlePinDisRunnableTask(0, pin.getReference_modleId(), pin));
+                }
+
+            } else {
+                /**在边界内*/
+                if (pin.isThisTimeParticipate()) {
+                    /*参与控制*/
+                    if (null != pin.getRunClock()) {
+                        /*闹铃时间到了吗*/
+                        if (pin.clockAlarm()) {
+                            modleRebuildService.putRebuildstak(new ModlePinRunnableTask(0, pin.getReference_modleId(), pin));
+                            pin.clearRunClock();
+                        }
+                    }
+                } else {
+                    /*没参与控制,设立闹钟*/
+                    if (null != modleRebuildService.getModleConstainer().getRunnableModulepool().get(pin.getReference_modleId())) {
+                        pin.setThisTimeParticipate(true);
+                        int checktime = 0;
+                        /*如果模型的输出周期为null/0，则直接设置引脚保持在置信区间为10s*/
+                        if ((null == modleRebuildService.getModleConstainer().getRunnableModulepool().get(pin.getReference_modleId()).getControlAPCOutCycle()) || (0 == modleRebuildService.getModleConstainer().getRunnableModulepool().get(pin.getReference_modleId()).getControlAPCOutCycle())) {
+                            checktime = 10;
+                            logger.warn("输出周期设置存在问题,引脚正常周期设置10秒。异常模型id=" + pin.getReference_modleId());
+                        } else {
+                            checktime = 2 * modleRebuildService.getModleConstainer().getRunnableModulepool().get(pin.getReference_modleId()).getControlAPCOutCycle();
+                        }
+                        pin.setRunClock(Instant.now().plusSeconds(checktime));
+                    }
+                }
+
+
+            }
+
+        }
+    }
 
 
     public void reconnect() {
@@ -905,7 +1138,7 @@ public class OPCService implements Runnable {
         } catch (Exception exception) {
             logger.error(exception.getMessage(), exception);
         }
-        itemManger = new ItemManger();
+        group = null;
         initAndReConnect();
     }
 
@@ -933,6 +1166,47 @@ public class OPCService implements Runnable {
             server.disconnect();
         } catch (JIException e) {
             logger.error(e.getMessage(), e);
+        }
+    }
+
+
+    private void registertagtoItemManger(String tag) throws AddFailedException, JIException {
+        if (!itemManger.iscontainstag(tag)) {
+            //加入group
+            Item item = group.addItem(tag);
+            ItemUnit itemUnit = new ItemUnit();
+            itemUnit.setItem(item);
+            itemUnit.addrefrencecount();
+            itemManger.addItemUnit(tag, itemUnit);
+            logger.info(tag + "注册成功" + " refrence:" + itemUnit.getRefrencecount());
+        } else {
+            //位号已添加
+            itemManger.getItemUnit(tag).addrefrencecount();
+            logger.warn(tag + "位号已添加");
+        }
+    }
+
+    /**
+     * 判断这个tag的所有引用都为0时，进移除，否则不进行移除
+     */
+    private void isNeedRemoveTagFromoItemManger(String tag) {
+        if (itemManger.getItemUnit(tag).isnorefrence()) {
+            ItemUnit removeItem = itemManger.removeItemUnit(tag);
+            if (removeItem != null) {
+                try {
+                    group.removeItem(removeItem.getItem().getId());
+                    logger.info("opcSERVE位号:" + tag + "refrence:" + removeItem.getRefrencecount());
+                } catch (UnknownHostException e) {
+                    logger.error(e.getMessage(), e);
+                } catch (JIException e) {
+                    logger.error(e.getMessage(), e);
+                } catch (Exception e) {
+                    logger.error(e.getMessage(), e);
+                }
+            } else {
+                logger.info("opcSERVE位号未找到，移除失败:" + tag);
+            }
+
         }
     }
 
@@ -1004,11 +1278,41 @@ public class OPCService implements Runnable {
         this.opcclsid = opcclsid;
     }
 
-    public ModleConstainer getModleConstainerl() {
-        return modleConstainerl;
+
+    public ConcurrentHashMap<String, OpcVeriTag> getAlreadregistervarytagpool() {
+        return alreadregistervarytagpool;
     }
 
-    public void setModleConstainerl(ModleConstainer modleConstainerl) {
-        this.modleConstainerl = modleConstainerl;
+    public Map<String, List<AlgorithmProperty>> getOpctagAIModlePropertyPool() {
+        return opctagAIModlePropertyPool;
+    }
+
+    public void setOpctagAIModlePropertyPool(Map<String, List<AlgorithmProperty>> opctagAIModlePropertyPool) {
+        this.opctagAIModlePropertyPool = opctagAIModlePropertyPool;
+    }
+
+    public Map<String, List<Filter>> getOpctagAIModlePropertyFilterPool() {
+        return opctagAIModlePropertyFilterPool;
+    }
+
+    public void setOpctagAIModlePropertyFilterPool(Map<String, List<Filter>> opctagAIModlePropertyFilterPool) {
+        this.opctagAIModlePropertyFilterPool = opctagAIModlePropertyFilterPool;
+    }
+
+
+    public Map<String, List<ShockDetector>> getOpctagShockDetectPool() {
+        return opctagShockDetectPool;
+    }
+
+    public void setOpctagShockDetectPool(Map<String, List<ShockDetector>> opctagShockDetectPool) {
+        this.opctagShockDetectPool = opctagShockDetectPool;
+    }
+
+    public Map<String, List<Filter>> getOpctagShockDetectFilterPool() {
+        return opctagShockDetectFilterPool;
+    }
+
+    public void setOpctagShockDetectFilterPool(Map<String, List<Filter>> opctagShockDetectFilterPool) {
+        this.opctagShockDetectFilterPool = opctagShockDetectFilterPool;
     }
 }
