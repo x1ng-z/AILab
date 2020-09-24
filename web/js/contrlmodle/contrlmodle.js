@@ -160,20 +160,111 @@ function newmodlepinwindow(layer, url, pintype, dom) {
     return indexlayer;
 }
 
+function newmresponwindow(layer, url, dom) {
+    let indexlayer = layer.open(
+        {
+            type: 2
+            , title: '新建响应'
+            // ,title: false //不显示标题栏
+            // ,id:'idLAY_layuipro'
+            // ,closeBtn: false
+            , offset: '90px'
+            , area: ['950px', '500px']
+            , content: [url, 'yes']//不要滚动条
+            , zIndex: layer.zIndex //重点1
+            , shade: 0.3
+            , id: 'LAY_layuipro'
+            , btn: ['确定', '取消']
+            , yes: function (index, layero) {
+                //按钮【按钮一】的回调
+                // layer.getChildFrame()
+                let iframeWin = window[layero.find('iframe')[0]['name']];
+                console.log(iframeWin)
+                var body = layer.getChildFrame('body', index);
+                body.find("#newresponsubmitbt").trigger('click');
+                $("#bt_flush_resppvmvtab", dom).trigger('click');
+            }
+            , btn2: function (index, layero) {
+                //按钮【按钮二】的回调 do nothing
+                //return false 开启该代码可禁止点击该按钮关闭
+            }
+            , btnAlign: 'c'
+            , success: function (layero) {
+                layer.setTop(layero); //重点2
+            }
 
-function modifymodlepinwindow(dom, layer, modleid, pinid, pintype, methodname,root) {
+            // content: 'http://sentsin.com' //这里content是一个URL，如果你不想让iframe出现滚动条，你还可以content: ['http://sentsin.com', 'no']
+        }
+    );
+    return indexlayer;
+}
+
+
+function modifymodlepinwindow(dom, layer, modleid, pinid, pintype, methodname, root) {
+    let indexlayer = layer.open(
+        {
+            type: 2
+            ,title: '修改模型' + pintype + '引脚'
+            // ,title: false //不显示标题栏
+            // ,id:'idLAY_layuipro'
+            // ,closeBtn: false
+            , offset: pintype == 'pv' ? '5px' : (pintype == 'mv' ? '30px' : (pintype == 'ff' ? '60px' : '120px'))
+            ,area: ['950px', '500px']//modofymodelpvpin
+
+            ,content: [root + '/contrlmodle/' + methodname + '.do?modleid=' + modleid + '&pinid=' + pinid + '&pintype=' + pintype, 'yes']//不要滚动条
+
+            ,zIndex: layer.zIndex //重点1
+            ,shade: 0.3
+
+            ,id: 'LAY_layuipro'
+
+            ,btn: ['确定', '取消']
+
+            ,yes: function (index, layero) {
+                //按钮【按钮一】的回调
+                // layer.getChildFrame()
+                let iframeWin = window[layero.find('iframe')[0]['name']];
+                console.log(iframeWin)
+                var body = layer.getChildFrame('body', index);
+                body.find("#modifycontrlmodlepinsubmitbt").trigger('click');
+                // body.trigger('click')
+                // iframeWin.document.getElementById("newmodlesubmitbt").click();
+                //$("#newcontrlmodlepinsubmit",iframeWin.document).trigger('click');
+                $("#bt_flush_pvtab", dom).trigger('click');
+
+            }
+
+            ,btn2: function (index, layero) {
+                //按钮【按钮二】的回调 do nothing
+                //return false 开启该代码可禁止点击该按钮关闭
+            }
+
+            ,btnAlign: 'c'
+
+            ,success: function (layero) {
+                layer.setTop(layero); //重点2
+            }
+
+            // content: 'http://sentsin.com' //这里content是一个URL，如果你不想让iframe出现滚动条，你还可以content: ['http://sentsin.com', 'no']
+        }
+    );
+    return indexlayer;
+}
+
+function modifyresponwindow(dom, layer, modleid, responid, methodname, root) {
     let indexlayer = layer.open(
         {
             type: 2
             ,
-            title: '修改模型' + pintype + '引脚'
+            title: '修改响应'
             // ,title: false //不显示标题栏
             // ,id:'idLAY_layuipro'
             // ,closeBtn: false
+            , offset: '90px'
             ,
             area: ['950px', '500px']//modofymodelpvpin
             ,
-            content: [root + '/contrlmodle/'+methodname+'.do?modleid=' + modleid + '&pinid=' + pinid + '&pintype=' + pintype, 'yes']//不要滚动条
+            content: [root + '/contrlmodle/' + methodname + '.do?modleid=' + modleid + '&responid=' + responid,  'yes']//不要滚动条
             ,
             zIndex: layer.zIndex //重点1
             ,
@@ -189,11 +280,11 @@ function modifymodlepinwindow(dom, layer, modleid, pinid, pintype, methodname,ro
                 let iframeWin = window[layero.find('iframe')[0]['name']];
                 console.log(iframeWin)
                 var body = layer.getChildFrame('body', index);
-                body.find("#modifycontrlmodlepinsubmitbt").trigger('click');
+                body.find("#newresponsubmitbt").trigger('click');
                 // body.trigger('click')
                 // iframeWin.document.getElementById("newmodlesubmitbt").click();
                 //$("#newcontrlmodlepinsubmit",iframeWin.document).trigger('click');
-                $("#bt_flush_pvtab", dom).trigger('click');
+                $("#bt_flush_resppvmvtab", dom).trigger('click');
 
             }
             ,
@@ -215,11 +306,11 @@ function modifymodlepinwindow(dom, layer, modleid, pinid, pintype, methodname,ro
 }
 
 
-function deletecontrlpin(dom, layer, pinid, pintype,method,root) {
-    console.log(root + "/contrlmodle/"+method+".do");
+function deletecontrlpin(dom, layer, pinid, pintype, method, root) {
+    console.log(root + "/contrlmodle/" + method + ".do");
     var index = layer.msg('删除中，请稍候', {icon: 16, time: false, shade: 0.8});
     $.ajax({
-        url: root + "/contrlmodle/"+method+".do" + "?" + Math.random(),
+        url: root + "/contrlmodle/" + method + ".do" + "?" + Math.random(),
         async: true,
         data: {
             "pinid": pinid
@@ -234,11 +325,73 @@ function deletecontrlpin(dom, layer, pinid, pintype,method,root) {
             } else {
                 layer.msg("删除成功！");
                 layer.close(index);
-                $("#bt_flush_"+pintype+"tab", dom).trigger('click');
+                $("#bt_flush_" + pintype + "tab", dom).trigger('click');
 
             }
         }
     });
 
 
+}
+
+function deleterespon(dom, layer, pinid, method, root) {
+    var index = layer.msg('删除中，请稍候', {icon: 16, time: false, shade: 0.8});
+    $.ajax({
+        url: root + "/contrlmodle/" + method + ".do" + "?" + Math.random(),
+        async: true,
+        data: {
+            "pinid": pinid
+        },
+        type: "POST",
+        success: function (result) {
+            console.log(result);
+            layer.close(index);
+            let json = JSON.parse(result);
+            if (json['msg'] == "error") {
+                layer.msg("删除失败！");
+            } else {
+                layer.msg("删除成功！");
+                layer.close(index);
+                $("#bt_flush_resppvmvtab", dom).trigger('click');
+
+            }
+        }
+    });
+
+
+}
+
+
+function modifymodlestructwindows(layer, modleid ,root) {
+    let indexlayer = layer.open(
+        {
+            type: 2
+            , title: '编辑控制结构'
+            , area: ['950px', '500px']
+            , content: [root+'/contrlmodle/modifymodlestruct.do?modleid='+modleid, 'yes']//不要滚动条
+            , zIndex: layer.zIndex //重点1
+            , shade: 0.3
+            , id: 'LAY_layuipro'
+            , btn: ['关闭']
+            , yes: function (index, layero) {
+                //按钮【按钮一】的回调
+                layer.close(index);
+                // layer.getChildFrame()
+                // let iframeWin = window[layero.find('iframe')[0]['name']];
+                // iframeWin.document.getElementById("newmodlesubmitbt").click();
+                //$("#newmodlesubmitbt", iframeWin.document).trigger('click')
+            }
+            // , btn2: function (index, layero) {
+            //     //按钮【按钮二】的回调 do nothing
+            //     //return false 开启该代码可禁止点击该按钮关闭
+            // }
+            , btnAlign: 'c'
+            , success: function (layero) {
+                layer.setTop(layero); //重点2
+            }
+
+            // content: 'http://sentsin.com' //这里content是一个URL，如果你不想让iframe出现滚动条，你还可以content: ['http://sentsin.com', 'no']
+        }
+    );
+    return indexlayer;
 }

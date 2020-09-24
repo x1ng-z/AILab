@@ -74,22 +74,22 @@
             </c:choose>
 
 
-            <button type="button" class="layui-btn layui-btn-primary" onclick="deletecontrlmodle(mylayer,${modleid},'${pageContext.request.contextPath}/contrlmodle/deletemodle.do','${pageContext.request.contextPath}/contrlmodle/modlestatus/${modle.modleId}.do')">
+            <button type="button" class="layui-btn layui-btn-primary mytipbut" name="删除" onclick="deletecontrlmodle(mylayer,${modleid},'${pageContext.request.contextPath}/contrlmodle/deletemodle.do','${pageContext.request.contextPath}/contrlmodle/modlestatus/${modle.modleId}.do')">
                 <i class="layui-icon">&#xe640;</i>
             </button>
 
-            <button type="button" class="layui-btn layui-btn-primary" onclick="window.location.reload()">
+            <button type="button" class="layui-btn layui-btn-primary mytipbut" name="刷新" onclick="window.location.reload()">
                 <i class="layui-icon">&#xe669;</i>
             </button>
 
             <c:choose>
                 <c:when test="${modle.simulatControlModle.issimulation==true}">
-                    <button type="button" class="layui-btn" onclick="stopOrrun('${pageContext.request.contextPath}/modle/stopSimulateModle.do?modleid=${modle.modleId}','确定停止仿真？')">
+                    <button type="button" class="layui-btn mytipbut" name="仿真" onclick="stopOrrun('${pageContext.request.contextPath}/modle/stopSimulateModle.do?modleid=${modle.modleId}','确定停止仿真？')">
                         <i class="layui-icon">&#xe628;</i>
                     </button>
                 </c:when>
                 <c:otherwise>
-                    <button type="button" class="layui-btn layui-btn-primary" onclick="stopOrrun('${pageContext.request.contextPath}/modle/runSimulateModle.do?modleid=${modle.modleId}','确定运行仿真？')">
+                    <button type="button" class="layui-btn layui-btn-primary mytipbut" name="仿真" onclick="stopOrrun('${pageContext.request.contextPath}/modle/runSimulateModle.do?modleid=${modle.modleId}','确定运行仿真？')">
                         <i class="layui-icon">&#xe628;</i>
                     </button>
                 </c:otherwise>
@@ -98,24 +98,27 @@
 
             <c:choose>
                 <c:when test="${modle.modleEnable eq 1}">
-
-
-                    <button type="button" class="layui-btn" onclick="stopOrrun('${pageContext.request.contextPath}/modle/stopModle.do?modleid=${modle.modleId}','确定停止？')">
+                    <button type="button" class="layui-btn mytipbut" name="运行" onclick="stopOrrun('${pageContext.request.contextPath}/modle/stopModle.do?modleid=${modle.modleId}','确定停止？')">
                         <i class="layui-icon">&#xe682;</i>
                     </button>
                 </c:when>
                 <c:otherwise>
 
-                    <button type="button" class="layui-btn layui-btn-primary" onclick="stopOrrun('${pageContext.request.contextPath}/modle/runModle.do?modleid=${modle.modleId}','确定运行？')">
+                    <button type="button" class="layui-btn layui-btn-primary mytipbut" name="运行" onclick="stopOrrun('${pageContext.request.contextPath}/modle/runModle.do?modleid=${modle.modleId}','确定运行？')">
                         <i class="layui-icon">&#xe682;</i>
                     </button>
                 </c:otherwise>
             </c:choose>
 
+            <button type="button" class="layui-btn layui-btn-primary mytipbut" name="编辑结构" onclick="modifymodlestructwindows(mylayer,${modleid},'${pageContext.request.contextPath}')">
+                <i class="layui-icon">&#xe857;</i>
+            </button>
 
-            <button type="button" class="layui-btn layui-btn-primary" onclick="newTabformodifycomtrlmodle('编辑${modle.modleName}','${pageContext.request.contextPath}/contrlmodle/modifymodle/${modle.modleId}.do')">
+            <button type="button" class="layui-btn layui-btn-primary mytipbut" name="编辑模型" onclick="newTabformodifycomtrlmodle('编辑${modle.modleName}','${pageContext.request.contextPath}/contrlmodle/modifymodle/${modle.modleId}.do')">
                 <i class="layui-icon">&#xe642;</i>
             </button>
+
+
         </div>
 
     </div>
@@ -192,149 +195,153 @@
     let allchars = [];
 
 
+        layui.use(['table','layer'], function () {
+            let w = document
+            table = layui.table;
+            form = layui.form;
+            mylayer=layui.layer;
+            table.render({
+                elem: '#modlereadDatatab'
+                // , page: true
+                // , method: 'POST'
+                //, "hight": "full-20"
+                //, "width": 900
+                // , url: '/status/findhostory.do'
+                , data: []
+                // , request: {
+                //     pageNum: 'currPage',//页码的参数名称，默认：page
+                //     limitName: 'pageSize'//每页显示数据条数的参数名，默认：limit
+                // }
+                // , where: {
+                //     "date": $('#sltdate').val(),
+                //     "time": $('#slttime').val(),
+                //     "region": $("#selProvince").val(),
+                //     "company": $("#selCompany").val()
+                // }
+                // , limit: 10
+                , jump: function (obj, first) {
+                    //obj包含了当前分页的所有参数，比如：
+                    // console.log(obj.curr); //得到当前页，以便向服务端请求对应页的数据。
+                    // console.log(obj.limit); //得到每页显示的条数
+                    // console.log(obj)
+                    //首次不执行
+                    if (!first) {
+                        //do something
+                        console.log("not first time")
+                    }
+                }
+                <%--, "data":${data}//[{"id":10000,"username":"user-0","sex":"女","city":"城市-0","sign":"签名-0","experience":255,"logins":24,"wealth":82830700,"classify":"作家","score":57}]--%>
+                , "cellMinWidth": 80 //全局定义常规单元格的最小宽度，layui 2.2.1 新增
+                , "cols": [[
+                    {field: 'pinName', title: '引脚', width: '8.3%', sort: true}
+                    , {field: 'pvValue', title: '实际值', width: '8.3%'}
+                    , {field: 'spValue', title: '目标值', width: '8.3%'}
+                    , {field: 'e', title: '预测误差', width: '8.3%'}
+                    , {field: 'dmv', title: 'dmv', width: '8.3%'}
+                    , {field: 'mvvalue', title: '给定值', width: '8.3%'}
+                    , {field: 'mvFeedBack', title: '反馈', width: '8.3%'}
+                    , {field: 'mvDownLmt', title: '下限', width: '8.3%'}
+                    , {field: 'mvUpLmt', title: '上限', width: '8.3%'}
+                    , {field: 'shockmv', title: 'mv幅值', width: '8.3%'}
+                    , {field: 'shockpv', title: 'pv幅值', width: '8.3%'}
+                    , {field: 'checkIO', title: '手自动', width: '8.3%', templet: '#switchTpl1', unresize: true}
+                ]]
+            });
+
+
+            table.render({
+                elem: '#sdmvDatatab'
+                , data: []
+                , jump: function (obj, first) {
+                    //obj包含了当前分页的所有参数，比如：
+                    // console.log(obj.curr); //得到当前页，以便向服务端请求对应页的数据。
+                    // console.log(obj.limit); //得到每页显示的条数
+                    // console.log(obj)
+                    //首次不执行
+                    if (!first) {
+                        //do something
+                        console.log("not first time")
+                    }
+                }
+                <%--, "data":${data}//[{"id":10000,"username":"user-0","sex":"女","city":"城市-0","sign":"签名-0","experience":255,"logins":24,"wealth":82830700,"classify":"作家","score":57}]--%>
+                , "cellMinWidth": 80 //全局定义常规单元格的最小宽度，layui 2.2.1 新增
+                , "cols": [[
+                    {field: 'pinName', title: '引脚', sort: true, width: '8.3%'}
+                    <c:forEach var="mv" items="${enableMVPins}" varStatus="Count">
+                    , {field: '${mv.modlePinName}', title: 'd${mv.modlePinName}', width: '8.3%'}
+                    </c:forEach>
+                ]]
+            });
+
+
+            table.render({
+                elem: '#ffDatatab'
+                , data: []
+                , jump: function (obj, first) {
+                    //obj包含了当前分页的所有参数，比如：
+                    // console.log(obj.curr); //得到当前页，以便向服务端请求对应页的数据。
+                    // console.log(obj.limit); //得到每页显示的条数
+                    // console.log(obj)
+                    //首次不执行
+                    if (!first) {
+                        //do something
+                        console.log("not first time")
+                    }
+                }
+                <%--, "data":${data}//[{"id":10000,"username":"user-0","sex":"女","city":"城市-0","sign":"签名-0","experience":255,"logins":24,"wealth":82830700,"classify":"作家","score":57}]--%>
+                , "cellMinWidth": 80 //全局定义常规单元格的最小宽度，layui 2.2.1 新增
+                , "cols": [[
+                    {field: 'pinName', title: '引脚', sort: true, width: '8.3%'}
+                    <c:forEach var="ff" items="${enableFFPins}" varStatus="Count">
+                    , {field: '${ff.modlePinName}', title: '${ff.modlePinName}', width: '8.3%'}
+                    , {field: 'd${ff.modlePinName}', title: 'd${ff.modlePinName}', width: '8.3%'}
+                    </c:forEach>
+                ]]
+            });
+
+
+            //监听操作
+            form.on('switch(icheckIO)', function (obj) {
+                // console.log("checkIO");
+                // layer.tips(this.value + '_' + this.name + '：' + obj.elem.checked, obj.othis);
+                if(this.value==='undefined'){
+                    //console.log('value is undefine')
+                    return;
+                }
+                console.log('value is undefine out'+typeof (this.value))
+                let index4modlepin = this.value.split("_");
+                var r = confirm(index4modlepin[2] == 1 ? '切除出模型控制' : '切入到模型控制');
+                if (r == true) {
+                    var index = layer.msg('修改中，请稍候', {icon: 16, time: false, shade: 0.8});
+                    $.ajax({
+                        url: "${pageContext.request.contextPath}/modle/modlepvcheckout/" + index4modlepin[0] + "/" + index4modlepin[1] + "/" + index4modlepin[2] + ".do" + "?" + Math.random(),
+                        async: true,
+                        type: "POST",
+                        success: function (result) {
+                            console.log(result);
+                            layer.close(index);
+                            let json = JSON.parse(result);
+                            if (json['msg'] == "error") {
+                                layer.msg("修改失败！");
+                            } else {
+                                layer.msg("修改成功！");
+                            }
+                        }
+                    });
+                    window.location.reload()
+                }
+
+
+            });
+        });
+
+
+
     // let table_width = $("#modlereadDatatab").width();
     // console.log("table_width:",table_width)
 
-    layui.use(['table','layer'], function () {
-        let w = document
-        table = layui.table;
-        form = layui.form;
-        mylayer=layui.layer;
-        table.render({
-            elem: '#modlereadDatatab'
-            // , page: true
-            // , method: 'POST'
-            //, "hight": "full-20"
-            //, "width": 900
-            // , url: '/status/findhostory.do'
-            , data: []
-            // , request: {
-            //     pageNum: 'currPage',//页码的参数名称，默认：page
-            //     limitName: 'pageSize'//每页显示数据条数的参数名，默认：limit
-            // }
-            // , where: {
-            //     "date": $('#sltdate').val(),
-            //     "time": $('#slttime').val(),
-            //     "region": $("#selProvince").val(),
-            //     "company": $("#selCompany").val()
-            // }
-            // , limit: 10
-            , jump: function (obj, first) {
-                //obj包含了当前分页的所有参数，比如：
-                // console.log(obj.curr); //得到当前页，以便向服务端请求对应页的数据。
-                // console.log(obj.limit); //得到每页显示的条数
-                // console.log(obj)
-                //首次不执行
-                if (!first) {
-                    //do something
-                    console.log("not first time")
-                }
-            }
-            <%--, "data":${data}//[{"id":10000,"username":"user-0","sex":"女","city":"城市-0","sign":"签名-0","experience":255,"logins":24,"wealth":82830700,"classify":"作家","score":57}]--%>
-            , "cellMinWidth": 80 //全局定义常规单元格的最小宽度，layui 2.2.1 新增
-            , "cols": [[
-                {field: 'pinName', title: '引脚', width: '8.3%', sort: true}
-                , {field: 'pvValue', title: '实际值', width: '8.3%'}
-                , {field: 'spValue', title: '目标值', width: '8.3%'}
-                , {field: 'e', title: '预测误差', width: '8.3%'}
-                , {field: 'dmv', title: 'dmv', width: '8.3%'}
-                , {field: 'mvvalue', title: '给定值', width: '8.3%'}
-                , {field: 'mvFeedBack', title: '反馈', width: '8.3%'}
-                , {field: 'mvDownLmt', title: '下限', width: '8.3%'}
-                , {field: 'mvUpLmt', title: '上限', width: '8.3%'}
-                , {field: 'shockmv', title: 'mv幅值', width: '8.3%'}
-                , {field: 'shockpv', title: 'pv幅值', width: '8.3%'}
-                , {field: 'checkIO', title: '手自动', width: '8.3%', templet: '#switchTpl1', unresize: true}
-            ]]
-        });
 
 
-        table.render({
-            elem: '#sdmvDatatab'
-            , data: []
-            , jump: function (obj, first) {
-                //obj包含了当前分页的所有参数，比如：
-                // console.log(obj.curr); //得到当前页，以便向服务端请求对应页的数据。
-                // console.log(obj.limit); //得到每页显示的条数
-                // console.log(obj)
-                //首次不执行
-                if (!first) {
-                    //do something
-                    console.log("not first time")
-                }
-            }
-            <%--, "data":${data}//[{"id":10000,"username":"user-0","sex":"女","city":"城市-0","sign":"签名-0","experience":255,"logins":24,"wealth":82830700,"classify":"作家","score":57}]--%>
-            , "cellMinWidth": 80 //全局定义常规单元格的最小宽度，layui 2.2.1 新增
-            , "cols": [[
-                {field: 'pinName', title: '引脚', sort: true, width: '8.3%'}
-                <c:forEach var="mv" items="${enableMVPins}" varStatus="Count">
-                , {field: '${mv.modlePinName}', title: 'd${mv.modlePinName}', width: '8.3%'}
-                </c:forEach>
-            ]]
-        });
-
-
-        table.render({
-            elem: '#ffDatatab'
-            , data: []
-            , jump: function (obj, first) {
-                //obj包含了当前分页的所有参数，比如：
-                // console.log(obj.curr); //得到当前页，以便向服务端请求对应页的数据。
-                // console.log(obj.limit); //得到每页显示的条数
-                // console.log(obj)
-                //首次不执行
-                if (!first) {
-                    //do something
-                    console.log("not first time")
-                }
-            }
-            <%--, "data":${data}//[{"id":10000,"username":"user-0","sex":"女","city":"城市-0","sign":"签名-0","experience":255,"logins":24,"wealth":82830700,"classify":"作家","score":57}]--%>
-            , "cellMinWidth": 80 //全局定义常规单元格的最小宽度，layui 2.2.1 新增
-            , "cols": [[
-                {field: 'pinName', title: '引脚', sort: true, width: '8.3%'}
-                <c:forEach var="ff" items="${enableFFPins}" varStatus="Count">
-                , {field: '${ff.modlePinName}', title: '${ff.modlePinName}', width: '8.3%'}
-                , {field: 'd${ff.modlePinName}', title: 'd${ff.modlePinName}', width: '8.3%'}
-                </c:forEach>
-            ]]
-        });
-
-
-        //监听操作
-        form.on('switch(icheckIO)', function (obj) {
-            // console.log("checkIO");
-            // layer.tips(this.value + '_' + this.name + '：' + obj.elem.checked, obj.othis);
-            if(this.value==='undefined'){
-                //console.log('value is undefine')
-                return;
-            }
-            console.log('value is undefine out'+typeof (this.value))
-            let index4modlepin = this.value.split("_");
-            var r = confirm(index4modlepin[2] == 1 ? '切除出模型控制' : '切入到模型控制');
-            if (r == true) {
-                var index = layer.msg('修改中，请稍候', {icon: 16, time: false, shade: 0.8});
-                $.ajax({
-                    url: "${pageContext.request.contextPath}/modle/modlepvcheckout/" + index4modlepin[0] + "/" + index4modlepin[1] + "/" + index4modlepin[2] + ".do" + "?" + Math.random(),
-                    async: true,
-                    type: "POST",
-                    success: function (result) {
-                        console.log(result);
-                        layer.close(index);
-                        let json = JSON.parse(result);
-                        if (json['msg'] == "error") {
-                            layer.msg("修改失败！");
-                        } else {
-                            layer.msg("修改成功！");
-                        }
-                    }
-                });
-                window.location.reload()
-            }
-
-
-        });
-
-    });
 </script>
 
 <script>
@@ -344,6 +351,20 @@
     $(document).ready(function(){
         findChartNum(${modle.numOfRunnablePVPins_pp});
         table_flush();
+
+
+
+        var tips;
+        $('.mytipbut').on({
+
+            mouseenter:function(){
+                tips =layer.tips($(this).attr('name'),this,{time:0});
+            },
+            mouseleave:function(){
+                layer.close(tips);
+            }
+        });
+
     });
     </c:if>
 

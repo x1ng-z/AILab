@@ -79,9 +79,19 @@ public interface ModleDBMapper {
 
     void updateShockDetetetor(@Param("detector") ShockDetector shockDetector);
 
-    void insertModleResp(@Param("responTimeSerises") List<ResponTimeSerise> responTimeSerises);
+    void insertModleResps(@Param("responTimeSerises") List<ResponTimeSerise> responTimeSerises);
 
-    void deleteModleResp(@Param("modleid") int modleid);
+
+    void insertModleResp(@Param("responTimeSerises") ResponTimeSerise responTimeSerise);
+    void updateModleResp(@Param("responTimeSerises") ResponTimeSerise responTimeSerise);
+
+    ResponTimeSerise findPinbyresponid(@Param("responid") int responid);
+
+
+    void deleteModleRespbymodleid(@Param("modleid") int modleid);
+
+    void deleteModleRespbyresponid(@Param("modleid") int responid);
+
 
     void deleteModle(@Param("modleid") int modleid);
 

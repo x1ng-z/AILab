@@ -440,7 +440,7 @@ public class ModleController {
                  * 4、移除opc点号
                  * 4、删除模型
                  * */
-                modleDBServe.deleteModleResp(controlModle.getModleId());
+                modleDBServe.deleteModleRespbymodleid(controlModle.getModleId());
                 for (ModlePin modlePin : controlModle.getModlePins()) {
                     if (modlePin.getFilter() != null) {
                         modleDBServe.deletePinsFilter(modlePin.getFilter().getPk_pinid());
@@ -1412,7 +1412,7 @@ public class ModleController {
                     if (modlejsonObject.getString("modleid").trim().equals("")) {
                         modleDBServe.insertModleResp(responTimeSeriseArrayList);
                     } else {
-                        modleDBServe.deleteModleResp(Integer.valueOf(modlejsonObject.getString("modleid").trim()));
+                        modleDBServe.deleteModleRespbymodleid(Integer.valueOf(modlejsonObject.getString("modleid").trim()));
                         modleDBServe.insertModleResp(responTimeSeriseArrayList);
                     }
 

@@ -166,7 +166,7 @@
 <script type="text/html" id="toolbarrespon">
     <div class="layui-btn-container">
         <button class="layui-btn layui-btn-sm" id="addresponbt" lay-event="addrespon"
-                lay-href="${pageContext.request.contextPath}/contrlmodle/newmodelrespon.do?modleid=${modle.modleId}">
+                lay-href="${pageContext.request.contextPath}/contrlmodle/newrespon.do?modleid=${modle.modleId}">
             添加响应
         </button>
     </div>
@@ -561,7 +561,7 @@
                 case 'addrespon':
                     // var data = checkStatus.data;
                     // alert("sss"+$("#addopcservebt").attr('lay-href'));
-                    newmodlepinwindow(layer, $("#addresponbt").attr('lay-href'),'ff',document);
+                    newmresponwindow(layer, $("#addresponbt").attr('lay-href'),document);
                     break;
                 case 'getCheckLength':
                     // var data = checkStatus.data;
@@ -584,12 +584,12 @@
             // console.log(obj)
             if (obj.event === 'del') {
                 layer.confirm('是否删除', function (index) {
-                    deletecontrlpin(document,layer,data['pinid'],'ff','deletemodelffpin','${pageContext.request.contextPath}');
+                    deleterespon(document,layer,data['responid'],'deletemodelrespon','${pageContext.request.contextPath}');
                     // obj.del();
                     layer.close(index);
                 });
             } else if (obj.event === 'edit') {
-                modifymodlepinwindow(document,layer,data['modleid'],data['pinid'],'ff','modofymodelffpin','${pageContext.request.contextPath}');
+                modifyresponwindow(document,layer,data['modleid'],data['responid'],'modofyrespon','${pageContext.request.contextPath}');
             }
         });
 
@@ -702,6 +702,29 @@
     }
 
     function flush_resppvmvtab() {
+        layui.use(['table', 'element', 'form', 'layer'], function () {
+            table = layui.table;
+            table.reload('respontable', {
+                elem: '#respontable'
+                // ,data:
+                , url: '${pageContext.request.contextPath}/contrlmodle/pagerespon.do'
+                , method: 'post'
+                , request: {
+                    pageName: 'page' //页码的参数名称，默认：page
+                    , limitName: 'pagesize' //每页数据量的参数名，默认：limit
+                }
+                , where: {
+                    modleid: '${modle.modleId}'
+                }
+            });
+
+        });
+
+
+
+
+
+
 
     }
 

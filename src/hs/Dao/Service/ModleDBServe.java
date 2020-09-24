@@ -139,7 +139,7 @@ public class ModleDBServe {
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public void deletemodle(ControlModle modle){
         modleMapper.deleteModle(modle.getModleId());
-        modleMapper.deleteModleResp(modle.getModleId());
+        modleMapper.deleteModleRespbymodleid(modle.getModleId());
         modleMapper.deleteModlePins(modle.getModleId());
         List<ModlePin> pins=modle.getModlePins();
         if(pins!=null){
@@ -170,6 +170,13 @@ public class ModleDBServe {
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public ModlePin findPinbypinid(int pinid){
         return modleMapper.findPinbypinid(pinid);
+    }
+
+
+
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    public ResponTimeSerise findPinbyresponid(int responid){
+        return modleMapper.findPinbyresponid(responid);
     }
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
@@ -227,8 +234,13 @@ public class ModleDBServe {
 
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
-    public void deleteModleResp(int modleid) {
-        modleMapper.deleteModleResp(modleid);
+    public void deleteModleRespbymodleid(int modleid) {
+        modleMapper.deleteModleRespbymodleid(modleid);
+    }
+
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    public void deleteModleRespbyresponid(int responid) {
+        modleMapper.deleteModleRespbyresponid(responid);
     }
 
 
@@ -263,8 +275,12 @@ public class ModleDBServe {
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public void insertModleResp(List<ResponTimeSerise> responTimeSerises) {
-        modleMapper.insertModleResp(responTimeSerises);
+        modleMapper.insertModleResps(responTimeSerises);
     }
+
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    public void insertOrUpdateTimeSerise(ResponTimeSerise responTimeSerise)
+    {CRUDRESP(responTimeSerise);}
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public void insertShockDetetetor(ShockDetector shockDetector) {
@@ -351,10 +367,25 @@ public class ModleDBServe {
                 modleMapper.deletePinsFilter(filter.getPk_pinid());
             }
         }
-
-
-
     }
+
+
+
+
+    private void CRUDRESP(ResponTimeSerise respon){
+        if(respon.getModletagId()==-1){
+            /****以前没有
+             * 没有id*/
+            modleMapper.insertModleResp(respon);
+        }else {
+            /*****
+             * 以前有s
+             * ***有id,有tag********/
+            modleMapper.updateModleResp(respon);
+        }
+    }
+
+
 
     private void CRUDShocker(ShockDetector shocker){
 

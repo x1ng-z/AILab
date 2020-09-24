@@ -208,15 +208,33 @@
     </delete>
 
 
-    <insert id="insertModleResp" useGeneratedKeys="true" keyColumn="modletagId" keyProperty="modletagId">
+    <insert id="insertModleResps" useGeneratedKeys="true" keyColumn="modletagId" keyProperty="modletagId">
         insert into modlerespon(refrencemodleId, stepRespJson, inputPins, outputPins) values
         <foreach collection="responTimeSerises" item="resp" separator=",">
             (#{resp.refrencemodleId}, #{resp.stepRespJson}, #{resp.inputPins}, #{resp.outputPins})
         </foreach>
     </insert>
 
-    <delete id="deleteModleResp">
+
+
+<!--    void insertModleResp(@Param("responTimeSerises") ResponTimeSerise responTimeSerise);-->
+    <insert id="insertModleResp" useGeneratedKeys="true" keyColumn="modletagId" keyProperty="modletagId">
+        insert into modlerespon(refrencemodleId, stepRespJson, inputPins, outputPins) value
+        (#{responTimeSerises.refrencemodleId}, #{responTimeSerises.stepRespJson}, #{responTimeSerises.inputPins}, #{responTimeSerises.outputPins})
+    </insert>
+
+
+<!--    void updateModleResp(@Param("responTimeSerises") ResponTimeSerise responTimeSerise)-->
+    <update id="updateModleResp" parameterType="hs.Bean.ResponTimeSerise">
+        update modlerespon set refrencemodleId=#{responTimeSerises.refrencemodleId}, stepRespJson= #{responTimeSerises.stepRespJson}, inputPins=#{responTimeSerises.inputPins}, outputPins=#{responTimeSerises.outputPins} where modletagId=#{responTimeSerises.modletagId}
+    </update>
+
+    <delete id="deleteModleRespbymodleid">
         delete from modlerespon where refrencemodleId=#{modleid}
+    </delete>
+
+    <delete id="deleteModleRespbyresponid">
+        delete from modlerespon where modletagId=#{responid}
     </delete>
 
 <!--    List<ResponTimeSerise> pageresponymodleid(@Param("modleid") int modleid,@Param("page") int page, @Param("pagesize") int pagesize);-->
@@ -226,7 +244,13 @@
     </select>
 
 
-<!--    int countresponbymodleid(@Param("modleid") int modleid);-->
+<!--    ResponTimeSerise findPinbyresponid(@Param("responid") int responid);-->
+    <select id="findPinbyresponid" resultType="hs.Bean.ResponTimeSerise">
+        select * from modlerespon where modletagId=#{responid}
+    </select>
+
+
+    <!--    int countresponbymodleid(@Param("modleid") int modleid);-->
 
     <select id="countresponbymodleid" resultType="java.lang.Integer">
         select count(*) from modlerespon where refrencemodleId=#{modleid}
