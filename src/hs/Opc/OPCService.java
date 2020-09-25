@@ -28,6 +28,7 @@ import java.util.regex.Pattern;
 
 public class OPCService implements Runnable {
     private static final Logger logger = Logger.getLogger(OPCService.class);
+    private static final boolean DEBUG = true;
     private static Pattern pvenablepattern = Pattern.compile("(^pvenable\\d+$)");
     private static Pattern pvpattern = Pattern.compile("(^pv\\d+$)");
     private static Pattern ffpattern = Pattern.compile("(^ff\\d+$)");
@@ -952,6 +953,8 @@ public class OPCService implements Runnable {
             } catch (Exception e) {
                 ++errortagnamenum;
                 logger.error(e.getMessage(), e);
+                logger.error("opc tag=" + itemManger.findTagnamebyItem(item) + " maybe styele error when get real data");
+
             }
         }
         logger.info("error tag num=" + errortagnamenum);
@@ -967,7 +970,14 @@ public class OPCService implements Runnable {
      */
     private void pinValueUpdate(Item item, ItemState itemState) throws JIException {
 
-        String valueStringstyle = itemState.getValue().getObject().toString();
+        String valueStringstyle;
+        if (DEBUG) {
+            valueStringstyle = "" + (itemState.getValue().getObjectAsUnsigned().getValue().shortValue());
+        } else {
+            valueStringstyle = itemState.getValue().getObject().toString();
+        }
+
+
         String opcname = itemManger.findTagnamebyItem(item);
         if (opcname == null) {
             //位号被移除了
