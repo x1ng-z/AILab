@@ -1001,13 +1001,13 @@ public class OPCService implements Runnable {
             pin.opcUpdateValue(Double.valueOf(valueStringstyle));
 
             //DCS手自动切换监视,监视模型是否运行
-            modleDisOrEnableByDCS(pin);
+            monitormodleDisOrEnableByDCS(pin);
 
             //检测模型的引脚是否需要停止启用
-            modlepinDisOrEnableByDCS(pin);
+            monitormodlepinDisOrEnableByDCS(pin);
 
             //检测模型引脚是否不运行
-            modlepinDisOrRunnableByDCS(pin);
+            monitormodlepinDisOrRunnableByDCS(pin);
 
 
             //检查是否存在滤波器，存在的话则根据滤波器类型生成滤波器执行任务
@@ -1030,21 +1030,22 @@ public class OPCService implements Runnable {
     /**
      * 监视模型是否从dcs端控制停止和运行
      */
-    private void modleDisOrEnableByDCS(ModlePin pin) {
+    private void monitormodleDisOrEnableByDCS(ModlePin pin) {
         /**首先需要匹配到模型手自动位号*/
+//        logger.info("modle run or stop ministror");
         if (pin.getModlePinName() != null && pin.getModlePinName().trim().equals(ModlePin.TYPE_PIN_MODLE_AUTO)) {
-            logger.info("modle id=" + pin.getReference_modleId() + "old value=" + pin.getOldReadValue() + ",new value=" + pin.getNewReadValue());
+//            logger.info("modle id=" + pin.getReference_modleId() + "old value=" + pin.getOldReadValue() + ",new value=" + pin.getNewReadValue());
             if ((pin.getOldReadValue() != null) && (pin.getOldReadValue() == 0) && (pin.getNewReadValue() != 0) /*&& (modleConstainerl != null) && (modleConstainerl.getModulepool().get(pin.getReference_modleId()).getModleEnable() == 0)*/) {
                 //run
-                logger.debug("模型运行，modleid=" + pin.getReference_modleId());
+                logger.debug("modle run modleid=" + pin.getReference_modleId()+" put runtask into pool");
                 modleRebuildService.putRebuildstak(new ModleEnableTask(0, pin.getReference_modleId()));
-                logger.debug("模型运行，modleid=" + pin.getReference_modleId());
+                logger.debug("modle run modleid=" + pin.getReference_modleId());
             } else if ((pin.getOldReadValue() != null) && (pin.getOldReadValue() != 0) && (pin.getNewReadValue() == 0) /*&& (modleConstainerl != null) && (modleConstainerl.getModulepool().get(pin.getReference_modleId()).getModleEnable() == 1)*/) {
                 //stop
-                logger.debug("模型停止，modleid=" + pin.getReference_modleId());
+                logger.debug("modle stop modleid=" + pin.getReference_modleId()+" put stoptask into pool");
 
                 modleRebuildService.putRebuildstak(new ModleDisEnableTask(0, pin.getReference_modleId()));
-                logger.debug("模型停止，modleid=" + pin.getReference_modleId());
+                logger.debug("modle stop modleid=" + pin.getReference_modleId());
             } else {
 //                    logger.debug("手自动位号未进行切换，modleid=" + pin.getReference_modleId());
             }
@@ -1056,21 +1057,21 @@ public class OPCService implements Runnable {
     /**
      * 模型引脚启用停用
      */
-    private void modlepinDisOrEnableByDCS(ModlePin pin) {
+    private void monitormodlepinDisOrEnableByDCS(ModlePin pin) {
 
         /**匹配到Enable引脚**/
         if (null != pin.getDcsEnabePin()) {
             /**有dcs端启用引脚的组件*/
-            logger.info("modle id=" + pin.getDcsEnabePin().getReference_modleId() + "old value=" + pin.getDcsEnabePin().getOldReadValue() + ",new value=" + pin.getDcsEnabePin().getNewReadValue());
+//            logger.info("modle id=" + pin.getDcsEnabePin().getReference_modleId() + "old value=" + pin.getDcsEnabePin().getOldReadValue() + ",new value=" + pin.getDcsEnabePin().getNewReadValue());
             if ((pin.getDcsEnabePin().getOldReadValue() != null) && (pin.getDcsEnabePin().getOldReadValue() == 0) && (pin.getDcsEnabePin().getNewReadValue() != 0)) {
                 /**pin enable*/
-                logger.debug("模型运行，modleid=" + pin.getReference_modleId() + "pinid=" + pin.getModlepinsId() + "启用");
+                logger.debug("pin enable，modleid=" + pin.getReference_modleId() + "pinid=" + pin.getModlepinsId() + "enable");
 
                 modleRebuildService.putRebuildstak(new ModlePinEnableTask(0, pin));
 
             } else if ((pin.getDcsEnabePin().getOldReadValue() != null) && (pin.getDcsEnabePin().getOldReadValue() != 0) && (pin.getDcsEnabePin().getNewReadValue() == 0)) {
                 /**pv disenable*/
-                logger.debug("模型运行，modleid=" + pin.getReference_modleId() + "pinid=" + pin.getModlepinsId() + "切出");
+                logger.debug("pin disenable，modleid=" + pin.getReference_modleId() + "pinid=" + pin.getModlepinsId() + "disable");
                 modleRebuildService.putRebuildstak(new ModlePinDisEnableTask(0, pin));
             }
 
@@ -1086,7 +1087,7 @@ public class OPCService implements Runnable {
      * 2运行
      * 2-1设置引脚运行,设置引脚，并设置引脚下次正真参与控制的时间
      */
-    private void modlepinDisOrRunnableByDCS(ModlePin pin) {
+    private void monitormodlepinDisOrRunnableByDCS(ModlePin pin) {
         /**引脚类型判断，筛选出pv或者ff引脚，这里限制了pv和ff这个范围，因为如果是mv也是有上下限的，二mv是不需要通过这个进行设置引脚运行还是停止*/
         if ((0 != pin.getPinEnable()) && (pvpattern.matcher(pin.getModlePinName()).find() || ffpattern.matcher(pin.getModlePinName()).find())) {
             /**模型引脚停止*/
@@ -1097,20 +1098,23 @@ public class OPCService implements Runnable {
              * */
             if (pin.isBreakLimit()) {
                 /**突破边界*/
-                logger.warn("break limit ! modle id=" + pin.getReference_modleId() + "value=" + pin.getOldReadValue());
+
                 if (pin.isThisTimeParticipate()) {
                     /*参与控制了，停止他*/
+                    logger.warn(pin.getModleOpcTag()+" break limit ! modle id=" + pin.getReference_modleId() + "value=" + pin.getOldReadValue());
                     pin.setThisTimeParticipate(false);
                     modleRebuildService.putRebuildstak(new ModlePinDisRunnableTask(0, pin.getReference_modleId(), pin));
                 }
 
             } else {
                 /**在边界内*/
+                logger.debug(pin.getModleOpcTag()+" go into limit ! "+"modle id=" + pin.getReference_modleId() + "value=" + pin.getOldReadValue()+"time="+System.currentTimeMillis());
                 if (pin.isThisTimeParticipate()) {
                     /*参与控制*/
                     if (null != pin.getRunClock()) {
                         /*闹铃时间到了吗*/
                         if (pin.clockAlarm()) {
+                            logger.debug("restore cycle is complet! modle id=" + pin.getReference_modleId() + "value=" + pin.getOldReadValue()+"time="+System.currentTimeMillis());
                             modleRebuildService.putRebuildstak(new ModlePinRunnableTask(0, pin.getReference_modleId(), pin));
                             pin.clearRunClock();
                         }
@@ -1123,10 +1127,11 @@ public class OPCService implements Runnable {
                         /*如果模型的输出周期为null/0，则直接设置引脚保持在置信区间为10s*/
                         if ((null == modleRebuildService.getModleConstainer().getRunnableModulepool().get(pin.getReference_modleId()).getControlAPCOutCycle()) || (0 == modleRebuildService.getModleConstainer().getRunnableModulepool().get(pin.getReference_modleId()).getControlAPCOutCycle())) {
                             checktime = 10;
-                            logger.warn("输出周期设置存在问题,引脚正常周期设置10秒。异常模型id=" + pin.getReference_modleId());
+                            logger.warn("output cycle set have error, pin go to right cycle set 10s. error modle id=" + pin.getReference_modleId());
                         } else {
                             checktime = 2 * modleRebuildService.getModleConstainer().getRunnableModulepool().get(pin.getReference_modleId()).getControlAPCOutCycle();
                         }
+                        logger.debug("value is right. begin set clock! modle id=" + pin.getReference_modleId() + "value=" + pin.getOldReadValue()+"time="+System.currentTimeMillis());
                         pin.setRunClock(Instant.now().plusSeconds(checktime));
                     }
                 }

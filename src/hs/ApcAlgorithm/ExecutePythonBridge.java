@@ -19,22 +19,24 @@ public class ExecutePythonBridge {
         this.modleid=modleid;
     }
 
-    public  void stop(){
+    public  boolean stop(){
         if(p!=null){
             p.destroy();
             result.interrupt();
             error.interrupt();
+            return true;
         }
         p=null;
+        return true;
     }
 
-    public  void execute() {
+    public  boolean execute() {
         if(p!=null){
-            return;
+            return true;
         }
         //LinkedBlockingQueue<String> linkedBlockingQueue=new LinkedBlockingQueue();
-        BufferedReader bReader = null;
-        InputStreamReader sReader = null;
+//        BufferedReader bReader = null;
+//        InputStreamReader sReader = null;
         try {
             p = Runtime.getRuntime().exec(new String[]{pythonjs, url,modleid});
              result= new Thread(new InputStreamRunnable(p.getInputStream(),"Result",null));
@@ -49,7 +51,9 @@ public class ExecutePythonBridge {
         } catch (Exception e) {
            logger.error(e.getMessage(),e);
            logger.error("jsdir"+pythonjs);
+           return false;
         }
+        return true;
     }
 
 }

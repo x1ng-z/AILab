@@ -2419,7 +2419,7 @@ public class ContrlModleController {
         }
 
 
-        JSONArray tabdata=new JSONArray();
+        JSONArray tabdata = new JSONArray();
 
         List<ModlePin> allpins = new ArrayList<>();
         allpins.addAll(pvlist);
@@ -2427,25 +2427,40 @@ public class ContrlModleController {
         allpins.addAll(fflist);
 
 
-        for(ModlePin pin:allpins){
-            JSONObject pinjsoncontext=new JSONObject();
-            pinjsoncontext.put("pinName",pin.getModlePinName());
-            pinjsoncontext.put("pinNote",pin.getOpcTagName());
-            pinjsoncontext.put("pinStatus",pin.getReference_modleId()+"_"+pin.getModlepinsId()+"_"+pin.getPinEnable());
+        for (ModlePin pin : allpins) {
+            JSONObject pinjsoncontext = new JSONObject();
+            pinjsoncontext.put("pinName", pin.getModlePinName());
+            pinjsoncontext.put("pinNote", pin.getOpcTagName());
+            pinjsoncontext.put("pinStatus", pin.getReference_modleId() + "_" + pin.getModlepinsId() + "_" + pin.getPinEnable());
+            pinjsoncontext.put("pinBound", pin.isBreakLimit() ? 0 : 1);
+
             tabdata.add(pinjsoncontext);
         }
 
-        return Tool.sendLayuiPage(allpins.size(),tabdata).toJSONString();
+        return Tool.sendLayuiPage(allpins.size(), tabdata).toJSONString();
     }
 
 
-
+    /**
+     *
+     * @param onOroff 0 表示需要启用，1表示禁用
+     * **/
     @RequestMapping("/savemodlestruct")
     @ResponseBody
-    public String savemodlestruct(@RequestParam("modleid") int modleid,@RequestParam("pinid") int pinid,@RequestParam("pinstatus") int onOroff) {
+    public String savemodlestruct(@RequestParam("modleid") int modleid, @RequestParam("pinid") int pinid, @RequestParam("pinstatus") int onOroff) {
 
         JSONObject result = new JSONObject();
         try {
+
+            ControlModle controlModle=modleConstainer.getRunnableModulepool().get(modleid);
+            if(controlModle!=null){
+                if(onOroff==0){
+                    controlModle.enablePinByWeb(pinid);
+                }else {
+                    controlModle.disablePinByWeb(pinid);
+                }
+
+            }
             modleDBServe.updatepinEnable(pinid, (onOroff == 0 ? 1 : 0));
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
@@ -2457,6 +2472,79 @@ public class ContrlModleController {
         result.put("msg", "success");
         return result.toJSONString();
     }
+
+
+    @RequestMapping("/stopsimulatemodle")
+    @ResponseBody
+    public String stopsimulatemodle(@RequestParam("modleid") String modleid) {
+
+        JSONObject result=new JSONObject();
+        ControlModle controlModle = modleConstainer.getRunnableModulepool().get(Integer.valueOf(modleid.trim()));
+        if (controlModle != null) {
+            try {
+                controlModle.disablesimulateModleByWeb();
+            } catch (Exception e) {
+                logger.error(e.getMessage(),e);
+                result.put("msg","error");
+                return result.toJSONString();
+            }
+            result.put("msg","success");
+            return result.toJSONString();
+
+        }
+
+        result.put("msg","success");
+        return result.toJSONString();
+    }
+
+
+
+    @RequestMapping("/runsimulatemodle")
+    @ResponseBody
+    public String runsimulatemodle(@RequestParam("modleid") String modleid) {
+
+        JSONObject result=new JSONObject();
+        ControlModle controlModle = modleConstainer.getRunnableModulepool().get(Integer.valueOf(modleid.trim()));
+        if (controlModle != null) {
+            try {
+                controlModle.enablesimulateModleByWeb();
+            } catch (Exception e) {
+                logger.error(e.getMessage(),e);
+                result.put("msg","error");
+                return result.toJSONString();
+            }
+            result.put("msg","success");
+            return result.toJSONString();
+
+        }
+
+        result.put("msg","success");
+        return result.toJSONString();
+    }
+
+
+
+    @RequestMapping("/runModle")
+    @ResponseBody
+    public String runModel(@RequestParam("modleid") String modleid) {
+
+        ControlModle controlModle = modleConstainer.getRunnableModulepool().get(Integer.valueOf(modleid.trim()));
+        if (controlModle != null) {
+            if (controlModle.getModleEnable() == 0) {
+                controlModle.setModleEnable(1);
+                controlModle.getExecutePythonBridge().execute();
+                modleDBServe.modifymodleEnable(controlModle.getModleId(), 1);
+                return "success";
+            }
+        } else {
+            return "error";
+        }
+//        ModelAndView mv=new ModelAndView();
+//        mv.setViewName("redirect:/login/index.do");
+        return "error";
+//        return "/modle/modlestatus.do";
+    }
+
 
 
 }

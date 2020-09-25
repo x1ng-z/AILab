@@ -1,9 +1,6 @@
 package hs.ServiceBus;
 
-import hs.Bean.ControlModle;
 import hs.Bean.ModlePin;
-import hs.Dao.Service.ModleDBServe;
-import hs.Opc.Monitor.MonitorTask;
 import org.apache.log4j.Logger;
 
 /**
@@ -23,7 +20,7 @@ public class ModlePinDisEnableTask extends ModleRebuildTask {
     @Override
     public void execute() {
         if (getControlModle() != null) {
-            getControlModle().disEnablePinByDCS(pin);
+            getControlModle().disablePinByDCS(pin);
             getModleDBServe().updatepinEnable(pin.getModlepinsId(), 0);
         }
     }

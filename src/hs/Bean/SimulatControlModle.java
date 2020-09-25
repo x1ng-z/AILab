@@ -27,7 +27,7 @@ public class SimulatControlModle {
     /**
      * 仿真标志位
      */
-    private boolean issimulation = false;
+    private boolean issimulation = true;
 
     /**
      * 表示mv使用了哪些pv
@@ -339,10 +339,10 @@ public class SimulatControlModle {
             B_SimulatetimeseriseMatrix = new double[numOfIOMappingRelation][controlModle.getNumOfRunnableFFpins_vv()][timeserise_N];
             /**
              *fill respon into 前馈与输出 响应matrix
-             *填入前馈输出响应矩阵
+             *填入前馈输出响应矩阵扩展矩阵
              * */
             for (int indexExpv = 0; indexExpv < numOfIOMappingRelation; ++indexExpv) {
-
+                /*扩展矩阵*/
                 int indexEnbaleFF=0;
                 for (int indexff = 0; indexff < controlModle.getCategoryFFmodletag().size(); ++indexff) {
 

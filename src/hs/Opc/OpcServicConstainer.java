@@ -29,6 +29,7 @@ import java.util.regex.Pattern;
 public class OpcServicConstainer {
     private static final Logger logger = Logger.getLogger(OpcServicConstainer.class);
     private FilterService filterService = null;//实时滤波服务
+
     private ModleRebuildService modleRebuildService = null;//dcs模块运行与停止监视服务
     private OpcDBServe opcDBServe = null;
     private ConcurrentHashMap<Integer, OPCService> opcservepool = new ConcurrentHashMap();//key=OPCserveid
@@ -560,7 +561,9 @@ public class OpcServicConstainer {
         }
 
     }
-
+    public ModleRebuildService getModleRebuildService() {
+        return modleRebuildService;
+    }
 
     public void selfclose() {
         for (OPCService opcService : opcservepool.values()) {

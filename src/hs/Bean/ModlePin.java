@@ -149,8 +149,8 @@ public class ModlePin implements ModleProperty {
      * */
     public boolean isBreakLimit(){
         //判断是否超过置信区间
-        boolean breaklow=((downLmt!=null)&&(modleGetReal()<downLmt.modleGetReal()));
-        boolean breakup=((upLmt!=null)&&(modleGetReal()>upLmt.modleGetReal()));
+        boolean breaklow=((downLmt!=null)&&(oldReadValue!=null)&&(modleGetReal()<downLmt.modleGetReal()));
+        boolean breakup=((upLmt!=null)&&(oldReadValue!=null)&&(modleGetReal()>upLmt.modleGetReal()));
         return (breaklow||breakup);
     }
 

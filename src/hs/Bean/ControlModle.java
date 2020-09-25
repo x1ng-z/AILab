@@ -188,6 +188,8 @@ public class ControlModle implements Modle {
      */
     int[] maskisRunnableMVMatrix = null;
 
+    /**apc程序位置*/
+    String apcdir;
 
     private Map<String, ModlePin> stringmodlePinsMap = new HashMap<>();//方便引脚索引key=pv1.mv2,sp1,ff1等 value=引脚类
 
@@ -202,12 +204,13 @@ public class ControlModle implements Modle {
         this.totalFf = baseConf.getFf();
         this.totalMv = baseConf.getMv();
         this.totalPv = baseConf.getPv();
+
     }
 
     /**
      * 初始化 ControlModle的重要属性，使其成为真正的ControlModle
      */
-    public void toBeRealControlModle(OpcServicConstainer opcServicConstainer, BaseConf baseConf, String simulatordir) {
+    public void toBeRealControlModle(String apcdir,OpcServicConstainer opcServicConstainer, BaseConf baseConf, String simulatordir) {
         this.opcServicConstainer = opcServicConstainer;
         this.baseConf = baseConf;
         this.simulatorbuilddir = simulatordir;
@@ -217,6 +220,7 @@ public class ControlModle implements Modle {
         this.totalFf = baseConf.getFf();
         this.totalMv = baseConf.getMv();
         this.totalPv = baseConf.getPv();
+        this.apcdir=apcdir;
     }
 
     /**
@@ -564,9 +568,11 @@ public class ControlModle implements Modle {
         modleBuild(false);
 
         if (1 == modleEnable) {
+            executePythonBridge.stop();
             executePythonBridge.execute();
         }
         if (simulatControlModle.isIssimulation()) {
+            simulatControlModle.getExecutePythonBridgeSimulate().stop();
             simulatControlModle.getExecutePythonBridgeSimulate().execute();
         }
         logger.info("DCS控制：模型id=" + getModleId() + " pinid=" + pin.getModlepinsId() + "设置为不可运行");
@@ -587,9 +593,11 @@ public class ControlModle implements Modle {
         modleBuild(false);
 
         if (1 == modleEnable) {
+            executePythonBridge.stop();
             executePythonBridge.execute();
         }
         if (simulatControlModle.isIssimulation()) {
+            simulatControlModle.getExecutePythonBridgeSimulate().stop();
             simulatControlModle.getExecutePythonBridgeSimulate().execute();
         }
         logger.info("DCS控制：模型id=" + getModleId() + " pinid=" + pin.getModlepinsId() + "设置为可运行");
@@ -598,7 +606,7 @@ public class ControlModle implements Modle {
     /**
      * 设置引脚启用
      */
-    public synchronized void disEnablePinByDCS(ModlePin pin) {
+    public synchronized void disablePinByDCS(ModlePin pin) {
         if (pin.getPinEnable() == 1) {
             pin.setPinEnable(0);
 
@@ -608,16 +616,17 @@ public class ControlModle implements Modle {
             modleBuild(false);
 
             if (1 == modleEnable) {
+                executePythonBridge.stop();
                 executePythonBridge.execute();
             }
 
             if (simulatControlModle.isIssimulation()) {
+                simulatControlModle.getExecutePythonBridgeSimulate().stop();
                 simulatControlModle.getExecutePythonBridgeSimulate().execute();
             }
             logger.info("DCS控制：模型id=" + getModleId() + " pinid=" + pin.getModlepinsId() + "停用");
         } else {
             logger.info("DCS控制：模型id=" + getModleId() + " pinid=" + pin.getModlepinsId() + "本来就已经停用");
-
         }
     }
 
@@ -635,9 +644,11 @@ public class ControlModle implements Modle {
             modleBuild(false);
 
             if (1 == modleEnable) {
+                executePythonBridge.stop();
                 executePythonBridge.execute();
             }
             if (simulatControlModle.isIssimulation()) {
+                simulatControlModle.getExecutePythonBridgeSimulate().stop();
                 simulatControlModle.getExecutePythonBridgeSimulate().execute();
             }
             logger.info("DCS控制：模型id=" + getModleId() + " pinid=" + pin.getModlepinsId() + "启用");
@@ -655,10 +666,17 @@ public class ControlModle implements Modle {
 
             modleEnable = 1;
             simulatControlModle.setIssimulation(true);
+
+
             modleBuild(false);
 
-            executePythonBridge.execute();
-            simulatControlModle.getExecutePythonBridgeSimulate().execute();
+            if(!executePythonBridge.execute()){
+                modleEnable=0;
+            }
+           if(!simulatControlModle.getExecutePythonBridgeSimulate().execute()){
+               simulatControlModle.setIssimulation(false);
+           }
+
 
             logger.info("DCS控制：模型id=" + modleId + "运行成功");
         } else {
@@ -669,14 +687,19 @@ public class ControlModle implements Modle {
     public synchronized void disEnableModleByDCS() {
         if (1 == modleEnable) {
 
+            /*刷新验证码*/
             generateValidkey();
             simulatControlModle.generateSimulatevalidkey();
 
             modleEnable = 0;
             simulatControlModle.setIssimulation(false);
 
-            executePythonBridge.stop();
-            simulatControlModle.getExecutePythonBridgeSimulate().stop();
+            if(!executePythonBridge.stop()){
+                modleEnable=1;
+            };
+            if(!simulatControlModle.getExecutePythonBridgeSimulate().stop()){
+                simulatControlModle.setIssimulation(true);
+            }
             logger.error("DCS控制：模型id=" + modleId + "停止成功");
         } else {
             logger.error("DCS控制：模型id=" + modleId + "本来就是停止");
@@ -686,27 +709,168 @@ public class ControlModle implements Modle {
 
 
     public synchronized void enableModleByWeb() {
-//TODO
+
+        if (0 == modleEnable) {
+
+            generateValidkey();
+            simulatControlModle.generateSimulatevalidkey();
+
+            modleEnable = 1;
+            simulatControlModle.setIssimulation(true);
+
+            modleBuild(false);
+
+            if(!executePythonBridge.execute()){
+                modleEnable=0;
+            }
+            if(!simulatControlModle.getExecutePythonBridgeSimulate().execute()){
+                simulatControlModle.setIssimulation(false);
+            }
+
+
+            logger.info("web contrl:modle id=" + modleId + "run conplete");
+        } else {
+            logger.info("web contrl:modle id=" + modleId + "already run status");
+        }
+
     }
 
-    public synchronized void disEnableModleByWeb() {
-//TODO
+    public synchronized void disableModleByWeb() {
+        if (1 == modleEnable) {
+
+            generateValidkey();
+            simulatControlModle.generateSimulatevalidkey();
+
+            modleEnable = 0;
+            simulatControlModle.setIssimulation(false);
+
+            if(!executePythonBridge.stop()){
+                modleEnable=1;
+            };
+            if(!simulatControlModle.getExecutePythonBridgeSimulate().stop()){
+                simulatControlModle.setIssimulation(true);
+            }
+            logger.error("web contrl:modle id=" + modleId + "stop complet");
+        } else {
+            logger.error("web contrl:modle id=" + modleId + "already stop");
+        }
+    }
+
+
+    /**停止仿真*/
+    public synchronized void disablesimulateModleByWeb() {
+        if (simulatControlModle.isIssimulation()) {
+
+            simulatControlModle.generateSimulatevalidkey();
+
+            simulatControlModle.setIssimulation(false);
+
+            if(!simulatControlModle.getExecutePythonBridgeSimulate().stop()){
+                simulatControlModle.setIssimulation(true);
+            }
+
+            logger.error("web contrl: simulate modle id=" + modleId + "stop complet");
+        } else {
+            logger.error("web contrl: simulate modle id=" + modleId + "already stop");
+        }
+    }
+    /**开始仿真*/
+    public synchronized void enablesimulateModleByWeb() {
+        if (!simulatControlModle.isIssimulation()) {
+
+            simulatControlModle.generateSimulatevalidkey();
+
+            simulatControlModle.setIssimulation(true);
+
+            if(!simulatControlModle.getExecutePythonBridgeSimulate().execute()){
+                simulatControlModle.setIssimulation(false);
+            }
+            logger.error("web contrl: simulate modle id=" + modleId + "run complet");
+        } else {
+            logger.error("web contrl: simulate modle id=" + modleId + "already run");
+        }
+    }
+
+
+    /**
+     * 设置引脚不启用
+     */
+    public synchronized void disablePinByWeb(int pinid) {
+
+        ModlePin pin=null;
+        for(ModlePin searchpin:modlePins){
+            if(searchpin.getModlepinsId()==pinid){
+                pin=searchpin;
+                break;
+            }
+        }
+        if(pin==null){
+            return;
+        }
+
+        if (pin.getPinEnable() == 1) {
+            pin.setPinEnable(0);
+
+            generateValidkey();
+            simulatControlModle.generateSimulatevalidkey();
+
+            modleBuild(false);
+
+            if (1 == modleEnable) {
+                executePythonBridge.stop();
+                executePythonBridge.execute();
+            }
+
+            if (simulatControlModle.isIssimulation()) {
+                simulatControlModle.getExecutePythonBridgeSimulate().stop();
+                simulatControlModle.getExecutePythonBridgeSimulate().execute();
+            }
+            logger.info("web contrl:modle id=" + getModleId() + " pinid=" + pin.getModlepinsId() + "disable");
+        } else {
+            logger.info("web contrl:modle id=" + getModleId() + " pinid=" + pin.getModlepinsId() + "already disable");
+        }
     }
 
     /**
-     * 设置引脚启用
+     * 将设置引脚为启用
      */
-    public synchronized void disEnablePinByWeb() {
-//        setPinEnable(0);
-        //TODO
-    }
+    public synchronized void enablePinByWeb(int pinid) {
 
-    /**
-     * 将设置引脚为不启用
-     */
-    public synchronized void enablePinByWeb() {
-//        setPinEnable(1);
-        //TODO
+
+        ModlePin pin=null;
+        for(ModlePin searchpin:modlePins){
+            if(searchpin.getModlepinsId()==pinid){
+                pin=searchpin;
+                break;
+            }
+        }
+        if(pin==null){
+            return;
+        }
+
+
+
+        if (pin.getPinEnable() == 0) {
+            /**没有启用，需要进行启用，*/
+            pin.setPinEnable(1);
+
+            generateValidkey();
+            simulatControlModle.generateSimulatevalidkey();
+
+            modleBuild(false);
+
+            if (1 == modleEnable) {
+                executePythonBridge.stop();
+                executePythonBridge.execute();
+            }
+            if (simulatControlModle.isIssimulation()) {
+                simulatControlModle.getExecutePythonBridgeSimulate().stop();
+                simulatControlModle.getExecutePythonBridgeSimulate().execute();
+            }
+            logger.info("web contrl:id=" + getModleId() + " pinid=" + pin.getModlepinsId() + " enable");
+        } else {
+            logger.info("web contrl:id=" + getModleId() + " pinid=" + pin.getModlepinsId() + " already enable");
+        }
     }
 
 
@@ -773,6 +937,8 @@ public class ControlModle implements Modle {
             numOfRunnableMVpins_mm = 0;
             numOfRunnableFFpins_vv = 0;
             initRunnablePinNum();
+
+            logger.debug("p="+numOfRunnablePVPins_pp+" ,m="+numOfRunnableMVpins_mm+" ,v="+numOfRunnableFFpins_vv);
 
             /***
              * 输入输出响应对应矩阵
@@ -851,6 +1017,23 @@ public class ControlModle implements Modle {
 
             simulatControlModle.setControlModle(this);
             simulatControlModle.build();
+
+
+
+            executePythonBridge= new ExecutePythonBridge(
+                    apcdir,
+                    "http://localhost:8080/AILab/python/modlebuild/" + modleId + ".do", modleId + "");
+
+            if(isfirsttime){
+                if (getModleEnable() == 1) {
+                    executePythonBridge.execute();
+                }
+                if(simulatControlModle.isIssimulation()){
+                    simulatControlModle.getExecutePythonBridgeSimulate().execute();
+                }
+            }
+
+
             return true;
 
         } catch (Exception e) {

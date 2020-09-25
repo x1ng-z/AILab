@@ -1,6 +1,7 @@
 package hs.ServiceBus;
 
 import hs.Bean.ModlePin;
+import org.apache.log4j.Logger;
 
 /**
  * @author zzx
@@ -8,6 +9,8 @@ import hs.Bean.ModlePin;
  * @date 2020/9/18 8:25
  */
 public class ModlePinRunnableTask extends ModleRebuildTask{
+    private static Logger logger= Logger.getLogger(ModlePinRunnableTask.class);
+
     private ModlePin modlePin;
 
     public ModlePinRunnableTask(int delaymillisec, int modleid, ModlePin modlePin) {
@@ -24,7 +27,9 @@ public class ModlePinRunnableTask extends ModleRebuildTask{
          * 2、构建模型
          * 3、启动模型
          * */
-        if(null==getControlModle()){
+
+        if(null!=getControlModle()){
+            logger.info("%%##"+this.getClass().toString());
             getControlModle().runnablePinByDCS(modlePin);
         }
 

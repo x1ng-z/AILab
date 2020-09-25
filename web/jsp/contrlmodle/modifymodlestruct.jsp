@@ -49,6 +49,14 @@
 </script>
 
 
+<script type="text/html" id="switchBound">
+    <%--    input 添加 就不能进行编辑 disabled--%>
+    <input type="checkbox" name="checkIO2" value="{{d.pinBound}}" lay-skin="switch" lay-text="在线|越界"
+           lay-filter="flagpinStatus" {{
+           d.pinBound===undefined? '': (d.pinBound== '1' ? 'checked' : '') }} disabled>
+</script>
+
+
 <script>
     var table;
     var form;
@@ -89,13 +97,13 @@
                 {field: 'pinName', title: '引脚', width: 150}
                 , {field: 'pinNote', title: '引脚注释', width: 150}
                 , {field: 'pinStatus', title: '是否启用', width: 150, templet: '#switchIsenable', unresize: true}
+                , {field: 'pinBound', title: '是否启用', width: 150, templet: '#switchBound', unresize: true}
             ]]
         });
 
 
         //监听操作
         form.on('switch(flagpinStatus)', function (obj) {
-            // console.log("checkIO");
             // layer.tips(this.value + '_' + this.name + '：' + obj.elem.checked, obj.othis);
             if (this.value === 'undefined') {
                 //console.log('value is undefine')

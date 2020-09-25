@@ -28,6 +28,8 @@ public class ModleConstainer {
     @Autowired
     public void setOpcServicConstainer(OpcServicConstainer opcServicConstainer) {
         this.opcServicConstainer = opcServicConstainer;
+
+        opcServicConstainer.getModleRebuildService().setModleConstainer(this);
     }
 
     private OpcServicConstainer opcServicConstainer;
@@ -59,19 +61,14 @@ public class ModleConstainer {
              * 2、对控制器进行构建
              * 3放置到模型池中
              * */
-            controlModle.toBeRealControlModle(opcServicConstainer,baseConf,simulatordir);
+            controlModle.toBeRealControlModle(apcdir,opcServicConstainer,baseConf,simulatordir);
             if(controlModle.modleBuild(true)){
                 /**只有构建成功的模型才可以加入到可运行模型池*/
                 runnableModulepool.put(controlModle.getModleId(), controlModle);
             }
 
-            ExecutePythonBridge executePythonBridge = new ExecutePythonBridge(
-                    apcdir,
-                    "http://localhost:8080/AILab/python/modlebuild/" + controlModle.getModleId() + ".do", controlModle.getModleId() + "");
-            controlModle.setExecutePythonBridge(executePythonBridge);
-            if (controlModle.getModleEnable() == 1) {
-                executePythonBridge.execute();
-            }
+
+
 
         }
     }
