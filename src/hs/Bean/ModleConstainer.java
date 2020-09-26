@@ -74,7 +74,7 @@ public class ModleConstainer {
             controlModle.modleBuild(true);
             runnableModulepool.put(controlModle.getModleId(), controlModle);
         }else {
-            logger.warn("重复注册模型");
+            logger.warn("REPEAD REGISTER MODLE ");
         }
     }
 
@@ -83,9 +83,9 @@ public class ModleConstainer {
         if (runnableModulepool.containsKey(controlModle.getModleId())) {
             controlModle.unregisterpin();
             controlModle.disableModleByWeb();
-            runnableModulepool.remove(controlModle);
+            runnableModulepool.remove(controlModle.getModleId());
         }else {
-            logger.warn("不是可运行的模型");
+            logger.warn("TI'S NOT A RUNNABLE MODLE");
         }
     }
 

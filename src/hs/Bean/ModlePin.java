@@ -77,6 +77,7 @@ public class ModlePin implements ModleProperty {
     private Double dmvLow;
     private Filter filter = null;//滤波器
     private Double referTrajectoryCoef;//pv的柔化系数(参考轨迹参数)
+    private String tracoefmethod="before";//柔化方法，前期(before)还是后期(after)
     private ShockDetector shockDetector;
     private Instant updateTime;
 
@@ -402,5 +403,13 @@ public class ModlePin implements ModleProperty {
 
     public void setPintype(String pintype) {
         this.pintype = pintype;
+    }
+
+    public String getTracoefmethod() {
+        return tracoefmethod;
+    }
+
+    public void setTracoefmethod(String tracoefmethod) {
+        this.tracoefmethod = tracoefmethod;
     }
 }

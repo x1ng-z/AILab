@@ -162,8 +162,8 @@
                 <li class="layui-nav-item">
                     <a href="javascript:;" title="设置"><i class="layui-icon layui-icon-set"></i><cite>设置</cite></a>
                     <dl class="layui-nav-child">
-                        <dd><a href="javascript:;"
-                               lay-href="${pageContext.request.contextPath}/modle/newmodle.do">模型新建</a></dd>
+<%--                        <dd><a href="javascript:;"--%>
+<%--                               lay-href="${pageContext.request.contextPath}/modle/newmodle.do">模型新建</a></dd>--%>
                         <dd><a href="javascript:;"
                                id="newcontrlmodle" lay-href="${pageContext.request.contextPath}/contrlmodle/newmodle.do">控制模型新建</a></dd>
                         <dd><a href="javascript:;" lay-href="${pageContext.request.contextPath}/aimodle/newaimodle.do"

@@ -31,7 +31,7 @@
 
         <div class="layui-colla-item">
             <h2 class="layui-colla-title">FF属性设置</h2>
-            <div class="layui-colla-content">
+            <div class="layui-colla-content  layui-show">
                 <div class="layui-form-item">
 
                     <input type="text" name="modleid" value="${modleid}" autocomplete="off" class="layui-input"
@@ -87,7 +87,7 @@
 
         <div class="layui-colla-item">
             <h2 class="layui-colla-title">FF(前馈)滤波器设置</h2>
-            <div class="layui-colla-content">
+            <div class="layui-colla-content   layui-show">
                 <p style="font-weight: bolder;font-size: 1.1rem">
                     一阶滤波(滤波系数0&ltalphe&lt1，数值越小滤波越强)和移动平均(滤波系数0&ltalphe的整数，数值越大滤波越强)</p>
                 <div class="layui-form-item">
@@ -139,7 +139,7 @@
 
         <div class="layui-colla-item">
             <h2 class="layui-colla-title">FF(前馈)上限设置</h2>
-            <div class="layui-colla-content">
+            <div class="layui-colla-content  layui-show">
                 <p style="font-weight: bolder;font-size: 1.1rem">FF值的置信区间上限</p>
                 <div class="layui-form-item">
 
@@ -171,7 +171,7 @@
 
         <div class="layui-colla-item">
             <h2 class="layui-colla-title">FF(前馈)下限设置</h2>
-            <div class="layui-colla-content">
+            <div class="layui-colla-content  layui-show">
                 <p style="font-weight: bolder;font-size: 1.1rem">FF值的置信区间下限</p>
                 <div class="layui-form-item">
 
@@ -202,7 +202,7 @@
 
         <div class="layui-colla-item">
             <h2 class="layui-colla-title">ff独立投切</h2>
-            <div class="layui-colla-content">
+            <div class="layui-colla-content  layui-show">
                 <p style="font-weight: bolder;font-size: 1.1rem">ffenable位号</p>
                 <div class="layui-form-item">
                     <input type="text" name="ffenableid" value="" autocomplete="off" class="layui-input"

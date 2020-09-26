@@ -121,6 +121,9 @@ public class ControlModle implements Modle {
     private Double[] Q = null;//误差权重矩阵
     private Double[] R = null;//控制权矩阵、正则化
     private Double[] alpheTrajectoryCoefficients = null;//参考轨迹的柔化系数
+
+
+    private String[] alpheTrajectoryCoefmethod = null;//参考轨迹的柔化系数方法
     private Double[] deadZones = null;//漏斗死区
     private Double[] funelinitvalues = null;//漏斗初始值
     private double[][] funneltype;
@@ -453,6 +456,7 @@ public class ControlModle implements Modle {
         for (ModlePin runpvpin : runablePVPins) {
             Q[looppv] = runpvpin.getQ();
             alpheTrajectoryCoefficients[looppv] = runpvpin.getReferTrajectoryCoef();
+            alpheTrajectoryCoefmethod[looppv]=runpvpin.getTracoefmethod();
             deadZones[looppv] = runpvpin.getDeadZone();
             funelinitvalues[looppv] = runpvpin.getFunelinitValue();
             double[] fnl = new double[2];
@@ -671,16 +675,16 @@ public class ControlModle implements Modle {
             modleBuild(false);
 
             if(!executePythonBridge.execute()){
-                modleEnable=0;
+               // modleEnable=0;
             }
            if(!simulatControlModle.getExecutePythonBridgeSimulate().execute()){
-               simulatControlModle.setIssimulation(false);
+               //simulatControlModle.setIssimulation(false);
            }
 
 
-            logger.info("DCS控制：模型id=" + modleId + "运行成功");
+            logger.info("DCS contrl: modle id=" + modleId + "run complet");
         } else {
-            logger.info("DCS控制：模型id=" + modleId + "本来就是运行状态！");
+            logger.info("DCS contrl: modle id=" + modleId + "already run status");
         }
     }
 
@@ -695,14 +699,14 @@ public class ControlModle implements Modle {
             simulatControlModle.setIssimulation(false);
 
             if(!executePythonBridge.stop()){
-                modleEnable=1;
+                //modleEnable=1;
             };
             if(!simulatControlModle.getExecutePythonBridgeSimulate().stop()){
-                simulatControlModle.setIssimulation(true);
+                //simulatControlModle.setIssimulation(true);
             }
-            logger.error("DCS控制：模型id=" + modleId + "停止成功");
+            logger.error("DCS contrl: modle id=" + modleId + "stop complet");
         } else {
-            logger.error("DCS控制：模型id=" + modleId + "本来就是停止");
+            logger.error("DCS contrl: modle id=" + modleId + "already stop");
         }
 
     }
@@ -721,14 +725,16 @@ public class ControlModle implements Modle {
             modleBuild(false);
 
             if(!executePythonBridge.execute()){
-                modleEnable=0;
+               //modleEnable=0;
+                logger.warn("web contrl:modle id=" + modleId + "run failed");
             }
             if(!simulatControlModle.getExecutePythonBridgeSimulate().execute()){
-                simulatControlModle.setIssimulation(false);
+                //simulatControlModle.setIssimulation(false);
+                logger.warn("web contrl:modle id=" + modleId + "run simulate failed");
             }
 
 
-            logger.info("web contrl:modle id=" + modleId + "run conplete");
+            logger.info("web contrl:modle id=" + modleId + "run execute conplete");
         } else {
             logger.info("web contrl:modle id=" + modleId + "already run status");
         }
@@ -745,12 +751,14 @@ public class ControlModle implements Modle {
             simulatControlModle.setIssimulation(false);
 
             if(!executePythonBridge.stop()){
-                modleEnable=1;
+//                modleEnable=1;
+                logger.warn("web contrl:modle id=" + modleId + "stop failed");
             };
             if(!simulatControlModle.getExecutePythonBridgeSimulate().stop()){
-                simulatControlModle.setIssimulation(true);
+//                simulatControlModle.setIssimulation(true);
+                logger.warn("web contrl:modle id=" + modleId + "stop simulte failed");
             }
-            logger.error("web contrl:modle id=" + modleId + "stop complet");
+            logger.info("web contrl:modle id=" + modleId + "stop execute complet");
         } else {
             logger.error("web contrl:modle id=" + modleId + "already stop");
         }
@@ -766,10 +774,10 @@ public class ControlModle implements Modle {
             simulatControlModle.setIssimulation(false);
 
             if(!simulatControlModle.getExecutePythonBridgeSimulate().stop()){
-                simulatControlModle.setIssimulation(true);
+                //simulatControlModle.setIssimulation(true);
             }
 
-            logger.error("web contrl: simulate modle id=" + modleId + "stop complet");
+            logger.info("web contrl: simulate modle id=" + modleId + "stop complet");
         } else {
             logger.error("web contrl: simulate modle id=" + modleId + "already stop");
         }
@@ -783,7 +791,7 @@ public class ControlModle implements Modle {
             simulatControlModle.setIssimulation(true);
 
             if(!simulatControlModle.getExecutePythonBridgeSimulate().execute()){
-                simulatControlModle.setIssimulation(false);
+                //simulatControlModle.setIssimulation(false);
             }
             logger.error("web contrl: simulate modle id=" + modleId + "run complet");
         } else {
@@ -954,6 +962,7 @@ public class ControlModle implements Modle {
             Q = new Double[numOfRunnablePVPins_pp];//use for pv
             /**trajectry coefs*/
             alpheTrajectoryCoefficients = new Double[numOfRunnablePVPins_pp];//use for pv
+            alpheTrajectoryCoefmethod=new String[numOfRunnablePVPins_pp];
             /**死区时间和漏洞初始值*/
             deadZones = new Double[numOfRunnablePVPins_pp];//use for pv
             funelinitvalues = new Double[numOfRunnablePVPins_pp];//use for pv
@@ -1733,6 +1742,14 @@ public class ControlModle implements Modle {
     public void setMaskMatrixRunnablePVUseMV(int[][] maskMatrixRunnablePVUseMV) {
         this.maskMatrixRunnablePVUseMV = maskMatrixRunnablePVUseMV;
     }
+    public String[] getAlpheTrajectoryCoefmethod() {
+        return alpheTrajectoryCoefmethod;
+    }
+
+    public void setAlpheTrajectoryCoefmethod(String[] alpheTrajectoryCoefmethod) {
+        this.alpheTrajectoryCoefmethod = alpheTrajectoryCoefmethod;
+    }
+
 
 
     public Map<String, ModlePin> getStringmodlePinsMap() {

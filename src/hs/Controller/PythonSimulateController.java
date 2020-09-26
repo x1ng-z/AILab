@@ -72,6 +72,7 @@ public class PythonSimulateController {
         jsonObject.put("Q", simulatControlModle.getSimulatQ());
         jsonObject.put("R", simulatControlModle.getSimulatR());
         jsonObject.put("alphe", simulatControlModle.getSimulateAlpheTrajectoryCoefficients());//柔化系数
+        jsonObject.put("alphemethod", simulatControlModle.getSimulateAlpheTrajectoryCoefmethods());//柔化系数
         return jsonObject.toJSONString();
     }
 

@@ -18,6 +18,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
     <script src="${pageContext.request.contextPath}/js/layui/layui.js"></script>
     <script src="${pageContext.request.contextPath}/js/jquery-3.0.0.js"></script>
+    <script type="text/javascript" src="${pageContext.request.contextPath}/js/contrlmodle/contrlmodle.js"></script>
     <link rel="stylesheet" href="${pageContext.request.contextPath}/js/layui/css/layui.css" media="all">
 </head>
 <body>
@@ -150,6 +151,24 @@
                                    placeholder="pv的柔化系数" onmousewheel='scrollFunc()'>
                         </div>
                     </div>
+
+                    <div class="layui-inline">
+                        <label class="layui-form-label" >柔化方式</label>
+                        <div class="layui-input-inline">
+                            <select name="tracoefmethod" lay-verify="required">
+                                <option value="">柔化方式</option>
+                                <option value="before" selected>前期</option>
+                                <option value="after">后期</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="layui-inline">
+                        <label class="layui-form-label"  type="button"  id="showtracoefmethodimg" src="${pageContext.request.contextPath}/img/tracof.jpg">ltalphe柔化效果</label>
+                    </div>
+
+
+
                 </div>
             </div>
         </div>
@@ -389,7 +408,7 @@
 
         <div class="layui-colla-item">
             <h2 class="layui-colla-title">SP设置</h2>
-            <div class="layui-colla-content">
+            <div class="layui-colla-content  layui-show">
                 <div class="layui-form-item">
 
 
@@ -448,51 +467,79 @@
 
 <script>
 
-    layui.use(['element', 'form', 'layer'], function () {
-        var element = layui.element;
-        var form = layui.form,
-            layer =layui.layer; //parent.layer === undefined ? layui.layer : parent.layer;
-        form.render(); //更新全部
-        form.render('select'); //刷新select选择框渲染
-        //监听提交
-        form.on('submit(newcontrlmodlepinsubmit)', function (data) {
-            let index = layer.msg('创建中，请稍候', {icon: 16, time: false, shade: 0.8});
-            $.ajax({
-                url: "${pageContext.request.contextPath}/contrlmodle/savenewmodelpvpin.do",
-                async: true,
-                data: {
-                    "modlepincontext": JSON.stringify(data.field),
-                },
-                type: "POST",
-                success: function (result) {
-                    console.log(result);
-                    layer.close(index);
-                    let json = JSON.parse(result);
-                    if (json['msg'] == "error") {
-                        layer.msg("修改失败！");
-                    } else {
-                        layer.msg("修改成功！");
-                        let index = parent.layer.getFrameIndex(window.name); //先得到当前iframe层的索引
-                        parent.layer.close(index); //再执行关闭
 
-                        console.log($("#bt_flush_pvtab", parent.document))
-                        $("#bt_flush_pvtab", parent.document).trigger('click')
-
-                    }
-
-                }
-            });
-
-
-            console.log(JSON.stringify(data.field))
-            return false;
-        });
-    });
 
 </script>
 
 
 <script>
+
+
+    $(document).ready(function () {
+
+
+        var layer;
+        layui.use(['element', 'form', 'layer'], function () {
+            var element = layui.element;
+            var form = layui.form;
+            layer =layui.layer; //parent.layer === undefined ? layui.layer : parent.layer;
+            form.render(); //更新全部
+            form.render('select'); //刷新select选择框渲染
+            //监听提交
+            form.on('submit(newcontrlmodlepinsubmit)', function (data) {
+                let index = layer.msg('创建中，请稍候', {icon: 16, time: false, shade: 0.8});
+                $.ajax({
+                    url: "${pageContext.request.contextPath}/contrlmodle/savenewmodelpvpin.do",
+                    async: true,
+                    data: {
+                        "modlepincontext": JSON.stringify(data.field),
+                    },
+                    type: "POST",
+                    success: function (result) {
+                        console.log(result);
+                        layer.close(index);
+                        let json = JSON.parse(result);
+                        if (json['msg'] == "error") {
+                            layer.msg("修改失败！");
+                        } else {
+                            layer.msg("修改成功！");
+                            let index = parent.layer.getFrameIndex(window.name); //先得到当前iframe层的索引
+                            parent.layer.close(index); //再执行关闭
+
+                            console.log($("#bt_flush_pvtab", parent.document))
+                            $("#bt_flush_pvtab", parent.document).trigger('click')
+
+                        }
+
+                    }
+                });
+
+
+                console.log(JSON.stringify(data.field))
+                return false;
+            });
+
+
+
+
+
+
+        });
+
+
+
+        var tratips;
+        $('#showtracoefmethodimg').on({
+            mouseenter: function () {
+                tratips=layer.tips('<img width="320px" height="240px" src="'+$(this).attr('src')+'">', this, {time: 0,area: ['320px', '240px']} );
+            },
+            mouseleave: function () {
+                layer.close(tratips);
+            }
+        });
+    });
+
+
 
     function scrollFunc(evt) {
         evt = evt || window.event;

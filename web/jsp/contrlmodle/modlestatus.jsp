@@ -86,13 +86,13 @@
 
             <c:choose>
                 <c:when test="${modle.simulatControlModle.issimulation==true}">
-                    <button type="button" class="layui-btn mytipbut" name="仿真"
+                    <button type="button" class="layui-btn  mytipbut" name="停止仿真"
                             onclick="stopOrrun('${pageContext.request.contextPath}/contrlmodle/stopsimulatemodle.do?modleid=${modle.modleId}','确定停止仿真？')">
                         <i class="layui-icon">&#xe628;</i>
                     </button>
                 </c:when>
                 <c:otherwise>
-                    <button type="button" class="layui-btn layui-btn-primary mytipbut" name="仿真"
+                    <button type="button" class="layui-btn layui-btn-primary  mytipbut" name="开始仿真"
                             onclick="stopOrrun('${pageContext.request.contextPath}/contrlmodle/runsimulatemodle.do?modleid=${modle.modleId}','确定运行仿真？')">
                         <i class="layui-icon">&#xe628;</i>
                     </button>
@@ -102,7 +102,7 @@
 
             <c:choose>
                 <c:when test="${modle.modleEnable eq 1}">
-                    <button type="button" class="layui-btn mytipbut" name="运行"
+                    <button type="button" class="layui-btn  mytipbut" name="停止"
                             onclick="stopOrrun('${pageContext.request.contextPath}/contrlmodle/stopmodle.do?modleid=${modle.modleId}','确定停止？')">
                         <i class="layui-icon">&#xe682;</i>
                     </button>
@@ -245,7 +245,6 @@
                     console.log("not first time")
                 }
             }
-            <%--, "data":${data}//[{"id":10000,"username":"user-0","sex":"女","city":"城市-0","sign":"签名-0","experience":255,"logins":24,"wealth":82830700,"classify":"作家","score":57}]--%>
             , "cellMinWidth": 80 //全局定义常规单元格的最小宽度，layui 2.2.1 新增
             , "cols": [[
                 {field: 'pinName', title: '引脚', width: '8.3%', sort: true}

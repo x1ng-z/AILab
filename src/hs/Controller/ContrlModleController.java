@@ -477,8 +477,10 @@ public class ContrlModleController {
         Double pvFunelInitValue = null;
         String pvfuneltype = null;
         Double pvtracoef = null;//参考轨迹系数
+        String tracoefmethod;
         String pvpinid;
         ModlePin pvpin = null;
+
 
         int pinscope;
         try {
@@ -496,6 +498,7 @@ public class ContrlModleController {
             pvFunelInitValue = modlejsonObject.getDouble(ModlePin.TYPE_PIN_PV + "FunelInitValue");
             pvfuneltype = modlejsonObject.getString("funneltype");
             pvtracoef = modlejsonObject.getDouble("tracoef");
+            tracoefmethod = modlejsonObject.getString("tracoefmethod");
             pvpinid = modlejsonObject.getString("pvpinid");
 
 
@@ -511,6 +514,7 @@ public class ContrlModleController {
             pvpin.setFunneltype(pvfuneltype);
             pvpin.setOpcTagName(pvcomment);
             pvpin.setReferTrajectoryCoef(pvtracoef);
+            pvpin.setTracoefmethod(tracoefmethod);
             pvpin.setModlepinsId(pvpinid.equals("") ? -1 : Integer.parseInt(pvpinid));
 
             Matcher pvmatch = pvpattern.matcher(pinName);
@@ -1490,6 +1494,7 @@ public class ContrlModleController {
         Double pvFunelInitValue = null;
         String pvfuneltype = null;
         Double pvtracoef = null;//参考轨迹系数
+        String tracoefmethod;
         String pvpinid;
         ModlePin pvpin = null;
 
@@ -1509,6 +1514,7 @@ public class ContrlModleController {
             pvFunelInitValue = modlejsonObject.getDouble(ModlePin.TYPE_PIN_PV + "FunelInitValue");
             pvfuneltype = modlejsonObject.getString("funneltype");
             pvtracoef = modlejsonObject.getDouble("tracoef");
+            tracoefmethod= modlejsonObject.getString("tracoefmethod");
             pvpinid = modlejsonObject.getString("pvpinid");
 
 
@@ -1524,6 +1530,7 @@ public class ContrlModleController {
             pvpin.setFunneltype(pvfuneltype);
             pvpin.setOpcTagName(pvcomment);
             pvpin.setReferTrajectoryCoef(pvtracoef);
+            pvpin.setTracoefmethod(tracoefmethod);
             pvpin.setModlepinsId(pvpinid.equals("") ? -1 : Integer.parseInt(pvpinid));
 
             Matcher pvmatch = pvpattern.matcher(pinName);
@@ -2403,8 +2410,11 @@ public class ContrlModleController {
     public String pagemodlestruct(@RequestParam("modleid") int modleid) {
 
         ControlModle controlModle = null;
+
+        ControlModle runablemodle=null;
         try {
             controlModle = modleDBServe.getModle(modleid);
+            runablemodle=modleConstainer.getRunnableModulepool().get(modleid);
         } catch (Exception e) {
             logger.error(e);
         }
@@ -2414,7 +2424,23 @@ public class ContrlModleController {
 
         List<ModlePin> fflist = new ArrayList<>();
 
-        if (controlModle != null) {
+        if (runablemodle != null) {
+            for (ModlePin modlepin : runablemodle.getModlePins()) {
+
+                switch (modlepin.getPintype()) {
+
+                    case ModlePin.TYPE_PIN_PV:
+                        pvlist.add(modlepin);
+                        break;
+                    case ModlePin.TYPE_PIN_MV:
+                        mvlist.add(modlepin);
+                        break;
+                    case ModlePin.TYPE_PIN_FF:
+                        fflist.add(modlepin);
+                        break;
+                }
+            }
+        }else if(controlModle!=null){
             for (ModlePin modlepin : controlModle.getModlePins()) {
 
                 switch (modlepin.getPintype()) {
@@ -2446,7 +2472,7 @@ public class ContrlModleController {
             pinjsoncontext.put("pinName", pin.getModlePinName());
             pinjsoncontext.put("pinNote", pin.getOpcTagName());
             pinjsoncontext.put("pinStatus", pin.getReference_modleId() + "_" + pin.getModlepinsId() + "_" + pin.getPinEnable());
-            pinjsoncontext.put("pinBound", ((0 == pin.getPinEnable()) || (!pin.isThisTimeParticipate())) ? 0 : 1);
+            pinjsoncontext.put("pinBound", ((1==pin.getPinEnable())&&(null!=runablemodle)&&(pin.isThisTimeParticipate()) ? 1 : 0));
 
             tabdata.add(pinjsoncontext);
         }
@@ -2565,7 +2591,7 @@ public class ContrlModleController {
         ControlModle controlModle = modleConstainer.getRunnableModulepool().get(Integer.valueOf(modleid.trim()));
         if (controlModle != null) {
             try {
-                controlModle.disablesimulateModleByWeb();
+                controlModle.disableModleByWeb();
                 modleDBServe.modifymodleEnable(controlModle.getModleId(), 0);
             } catch (Exception e) {
                 logger.error(e.getMessage(), e);
@@ -2628,8 +2654,6 @@ public class ContrlModleController {
 
             /**表格内容*/
 
-//            int pvnum = controlModle.getCategoryPVmodletag().size();//2
-//            int mvnum = controlModle.getCategoryMVmodletag().size();//1
 
             List<ModlePin> pvpinsrunable=controlModle.getRunablePins(controlModle.getCategoryPVmodletag(),controlModle.getMaskisRunnablePVMatrix());
 

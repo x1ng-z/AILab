@@ -27,7 +27,7 @@ public class SimulatControlModle {
     /**
      * 仿真标志位
      */
-    private boolean issimulation = true;
+    private boolean issimulation = false;
 
     /**
      * 表示mv使用了哪些pv
@@ -75,6 +75,10 @@ public class SimulatControlModle {
     private Double[] simulatQ;
     private Double[] simulatR;
     private Double[] simulateAlpheTrajectoryCoefficients;
+
+
+    private String[] simulateAlpheTrajectoryCoefmethods;
+
 
     private Double[] simulatedeadZones;
     private Double[] simulatefunelinitvalues;
@@ -245,6 +249,7 @@ public class SimulatControlModle {
         simulatQ = new Double[numOfIOMappingRelation];
         /**仿真轨迹柔化系数*/
         simulateAlpheTrajectoryCoefficients = new Double[numOfIOMappingRelation];
+        simulateAlpheTrajectoryCoefmethods=new String[numOfIOMappingRelation];
         /**仿真死区*/
         simulatedeadZones = new Double[numOfIOMappingRelation];
         /**仿真漏斗初始值*/
@@ -281,6 +286,7 @@ public class SimulatControlModle {
                     simulatQ[index4IOMappingRelation] = controlModle.getCategoryPVmodletag().get(indexpv).getQ();
                     /**柔化系数*/
                     simulateAlpheTrajectoryCoefficients[index4IOMappingRelation] = controlModle.getCategoryPVmodletag().get(indexpv).getReferTrajectoryCoef();
+                    simulateAlpheTrajectoryCoefmethods[index4IOMappingRelation]= controlModle.getCategoryPVmodletag().get(indexpv).getTracoefmethod();
                     /**死区*/
                     simulatedeadZones[index4IOMappingRelation] = controlModle.getCategoryPVmodletag().get(indexpv).getDeadZone();
                     /**漏斗初始值*/
@@ -524,6 +530,13 @@ public class SimulatControlModle {
 
     public void setModlePins(List<ModlePin> modlePins) {
         this.modlePins = modlePins;
+    }
+    public String[] getSimulateAlpheTrajectoryCoefmethods() {
+        return simulateAlpheTrajectoryCoefmethods;
+    }
+
+    public void setSimulateAlpheTrajectoryCoefmethods(String[] simulateAlpheTrajectoryCoefmethods) {
+        this.simulateAlpheTrajectoryCoefmethods = simulateAlpheTrajectoryCoefmethods;
     }
 
 

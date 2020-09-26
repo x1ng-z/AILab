@@ -55,6 +55,7 @@
         <result property="R" column="R"/>
         <result property="dmvLow" column="dmvLow"/>
         <result property="referTrajectoryCoef" column="referTrajectoryCoef"/>
+        <result property="tracoefmethod" column="tracoefmethod"/>
         <result property="funneltype" column="funneltype"/>
         <result property="pintype" column="pintype"/>
         <result property="pinEnable" column="pinEnable"/>
@@ -156,21 +157,21 @@
 
     <insert id="insertModlePins" parameterType="hs.Bean.ModlePin" useGeneratedKeys="true" keyProperty="modlepinsId">
         insert into modlepins(reference_modleId, modleOpcTag, modlePinName, opcTagName, resource, Q,
-        R,deadZone,funelinitValue,dmvHigh,dmvLow,referTrajectoryCoef,funneltype,pinEnable,pintype)
+        R,deadZone,funelinitValue,dmvHigh,dmvLow,referTrajectoryCoef,funneltype,pinEnable,pintype,tracoefmethod)
         values
         <foreach collection="modlePins" item="pin" separator=",">
             (#{pin.reference_modleId}, #{pin.modleOpcTag}, #{pin.modlePinName}, #{pin.opcTagName},
             #{pin.resource}, #{pin.Q},
-            #{pin.R},#{pin.deadZone},#{pin.funelinitValue},#{pin.dmvHigh},#{pin.dmvLow},#{pin.referTrajectoryCoef},#{pin.funneltype},#{pin.pinEnable},#{pin.pintype})
+            #{pin.R},#{pin.deadZone},#{pin.funelinitValue},#{pin.dmvHigh},#{pin.dmvLow},#{pin.referTrajectoryCoef},#{pin.funneltype},#{pin.pinEnable},#{pin.pintype},#{pin.tracoefmethod})
         </foreach>
 
     </insert>
 
 
     <insert id="insertModlePin" parameterType="hs.Bean.ModlePin" useGeneratedKeys="true" keyProperty="modlepinsId">
-        insert into modlepins(reference_modleId, modleOpcTag, modlePinName, opcTagName, resource, Q, R,deadZone,funelinitValue,dmvHigh,dmvLow,referTrajectoryCoef,funneltype,pinEnable,pintype)
+        insert into modlepins(reference_modleId, modleOpcTag, modlePinName, opcTagName, resource, Q, R,deadZone,funelinitValue,dmvHigh,dmvLow,referTrajectoryCoef,funneltype,pinEnable,pintype,tracoefmethod)
         value (#{pin.reference_modleId}, #{pin.modleOpcTag},  #{pin.modlePinName}, #{pin.opcTagName},
-            #{pin.resource}, #{pin.Q}, #{pin.R},#{pin.deadZone},#{pin.funelinitValue},#{pin.dmvHigh},#{pin.dmvLow},#{pin.referTrajectoryCoef},#{pin.funneltype},#{pin.pinEnable},#{pin.pintype})
+            #{pin.resource}, #{pin.Q}, #{pin.R},#{pin.deadZone},#{pin.funelinitValue},#{pin.dmvHigh},#{pin.dmvLow},#{pin.referTrajectoryCoef},#{pin.funneltype},#{pin.pinEnable},#{pin.pintype},#{pin.tracoefmethod})
     </insert>
 
 
@@ -193,6 +194,7 @@
                             dmvLow=#{pin.dmvLow},
                             referTrajectoryCoef=#{pin.referTrajectoryCoef},
                             funneltype=#{pin.funneltype},
+                            tracoefmethod=#{pin.tracoefmethod},
                             updateTime=current_timestamp()
         where modlepinsId=#{pin.modlepinsId}
     </update>

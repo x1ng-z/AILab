@@ -65,6 +65,7 @@ public class PythonController {
         jsonObject.put("Q", modle.getQ());
         jsonObject.put("R", modle.getR());
         jsonObject.put("alphe", modle.getAlpheTrajectoryCoefficients());
+        jsonObject.put("alphemethod", modle.getAlpheTrajectoryCoefmethod());
 
 
         return jsonObject.toJSONString();

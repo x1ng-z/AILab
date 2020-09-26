@@ -395,3 +395,27 @@ function modifymodlestructwindows(layer, modleid ,root) {
     );
     return indexlayer;
 }
+
+
+
+
+function showimg(layer,dom) {
+    let indexlayer = layer.open(
+        {
+            type: 1
+            // , title: '新建控制模型'
+            ,title: false //不显示标题栏
+            // ,id:'idLAY_layuipro'
+            // ,closeBtn: false
+            , area: ['50%', '50%']
+            , content: '<div style="text-align: center"><img width="20%" height="20%" src="'+$(dom).attr('src')+'"></div>'
+            , zIndex: layer.zIndex //重点1
+            , shadeClose:true
+            , id: 'LAY_layuiproshowimg'
+            , success: function (layero) {
+                layer.setTop(layero); //重点2
+            }
+        }
+    );
+    return indexlayer;
+}
