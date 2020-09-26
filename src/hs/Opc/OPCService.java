@@ -28,7 +28,7 @@ import java.util.regex.Pattern;
 
 public class OPCService implements Runnable {
     private static final Logger logger = Logger.getLogger(OPCService.class);
-    private static final boolean DEBUG = true;
+    private static final boolean DEBUG = false;
     private static Pattern pvenablepattern = Pattern.compile("(^pvenable\\d+$)");
     private static Pattern pvpattern = Pattern.compile("(^pv\\d+$)");
     private static Pattern ffpattern = Pattern.compile("(^ff\\d+$)");

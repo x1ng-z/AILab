@@ -340,7 +340,7 @@ function deleterespon(dom, layer, pinid, method, root) {
         url: root + "/contrlmodle/" + method + ".do" + "?" + Math.random(),
         async: true,
         data: {
-            "pinid": pinid
+            "responid": pinid
         },
         type: "POST",
         success: function (result) {

@@ -138,7 +138,7 @@ public class ModleDBServe {
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public void deletemodle(ControlModle modle){
-        modleMapper.deleteModle(modle.getModleId());
+
         modleMapper.deleteModleRespbymodleid(modle.getModleId());
         modleMapper.deleteModlePins(modle.getModleId());
         List<ModlePin> pins=modle.getModlePins();
@@ -153,6 +153,8 @@ public class ModleDBServe {
                 }
             }
         }
+        modleMapper.deleteModle(modle.getModleId());
+
     }
 
 

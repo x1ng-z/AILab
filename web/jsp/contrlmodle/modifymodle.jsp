@@ -346,7 +346,7 @@
             var data = obj.data;
             // console.log(obj)
             if (obj.event === 'del') {
-                layer.confirm('是否删除', function (index) {
+                layer.confirm('是否删除',{offset:'5px'}, function (index) {
                     deletecontrlpin(document,layer,data['pinid'],'pv','deletemodelpvpin','${pageContext.request.contextPath}');
                     // obj.del();
                     layer.close(index);
@@ -424,7 +424,7 @@
             var data = obj.data;
             // console.log(obj)
             if (obj.event === 'del') {
-                layer.confirm('是否删除', function (index) {
+                layer.confirm('是否删除',{offset:'30px'}, function (index) {
                     deletecontrlpin(document,layer,data['pinid'],'mv','deletemodelmvpin','${pageContext.request.contextPath}');
                     // obj.del();
                     layer.close(index);
@@ -503,7 +503,7 @@
             var data = obj.data;
             // console.log(obj)
             if (obj.event === 'del') {
-                layer.confirm('是否删除', function (index) {
+                layer.confirm('是否删除',{offset:'60px'}, function (index) {
                     deletecontrlpin(document,layer,data['pinid'],'ff','deletemodelffpin','${pageContext.request.contextPath}');
                     // obj.del();
                     layer.close(index);
@@ -583,7 +583,7 @@
             var data = obj.data;
             // console.log(obj)
             if (obj.event === 'del') {
-                layer.confirm('是否删除', function (index) {
+                layer.confirm('是否删除',{offset:'70px'}, function (index) {
                     deleterespon(document,layer,data['responid'],'deletemodelrespon','${pageContext.request.contextPath}');
                     // obj.del();
                     layer.close(index);

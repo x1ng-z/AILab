@@ -90,7 +90,7 @@ public interface ModleDBMapper {
 
     void deleteModleRespbymodleid(@Param("modleid") int modleid);
 
-    void deleteModleRespbyresponid(@Param("modleid") int responid);
+    void deleteModleRespbyresponid(@Param("responid") int responid);
 
 
     void deleteModle(@Param("modleid") int modleid);
