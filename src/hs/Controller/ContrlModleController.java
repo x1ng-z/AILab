@@ -2446,7 +2446,7 @@ public class ContrlModleController {
             pinjsoncontext.put("pinName", pin.getModlePinName());
             pinjsoncontext.put("pinNote", pin.getOpcTagName());
             pinjsoncontext.put("pinStatus", pin.getReference_modleId() + "_" + pin.getModlepinsId() + "_" + pin.getPinEnable());
-            pinjsoncontext.put("pinBound", ((0 == pin.getPinEnable()) || pin.isBreakLimit()) ? 0 : 1);
+            pinjsoncontext.put("pinBound", ((0 == pin.getPinEnable()) || (!pin.isThisTimeParticipate())) ? 0 : 1);
 
             tabdata.add(pinjsoncontext);
         }
