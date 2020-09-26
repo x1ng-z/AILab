@@ -238,7 +238,6 @@ public class ContrlModleController {
         autopin.setResource(autoresource);
         autopin.setModleOpcTag(autoTag);
         autopin.setReference_modleId(modleId);
-
         try {
             if ((modlepinsId != null) && modlepinsId.equals("")) {
                 /**delet or insert
@@ -275,6 +274,21 @@ public class ContrlModleController {
 
                 }
 
+            }
+
+            /**********更新内存模型*****/
+
+            try {
+                ControlModle oldgenercontrlmodle=modleConstainer.getRunnableModulepool().get(modleId);
+
+                if(null!=oldgenercontrlmodle){
+                    modleConstainer.unregisterModle(oldgenercontrlmodle);
+                }
+                modleConstainer.registerModle(modleDBServe.getModle(modleId));
+            } catch (Exception e) {
+                logger.error(e.getMessage(), e);
+                reult.put("msg", "error");
+                return reult.toJSONString();
             }
 
 
@@ -2432,7 +2446,7 @@ public class ContrlModleController {
             pinjsoncontext.put("pinName", pin.getModlePinName());
             pinjsoncontext.put("pinNote", pin.getOpcTagName());
             pinjsoncontext.put("pinStatus", pin.getReference_modleId() + "_" + pin.getModlepinsId() + "_" + pin.getPinEnable());
-            pinjsoncontext.put("pinBound", pin.isBreakLimit() ? 0 : 1);
+            pinjsoncontext.put("pinBound", ((0 == pin.getPinEnable()) || pin.isBreakLimit()) ? 0 : 1);
 
             tabdata.add(pinjsoncontext);
         }
@@ -2442,9 +2456,8 @@ public class ContrlModleController {
 
 
     /**
-     *
      * @param onOroff 0 表示需要启用，1表示禁用
-     * **/
+     **/
     @RequestMapping("/savemodlestruct")
     @ResponseBody
     public String savemodlestruct(@RequestParam("modleid") int modleid, @RequestParam("pinid") int pinid, @RequestParam("pinstatus") int onOroff) {
@@ -2452,11 +2465,11 @@ public class ContrlModleController {
         JSONObject result = new JSONObject();
         try {
 
-            ControlModle controlModle=modleConstainer.getRunnableModulepool().get(modleid);
-            if(controlModle!=null){
-                if(onOroff==0){
+            ControlModle controlModle = modleConstainer.getRunnableModulepool().get(modleid);
+            if (controlModle != null) {
+                if (onOroff == 0) {
                     controlModle.enablePinByWeb(pinid);
-                }else {
+                } else {
                     controlModle.disablePinByWeb(pinid);
                 }
 
@@ -2478,73 +2491,268 @@ public class ContrlModleController {
     @ResponseBody
     public String stopsimulatemodle(@RequestParam("modleid") String modleid) {
 
-        JSONObject result=new JSONObject();
+        JSONObject result = new JSONObject();
         ControlModle controlModle = modleConstainer.getRunnableModulepool().get(Integer.valueOf(modleid.trim()));
         if (controlModle != null) {
             try {
                 controlModle.disablesimulateModleByWeb();
             } catch (Exception e) {
-                logger.error(e.getMessage(),e);
-                result.put("msg","error");
+                logger.error(e.getMessage(), e);
+                result.put("msg", "error");
                 return result.toJSONString();
             }
-            result.put("msg","success");
+            result.put("msg", "success");
             return result.toJSONString();
 
         }
 
-        result.put("msg","success");
+        result.put("msg", "success");
         return result.toJSONString();
     }
-
 
 
     @RequestMapping("/runsimulatemodle")
     @ResponseBody
     public String runsimulatemodle(@RequestParam("modleid") String modleid) {
 
-        JSONObject result=new JSONObject();
+        JSONObject result = new JSONObject();
         ControlModle controlModle = modleConstainer.getRunnableModulepool().get(Integer.valueOf(modleid.trim()));
         if (controlModle != null) {
             try {
                 controlModle.enablesimulateModleByWeb();
             } catch (Exception e) {
-                logger.error(e.getMessage(),e);
-                result.put("msg","error");
+                logger.error(e.getMessage(), e);
+                result.put("msg", "error");
                 return result.toJSONString();
             }
-            result.put("msg","success");
+            result.put("msg", "success");
             return result.toJSONString();
 
         }
 
-        result.put("msg","success");
+        result.put("msg", "success");
         return result.toJSONString();
     }
 
 
-
-    @RequestMapping("/runModle")
+    @RequestMapping("/runmodle")
     @ResponseBody
-    public String runModel(@RequestParam("modleid") String modleid) {
-
+    public String runmodle(@RequestParam("modleid") String modleid) {
+        JSONObject result = new JSONObject();
         ControlModle controlModle = modleConstainer.getRunnableModulepool().get(Integer.valueOf(modleid.trim()));
         if (controlModle != null) {
-            if (controlModle.getModleEnable() == 0) {
-                controlModle.setModleEnable(1);
-                controlModle.getExecutePythonBridge().execute();
+            try {
+                controlModle.enableModleByWeb();
                 modleDBServe.modifymodleEnable(controlModle.getModleId(), 1);
-                return "success";
+            } catch (Exception e) {
+                logger.error(e.getMessage(), e);
+                result.put("msg", "error");
+                return result.toJSONString();
             }
-        } else {
-            return "error";
+            result.put("msg", "success");
+            return result.toJSONString();
         }
-//        ModelAndView mv=new ModelAndView();
-//        mv.setViewName("redirect:/login/index.do");
-        return "error";
-//        return "/modle/modlestatus.do";
+
+        result.put("msg", "error");
+        return result.toJSONString();
     }
 
+
+    @RequestMapping("/stopmodle")
+    @ResponseBody
+    public String stopmodle(@RequestParam("modleid") String modleid) {
+        JSONObject result = new JSONObject();
+        ControlModle controlModle = modleConstainer.getRunnableModulepool().get(Integer.valueOf(modleid.trim()));
+        if (controlModle != null) {
+            try {
+                controlModle.disablesimulateModleByWeb();
+                modleDBServe.modifymodleEnable(controlModle.getModleId(), 0);
+            } catch (Exception e) {
+                logger.error(e.getMessage(), e);
+                result.put("msg", "error");
+                return result.toJSONString();
+            }
+            result.put("msg", "success");
+            return result.toJSONString();
+
+        }
+
+        result.put("msg", "error");
+        return result.toJSONString();
+    }
+
+
+    @RequestMapping("/modelstatus/{modleid}")
+    @ResponseBody
+    public String modelstatus(@PathVariable("modleid") String modleid) {
+        JSONObject result = new JSONObject();
+        try {
+            ControlModle controlModle = modleConstainer.getRunnableModulepool().get(Integer.valueOf(modleid.trim()));
+
+            if(null==controlModle){
+
+                result.put("msg","error");
+
+                return result.toJSONString();
+            }
+
+            result.put("outSetp", controlModle.getControlAPCOutCycle());
+            /****曲线***/
+            result.put("funelUp", controlModle.getBackPVFunelUp());
+            result.put("funelDwon", controlModle.getBackPVFunelDown());
+            result.put("funneltype", controlModle.getFunneltype());
+            result.put("predict", controlModle.getBackPVPrediction());
+            int[] xaxis = new int[controlModle.getTimeserise_N()];
+            for (int i = 0; i < controlModle.getTimeserise_N(); i++) {
+                xaxis[i] = i;
+            }
+            result.put("xaxis", xaxis);
+
+            String[] pvcurveNames = new String[controlModle.getNumOfRunnablePVPins_pp()];
+            String[] funelUpcurveNames = new String[controlModle.getNumOfRunnablePVPins_pp()];
+            String[] funelDowncurveNames = new String[controlModle.getNumOfRunnablePVPins_pp()];
+
+            int indexEnablepv = 0;
+            List<ModlePin> pvrunablepins = controlModle.getRunablePins(controlModle.getCategoryPVmodletag(), controlModle.getMaskisRunnablePVMatrix());
+            for (ModlePin runpvpin : pvrunablepins) {
+                pvcurveNames[indexEnablepv] = runpvpin.getModlePinName();
+                funelUpcurveNames[indexEnablepv] = "funelUp";
+                funelDowncurveNames[indexEnablepv] = "funelDown";
+                indexEnablepv++;
+            }
+
+            result.put("curveNames4funelUp", funelUpcurveNames);
+            result.put("curveNames4pv", pvcurveNames);
+            result.put("curveNames4funelDown", funelDowncurveNames);
+
+
+            /**表格内容*/
+
+//            int pvnum = controlModle.getCategoryPVmodletag().size();//2
+//            int mvnum = controlModle.getCategoryMVmodletag().size();//1
+
+            List<ModlePin> pvpinsrunable=controlModle.getRunablePins(controlModle.getCategoryPVmodletag(),controlModle.getMaskisRunnablePVMatrix());
+
+            List<ModlePin> sppinsrunable=controlModle.getRunablePins(controlModle.getCategorySPmodletag(),controlModle.getMaskisRunnablePVMatrix());
+
+            List<ModlePin> mvpinsrunable=controlModle.getRunablePins(controlModle.getCategoryMVmodletag(),controlModle.getMaskisRunnableMVMatrix());
+
+            List<ModlePin> ffpinsrunable=controlModle.getRunablePins(controlModle.getCategoryFFmodletag(),controlModle.getMaskisRunnableFFMatrix());
+
+
+            int pvnum=pvpinsrunable.size();
+            int mvnum=mvpinsrunable.size();
+            int maxrownum = Math.max(pvnum, mvnum);
+
+            JSONArray modlereadData = new JSONArray();
+            JSONArray sdmvData = new JSONArray();
+            JSONArray ffData = new JSONArray();
+
+            int indexEnableMV = 0;
+            int indexEnablePV = 0;
+            for (int loop = 0; loop < maxrownum; loop++) {
+                JSONObject modlereadDatarowcontext = new JSONObject();
+
+                String mainrowpinname = "";
+                if (loop < pvnum) {
+                    /*pv*/
+                    ModlePin pv = pvpinsrunable.get(loop);
+                    ModlePin sp = sppinsrunable.get(loop);
+
+                    modlereadDatarowcontext.put("pvValue", Tool.getSpecalScale(3, pv.modleGetReal()));
+                    modlereadDatarowcontext.put("spValue", Tool.getSpecalScale(3, sp.modleGetReal()));
+
+                    modlereadDatarowcontext.put("e", Tool.getSpecalScale(3, controlModle.getBackPVPredictionError()[indexEnablePV]));
+                    ++indexEnablePV;
+
+                    modlereadDatarowcontext.put("shockpv", pv.getShockDetector() == null ? "" : Tool.getSpecalScale(3, pv.getShockDetector().getLowhzA()));
+
+                    mainrowpinname += pv.getModlePinName();
+                }
+
+
+                if (loop < mvnum) {
+                    /*mv*/
+                    ModlePin mv = mvpinsrunable.get(loop);
+                    ModlePin mvDownLmt = mv.getDownLmt();
+                    ModlePin mvUpLmt = mv.getUpLmt();
+                    ModlePin mvFeedBack = mv.getFeedBack();
+                    modlereadDatarowcontext.put("mvvalue", Tool.getSpecalScale(3, mv.modleGetReal()));
+                    modlereadDatarowcontext.put("mvDownLmt", Tool.getSpecalScale(3, mvDownLmt.modleGetReal()));
+                    modlereadDatarowcontext.put("mvUpLmt", Tool.getSpecalScale(3, mvUpLmt.modleGetReal()));
+                    modlereadDatarowcontext.put("mvFeedBack", Tool.getSpecalScale(3, mvFeedBack.modleGetReal()));
+
+                    modlereadDatarowcontext.put("dmv", Tool.getSpecalScale(3, controlModle.getBackrawDmv()[indexEnableMV]));
+                    ++indexEnableMV;
+
+                    modlereadDatarowcontext.put("shockmv", mv.getShockDetector() == null ? "" : Tool.getSpecalScale(3, mv.getShockDetector().getLowhzA()));
+
+                    mainrowpinname += (mainrowpinname.equals("") ? mv.getModlePinName() : "|" + mv.getModlePinName());
+                }
+
+                modlereadDatarowcontext.put("pinName", mainrowpinname);
+                modlereadData.add(modlereadDatarowcontext);
+
+            }
+
+            /***仿真数据，ff数据展示*/
+            indexEnablePV = 0;
+            for(ModlePin pvpin:pvpinsrunable){
+                JSONObject sdmvrowcontext = new JSONObject();
+                JSONObject ffrowcontext = new JSONObject();
+
+
+                sdmvrowcontext.put("pinName", pvpin.getModlePinName());
+                ffrowcontext.put("pinName", pvpin.getModlePinName());
+                indexEnableMV = 0;
+                /**仿真dmv*/
+                for(ModlePin mvpin:mvpinsrunable){
+                    /*是否有映射关系*/
+                    if (controlModle.getMaskMatrixRunnablePVUseMV()[indexEnablePV][indexEnableMV] == 1) {
+                        sdmvrowcontext.put(mvpin.getModlePinName(), Tool.getSpecalScale(3, controlModle.getSimulatControlModle().getBackSimulateDmv()[indexEnablePV][indexEnableMV]));
+                    }
+                    ++indexEnableMV;
+                }
+
+                int indexEnableFF = 0;
+                /**ff*/
+                if (controlModle.getBasefeedforwardpoints_v() > 0) {
+                    for(ModlePin ffpin:ffpinsrunable){
+                        if (controlModle.getMaskMatrixRunnablePVUseFF()[indexEnablePV][indexEnableFF] == 1) {
+                            /**dff*/
+                            ffrowcontext.put("d" + ffpin.getModlePinName(), Tool.getSpecalScale(3, controlModle.getBackDff()[indexEnablePV][indexEnableFF]));
+                            /**ff值*/
+                            ffrowcontext.put(ffpin.getModlePinName(), Tool.getSpecalScale(3, ffpin.modleGetReal()));
+                        }
+
+                        ++indexEnableFF;
+                    }
+                }
+
+                if (!sdmvrowcontext.equals("")) {
+                    sdmvData.add(sdmvrowcontext);
+                }
+
+                ffData.add(ffrowcontext);
+                ++indexEnablePV;
+            }
+
+            result.put("modleRealData", modlereadData);
+            result.put("modlestatus", controlModle.getAutoEnbalePin() != null ? controlModle.getAutoEnbalePin().modleGetReal() : 1);
+            result.put("sdmvData", sdmvData);
+
+            if (controlModle.getBasefeedforwardpoints_v() > 0) {
+                result.put("ffData", ffData);
+            }
+            result.put("msg","success");
+
+            return result.toJSONString();
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+            result.put("msg","error");
+            return result.toJSONString();
+        }
+    }
 
 
 }

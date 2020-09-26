@@ -1026,11 +1026,12 @@ public class ControlModle implements Modle {
 
             if(isfirsttime){
                 if (getModleEnable() == 1) {
+                    simulatControlModle.setIssimulation(true);
                     executePythonBridge.execute();
-                }
-                if(simulatControlModle.isIssimulation()){
                     simulatControlModle.getExecutePythonBridgeSimulate().execute();
+
                 }
+
             }
 
 

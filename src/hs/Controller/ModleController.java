@@ -37,6 +37,7 @@ import java.util.regex.Pattern;
  * @date 2020/3/19 14:11
  */
 
+@Deprecated
 @Controller("modle")
 @RequestMapping("/modle")
 public class ModleController {

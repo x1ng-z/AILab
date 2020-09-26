@@ -103,14 +103,14 @@
             <c:choose>
                 <c:when test="${modle.modleEnable eq 1}">
                     <button type="button" class="layui-btn mytipbut" name="运行"
-                            onclick="stopOrrun('${pageContext.request.contextPath}/contrlmodle/stopModle.do?modleid=${modle.modleId}','确定停止？')">
+                            onclick="stopOrrun('${pageContext.request.contextPath}/contrlmodle/stopmodle.do?modleid=${modle.modleId}','确定停止？')">
                         <i class="layui-icon">&#xe682;</i>
                     </button>
                 </c:when>
                 <c:otherwise>
 
                     <button type="button" class="layui-btn layui-btn-primary mytipbut" name="运行"
-                            onclick="stopOrrun('${pageContext.request.contextPath}/contrlmodle/runModle.do?modleid=${modle.modleId}','确定运行？')">
+                            onclick="stopOrrun('${pageContext.request.contextPath}/contrlmodle/runmodle.do?modleid=${modle.modleId}','确定运行？')">
                         <i class="layui-icon">&#xe682;</i>
                     </button>
                 </c:otherwise>
@@ -146,11 +146,11 @@
 </div>
 
 
-<script type="text/html" id="switchTpl1">
-    <%--    input 添加 就不能进行编辑 disabled--%>
-    <input type="checkbox" name="checkIO" value="{{d.checkIO}}" lay-skin="switch" lay-text="on|off"
-           lay-filter="icheckIO" {{ d.checkIO===undefined? '': (d.checkIO.split('_')[2]== '1' ? 'checked' : '') }}/>
-</script>
+<%--<script type="text/html" id="switchTpl1">--%>
+<%--    &lt;%&ndash;    input 添加 就不能进行编辑 disabled&ndash;%&gt;--%>
+<%--    <input type="checkbox" name="checkIO" value="{{d.checkIO}}" lay-skin="switch" lay-text="on|off"--%>
+<%--           lay-filter="icheckIO" {{ d.checkIO===undefined? '': (d.checkIO.split('_')[2]== '1' ? 'checked' : '') }}/>--%>
+<%--</script>--%>
 <script>
     // function isdelete(url) {
     //     var r = confirm("确定删除?");
@@ -259,7 +259,7 @@
                 , {field: 'mvUpLmt', title: '上限', width: '8.3%'}
                 , {field: 'shockmv', title: 'mv幅值', width: '8.3%'}
                 , {field: 'shockpv', title: 'pv幅值', width: '8.3%'}
-                , {field: 'checkIO', title: '手自动', width: '8.3%', templet: '#switchTpl1', unresize: true}
+                // , {field: 'checkIO', title: '手自动', width: '8.3%', templet: '#switchTpl1', unresize: true}
             ]]
         });
 
@@ -316,38 +316,38 @@
 
 
         //监听操作
-        form.on('switch(icheckIO)', function (obj) {
-            // console.log("checkIO");
-            // layer.tips(this.value + '_' + this.name + '：' + obj.elem.checked, obj.othis);
-            if (this.value === 'undefined') {
-                //console.log('value is undefine')
-                return;
-            }
-            console.log('value is undefine out' + typeof (this.value))
-            let index4modlepin = this.value.split("_");
-            var r = confirm(index4modlepin[2] == 1 ? '切除出模型控制' : '切入到模型控制');
-            if (r == true) {
-                var index = layer.msg('修改中，请稍候', {icon: 16, time: false, shade: 0.8});
-                $.ajax({
-                    url: "${pageContext.request.contextPath}/modle/modlepvcheckout/" + index4modlepin[0] + "/" + index4modlepin[1] + "/" + index4modlepin[2] + ".do" + "?" + Math.random(),
-                    async: true,
-                    type: "POST",
-                    success: function (result) {
-                        console.log(result);
-                        layer.close(index);
-                        let json = JSON.parse(result);
-                        if (json['msg'] == "error") {
-                            layer.msg("修改失败！");
-                        } else {
-                            layer.msg("修改成功！");
-                        }
-                    }
-                });
-                window.location.reload()
-            }
+        <%--form.on('switch(icheckIO)', function (obj) {--%>
+        <%--    // console.log("checkIO");--%>
+        <%--    // layer.tips(this.value + '_' + this.name + '：' + obj.elem.checked, obj.othis);--%>
+        <%--    if (this.value === 'undefined') {--%>
+        <%--        //console.log('value is undefine')--%>
+        <%--        return;--%>
+        <%--    }--%>
+        <%--    console.log('value is undefine out' + typeof (this.value))--%>
+        <%--    let index4modlepin = this.value.split("_");--%>
+        <%--    var r = confirm(index4modlepin[2] == 1 ? '切除出模型控制' : '切入到模型控制');--%>
+        <%--    if (r == true) {--%>
+        <%--        var index = layer.msg('修改中，请稍候', {icon: 16, time: false, shade: 0.8});--%>
+        <%--        $.ajax({--%>
+        <%--            url: "${pageContext.request.contextPath}/modle/modlepvcheckout/" + index4modlepin[0] + "/" + index4modlepin[1] + "/" + index4modlepin[2] + ".do" + "?" + Math.random(),--%>
+        <%--            async: true,--%>
+        <%--            type: "POST",--%>
+        <%--            success: function (result) {--%>
+        <%--                console.log(result);--%>
+        <%--                layer.close(index);--%>
+        <%--                let json = JSON.parse(result);--%>
+        <%--                if (json['msg'] == "error") {--%>
+        <%--                    layer.msg("修改失败！");--%>
+        <%--                } else {--%>
+        <%--                    layer.msg("修改成功！");--%>
+        <%--                }--%>
+        <%--            }--%>
+        <%--        });--%>
+        <%--        window.location.reload()--%>
+        <%--    }--%>
 
 
-        });
+        <%--});--%>
     });
 
 
@@ -524,7 +524,7 @@
     function dataFill() {
 
         $.ajax({
-            url: "${pageContext.request.contextPath}/modle/modleRealStatus/${modle.modleId}.do" + "?" + Math.random(),
+            url: "${pageContext.request.contextPath}/contrlmodle/modelstatus/${modle.modleId}.do" + "?" + Math.random(),
             async: true,
             // data: {
             //     "date": $('#sltdate').val(),
@@ -537,6 +537,9 @@
                 var json = JSON.parse(result);
                 // console.log(json["funneltype"][0][0]);
                 // console.log(typeof (json["funneltype"][0][0]));
+                if(json['msg']=='error'){
+                    return;
+                }
                 for (let loop = 0; loop < mychartSerise.length; ++loop) {
                     mychartSerise[loop] = [
                         {
@@ -592,7 +595,6 @@
                 let table_width = $("#modlereadDatatab").width();
                 // console.log("table_width:", table_width)
                 $("#modlereadDatatab").width($(document).width());
-
 
                 table.reload('modlereadDatatab', {
                     "data": json['modleRealData'],

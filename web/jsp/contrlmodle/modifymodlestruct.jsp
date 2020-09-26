@@ -97,7 +97,7 @@
                 {field: 'pinName', title: '引脚', width: 150}
                 , {field: 'pinNote', title: '引脚注释', width: 150}
                 , {field: 'pinStatus', title: '是否启用', width: 150, templet: '#switchIsenable', unresize: true}
-                , {field: 'pinBound', title: '是否启用', width: 150, templet: '#switchBound', unresize: true}
+                , {field: 'pinBound', title: '是否在线', width: 150, templet: '#switchBound', unresize: true}
             ]]
         });
 

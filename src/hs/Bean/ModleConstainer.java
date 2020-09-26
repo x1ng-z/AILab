@@ -3,6 +3,7 @@ package hs.Bean;
 import hs.ApcAlgorithm.ExecutePythonBridge;
 import hs.Dao.Service.ModleDBServe;
 import hs.Opc.OpcServicConstainer;
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.DependsOn;
@@ -25,6 +26,8 @@ import java.util.concurrent.ConcurrentHashMap;
 @PropertySource("classpath:apc.properties")
 @DependsOn("opcServicConstainer")
 public class ModleConstainer {
+    public static Logger logger = Logger.getLogger(ModleConstainer.class);
+
     @Autowired
     public void setOpcServicConstainer(OpcServicConstainer opcServicConstainer) {
         this.opcServicConstainer = opcServicConstainer;
@@ -61,35 +64,29 @@ public class ModleConstainer {
              * 2、对控制器进行构建
              * 3放置到模型池中
              * */
-            controlModle.toBeRealControlModle(apcdir,opcServicConstainer,baseConf,simulatordir);
-            if(controlModle.modleBuild(true)){
-                /**只有构建成功的模型才可以加入到可运行模型池*/
-                runnableModulepool.put(controlModle.getModleId(), controlModle);
-            }
-
-
-
-
+            registerModle(controlModle);
         }
     }
 
-    public void registerModle(ControlModle controlModle) {
+    public synchronized void registerModle(ControlModle controlModle) {
         if (!runnableModulepool.containsKey(controlModle.getModleId())) {
-            controlModle.setOpcServicConstainer(opcServicConstainer);
-            controlModle.setBaseConf(baseConf);
-            controlModle.setSimulatorbuilddir(simulatordir);
+            controlModle.toBeRealControlModle(apcdir,opcServicConstainer,baseConf,simulatordir);
             controlModle.modleBuild(true);
             runnableModulepool.put(controlModle.getModleId(), controlModle);
+        }else {
+            logger.warn("重复注册模型");
         }
+    }
 
-        ExecutePythonBridge executePythonBridge = new ExecutePythonBridge(apcdir,
-                "http://localhost:8080/AILab/python/modlebuild/" + controlModle.getModleId() + ".do", controlModle.getModleId() + "");
-        controlModle.setExecutePythonBridge(executePythonBridge);
-        if (controlModle.getModleEnable() == 1) {
-            controlModle.modleCheckStatusRun();
-            controlModle.getSimulatControlModle().simulateModleRun();
+
+    public synchronized void unregisterModle(ControlModle controlModle){
+        if (runnableModulepool.containsKey(controlModle.getModleId())) {
+            controlModle.unregisterpin();
+            controlModle.disableModleByWeb();
+            runnableModulepool.remove(controlModle);
+        }else {
+            logger.warn("不是可运行的模型");
         }
-
     }
 
 
