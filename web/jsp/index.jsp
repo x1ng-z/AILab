@@ -135,7 +135,7 @@
                     <dl class="layui-nav-child">
                         <c:forEach var="md" items="${contrlmodles}" varStatus="Count">
                             <dd><a href="javascript:;"
-                                   lay-href="${pageContext.request.contextPath}/contrlmodle/modlestatus/${md.modleId}.do">${md.modleName}</a>
+                                   lay-href="${pageContext.request.contextPath}/contrlmodle/modlestatus/${md.modleId}.do" modleid="contrlmodle${md.modleId}">${md.modleName}</a>
                             </dd>
                         </c:forEach>
                     </dl>
@@ -280,9 +280,9 @@
             }
             if ((elem[0].innerText.indexOf("消息中心") !== -1)) {
                 myelement.tabAdd('pagetabs', {
-                    title: elem[0].innerText
+                    title: '<i class="layui-icon layui-icon-refresh" onclick="document.getElementById('+url+').contentWindow.location.reload()"></i>&nbsp'+elem[0].innerText
                     ,
-                    content: '<iframe src="' + url + '" class="layui-admin-iframe" scrolling="auto" frameborder="0" "></iframe>'
+                    content: '<iframe id="'+url+'" src="' + url + '" class="layui-admin-iframe" scrolling="auto" frameborder="0" "></iframe>'
                     ,
                     id: url
                 });
@@ -354,9 +354,13 @@
                         })
                         if (flag) {
                             //新增选项卡
+                            let timestamp=new Date();
+
                             myelement.tabAdd('pagetabs', {
-                                title: elem[0].innerText,
-                                content: '<iframe src="' + url + '" class="layui-admin-iframe" scrolling="auto" frameborder="0" "></iframe>',
+                                title:   '<i class="layui-icon layui-icon-refresh" onclick="document.getElementById('+timestamp.getMilliseconds()+').contentWindow.location.reload()"></i>&nbsp;'+elem[0].innerText
+                                ,
+                                content: '<iframe id="'+ timestamp.getMilliseconds() + '" src="' + url + '" class="layui-admin-iframe" scrolling="auto" frameborder="0" "></iframe>'
+                                ,
                                 id: url
                             });
                             //切换选项卡

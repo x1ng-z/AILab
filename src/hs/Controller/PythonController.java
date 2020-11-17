@@ -76,7 +76,7 @@ public class PythonController {
     @ResponseBody
     public String ModelReadData(@PathVariable("id") int id) {
         ControlModle controlModle = modleConstainer.getRunnableModulepool().get(id);
-        return controlModle.getrealData().toJSONString();
+        return controlModle.getRealData().toJSONString();
     }
 
     @RequestMapping("/opcwrite")
@@ -84,12 +84,19 @@ public class PythonController {
     public String ModelWriteData(@RequestParam("id") int id, @RequestParam("U") Double[] u, @RequestParam("validekey") long validekey) {
 
         ControlModle controlModle = modleConstainer.getRunnableModulepool().get(id);
-        if (validekey != controlModle.getValidkey()) {
+
+        if(controlModle.getRunstyle().equals(ControlModle.RUNSTYLEBYAUTO)){
+            if (validekey != controlModle.getValidkey()) {
+                return "false";
+            }
+            if (!controlModle.writeData(u)) {
+                return "false";
+            }
+        }else {
             return "false";
         }
-        if (!controlModle.writeData(u)) {
-            return "false";
-        }
+
+
 
         return "true";
     }
@@ -146,7 +153,7 @@ public class PythonController {
                 dffArray[i]=dffJson.getDouble(i);
             }
 
-            if (!controlModle.updateModleReal(predictpvArray, funelupAnddownArray, dmvArray, eArray,dffArray)) {
+            if (!controlModle.updateModleComputeResult(predictpvArray, funelupAnddownArray, dmvArray, eArray,dffArray)) {
                 return "false";
             }
 

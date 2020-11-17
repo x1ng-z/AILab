@@ -29,8 +29,10 @@
 <div id="bt_flush_sptab" onclick="flush_sptab()" style="visibility: hidden;width: 0px;height: 0px;z-index: -99;"></div>
 <div id="bt_flush_mvtab" onclick="flush_mvtab()" style="visibility: hidden;width: 0px;height: 0px;z-index: -99;"></div>
 <div id="bt_flush_fftab" onclick="flush_fftab()" style="visibility: hidden;width: 0px;height: 0px;z-index: -99;"></div>
-<div id="bt_flush_resppvmvtab" onclick="flush_resppvmvtab()" style="visibility: hidden;width: 0px;height: 0px;z-index: -99;"></div>
-<div id="bt_flush_resppvfftab" onclick="flush_resppvfftab()" style="visibility: hidden;width: 0px;height: 0px;z-index: -99;"></div>
+<div id="bt_flush_resppvmvtab" onclick="flush_resppvmvtab()"
+     style="visibility: hidden;width: 0px;height: 0px;z-index: -99;"></div>
+<div id="bt_flush_resppvfftab" onclick="flush_resppvfftab()"
+     style="visibility: hidden;width: 0px;height: 0px;z-index: -99;"></div>
 
 
 <form class="layui-form" action="" method="post">
@@ -119,6 +121,37 @@
                 </select>
             </div>
         </div>
+
+
+        <div class="layui-inline">
+            <label class="layui-form-label">PV对Dmv作用分配方式</label>
+            <div class="layui-input-inline">
+                <select name="runstyle" lay-verify="required">
+                    <option value="">请选择分配方式</option>
+
+                    <c:choose>
+                        <c:when test="${modle.runstyle==0}">
+                            <option value="0" selected>最小误差</option>
+                        </c:when>
+                        <c:otherwise>
+                            <option value="0">最小误差</option>
+                        </c:otherwise>
+                    </c:choose>
+
+                    <c:choose>
+                        <c:when test="${modle.runstyle==1}">
+                            <option value="1" selected>手动分配</option>
+                        </c:when>
+                        <c:otherwise>
+                            <option value="1">手动分配</option>
+                        </c:otherwise>
+                    </c:choose>
+
+                </select>
+            </div>
+        </div>
+
+
     </div>
 
 
@@ -197,7 +230,6 @@
 <table class="layui-hide" id="pvtable" lay-filter="pvtable"></table>
 
 
-
 <fieldset class="layui-elem-field layui-field-title" style="margin-top: 20px;">
     <legend>MV设置</legend>
 </fieldset>
@@ -216,70 +248,9 @@
 </fieldset>
 
 <table class="layui-hide" id="respontable" lay-filter="respontable"></table>
-
-
 <script>
-    var table;
-    var element;
-    var form;
-    var layer;
-    var opcvertaglayerindex;
-    layui.use(['table', 'element', 'form', 'layer'], function () {
-        table = layui.table;
-
-        element = layui.element;
-        form = layui.form;
-        layer = layui.layer;//parent.layer === undefined ? layui.layer : parent.layer;
-        form.render(); //更新全部
-        form.render('select'); //刷新select选择框渲染
-        form.on('submit(motifymodlesubmit)', function (data) {
-
-            let index = layer.msg('修改中，请稍候', {icon: 16, time: false, shade: 0.8});
-            $.ajax({
-                url: "${pageContext.request.contextPath}/contrlmodle/savemodifymodle.do",
-                async: true,
-                data: {
-                    "modlecontxt": JSON.stringify(data.field),
-                },
-                type: "POST",
-                success: function (result) {
-                    console.log(result);
-                    layer.close(index);
-                    let json = JSON.parse(result);
-                    if (json['msg'] == "error") {
-                        layer.msg("修改失败！");
-                    } else {
-                        layer.msg("修改成功！");
-                        // newleft(json['modleName'],json['modleId'])
-                        window.location.reload();
-                    }
-                    //window.location.href("result")
-                    // var json = JSON.parse(result);
-                }
-            });
-
-            console.log(JSON.stringify(data.field))
-            return false;
-        });
-
-        pvtabrender(table);
-
-        mvtabrender(table);
-
-        fftabrender(table);
-        respontabtabrender(table);
 
 
-    });
-
-
-</script>
-
-
-<script>
-    
-    
-    
     function pvtabrender(table) {
 
         table.render({
@@ -312,6 +283,7 @@
                 , {field: 'modlePinName', title: '引脚名', width: 150}
                 , {field: 'modleOpcTag', title: 'opc位号', width: 100}
                 , {field: 'opcTagName', title: '注释', width: 100}
+                , {field: 'Q', title: 'Q值', width: 100}
                 , {fixed: 'right', title: '操作', toolbar: '#barpv', width: 300}
             ]]
             , page: true
@@ -324,7 +296,7 @@
                 case 'addpvpin':
                     // var data = checkStatus.data;
                     // alert("sss"+$("#addopcservebt").attr('lay-href'));
-                    newmodlepinwindow(layer, $("#addpvpinbt").attr('lay-href'),'pv',document);
+                    newmodlepinwindow(layer, $("#addpvpinbt").attr('lay-href'), 'pv', document);
                     break;
                 case 'getCheckLength':
                     // var data = checkStatus.data;
@@ -346,13 +318,13 @@
             var data = obj.data;
             // console.log(obj)
             if (obj.event === 'del') {
-                layer.confirm('是否删除',{offset:'5px'}, function (index) {
-                    deletecontrlpin(document,layer,data['pinid'],'pv','deletemodelpvpin','${pageContext.request.contextPath}');
+                layer.confirm('是否删除', {offset: '5px'}, function (index) {
+                    deletecontrlpin(document, layer, data['pinid'], 'pv', 'deletemodelpvpin', '${pageContext.request.contextPath}');
                     // obj.del();
                     layer.close(index);
                 });
             } else if (obj.event === 'edit') {
-                modifymodlepinwindow(document,layer,data['modleid'],data['pinid'],'pv','modofymodelpvpin','${pageContext.request.contextPath}');
+                modifymodlepinwindow(document, layer, data['modleid'], data['pinid'], 'pv', 'modofymodelpvpin', '${pageContext.request.contextPath}');
             }
         });
 
@@ -402,7 +374,7 @@
                 case 'addmvpin':
                     // var data = checkStatus.data;
                     // alert("sss"+$("#addopcservebt").attr('lay-href'));
-                    newmodlepinwindow(layer, $("#addmvpinbt").attr('lay-href'),'mv',document);
+                    newmodlepinwindow(layer, $("#addmvpinbt").attr('lay-href'), 'mv', document);
                     break;
                 case 'getCheckLength':
                     // var data = checkStatus.data;
@@ -424,18 +396,17 @@
             var data = obj.data;
             // console.log(obj)
             if (obj.event === 'del') {
-                layer.confirm('是否删除',{offset:'30px'}, function (index) {
-                    deletecontrlpin(document,layer,data['pinid'],'mv','deletemodelmvpin','${pageContext.request.contextPath}');
+                layer.confirm('是否删除', {offset: '30px'}, function (index) {
+                    deletecontrlpin(document, layer, data['pinid'], 'mv', 'deletemodelmvpin', '${pageContext.request.contextPath}');
                     // obj.del();
                     layer.close(index);
                 });
             } else if (obj.event === 'edit') {
-                modifymodlepinwindow(document,layer,data['modleid'],data['pinid'],'mv','modofymodelmvpin','${pageContext.request.contextPath}');
+                modifymodlepinwindow(document, layer, data['modleid'], data['pinid'], 'mv', 'modofymodelmvpin', '${pageContext.request.contextPath}');
             }
         });
 
     }
-
 
 
     function fftabrender(table) {
@@ -481,7 +452,7 @@
                 case 'addffpin':
                     // var data = checkStatus.data;
                     // alert("sss"+$("#addopcservebt").attr('lay-href'));
-                    newmodlepinwindow(layer, $("#addffpinbt").attr('lay-href'),'ff',document);
+                    newmodlepinwindow(layer, $("#addffpinbt").attr('lay-href'), 'ff', document);
                     break;
                 case 'getCheckLength':
                     // var data = checkStatus.data;
@@ -503,13 +474,13 @@
             var data = obj.data;
             // console.log(obj)
             if (obj.event === 'del') {
-                layer.confirm('是否删除',{offset:'60px'}, function (index) {
-                    deletecontrlpin(document,layer,data['pinid'],'ff','deletemodelffpin','${pageContext.request.contextPath}');
+                layer.confirm('是否删除', {offset: '60px'}, function (index) {
+                    deletecontrlpin(document, layer, data['pinid'], 'ff', 'deletemodelffpin', '${pageContext.request.contextPath}');
                     // obj.del();
                     layer.close(index);
                 });
             } else if (obj.event === 'edit') {
-                modifymodlepinwindow(document,layer,data['modleid'],data['pinid'],'ff','modofymodelffpin','${pageContext.request.contextPath}');
+                modifymodlepinwindow(document, layer, data['modleid'], data['pinid'], 'ff', 'modofymodelffpin', '${pageContext.request.contextPath}');
             }
         });
 
@@ -549,6 +520,7 @@
                 , {field: 'K', title: 'K', width: 150}
                 , {field: 'T', title: 'T', width: 150}
                 , {field: 'Tau', title: 'Tau', width: 150}
+                , {field: 'effectRatio', title: '作用比例', width: 150}
                 , {fixed: 'right', title: '操作', toolbar: '#barrespon', width: 300}
             ]]
             , page: true
@@ -561,7 +533,7 @@
                 case 'addrespon':
                     // var data = checkStatus.data;
                     // alert("sss"+$("#addopcservebt").attr('lay-href'));
-                    newmresponwindow(layer, $("#addresponbt").attr('lay-href'),document);
+                    newmresponwindow(layer, $("#addresponbt").attr('lay-href'), document);
                     break;
                 case 'getCheckLength':
                     // var data = checkStatus.data;
@@ -583,24 +555,18 @@
             var data = obj.data;
             // console.log(obj)
             if (obj.event === 'del') {
-                layer.confirm('是否删除',{offset:'70px'}, function (index) {
-                    deleterespon(document,layer,data['responid'],'deletemodelrespon','${pageContext.request.contextPath}');
+                layer.confirm('是否删除', {offset: '70px'}, function (index) {
+                    deleterespon(document, layer, data['responid'], 'deletemodelrespon', '${pageContext.request.contextPath}');
                     // obj.del();
                     layer.close(index);
                 });
             } else if (obj.event === 'edit') {
-                modifyresponwindow(document,layer,data['modleid'],data['responid'],'modofyrespon','${pageContext.request.contextPath}');
+                modifyresponwindow(document, layer, data['modleid'], data['responid'], 'modofyrespon', '${pageContext.request.contextPath}');
             }
         });
 
 
     }
-
-
-
-
-
-
 
 
     function verifyrespon(param) {
@@ -676,8 +642,6 @@
     }
 
 
-
-
     function flush_fftab() {
 
         layui.use(['table', 'element', 'form', 'layer'], function () {
@@ -721,11 +685,6 @@
         });
 
 
-
-
-
-
-
     }
 
     function flush_resppvfftab() {
@@ -733,5 +692,68 @@
     }
 
 </script>
+
+<script>
+    var table;
+    var element;
+    var form;
+    var layer;
+    var opcvertaglayerindex;
+
+
+    $(document).ready(function () {
+        layui.use(['table', 'element', 'form', 'layer'], function () {
+            table = layui.table;
+
+            element = layui.element;
+            form = layui.form;
+            layer = layui.layer;//parent.layer === undefined ? layui.layer : parent.layer;
+            form.render(); //更新全部
+            form.render('select'); //刷新select选择框渲染
+            form.on('submit(motifymodlesubmit)', function (data) {
+
+                let index = layer.msg('修改中，请稍候', {icon: 16, time: false, shade: 0.8});
+                $.ajax({
+                    url: "${pageContext.request.contextPath}/contrlmodle/savemodifymodle.do",
+                    async: true,
+                    data: {
+                        "modlecontxt": JSON.stringify(data.field),
+                    },
+                    type: "POST",
+                    success: function (result) {
+                        console.log(result);
+                        layer.close(index);
+                        let json = JSON.parse(result);
+                        if (json['msg'] == "error") {
+                            layer.msg("修改失败！");
+                        } else {
+                            layer.msg("修改成功！");
+                            // newleft(json['modleName'],json['modleId'])
+                            window.location.reload();
+                        }
+                        //window.location.href("result")
+                        // var json = JSON.parse(result);
+                    }
+                });
+
+                console.log(JSON.stringify(data.field))
+                return false;
+            });
+
+            pvtabrender(table);
+
+            mvtabrender(table);
+
+            fftabrender(table);
+            respontabtabrender(table);
+
+
+        });
+    });
+
+
+</script>
+
+
 </body>
 </html>

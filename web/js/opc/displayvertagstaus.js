@@ -62,9 +62,12 @@ function newvertagwindows(element,root,opcserveid) {
                 // console.log(layero.find('iframe'))
 
                 let iframeWin = window[layero.find('iframe')[0]['name']];
+
+                var body = parent.layer.getChildFrame('body', index);
+                body.find("#opcservevertagsubmit").trigger('click');
                 // iframeWin.document.getElementById("opcservesubmit").click();
                 // console.log(iframeWin)
-                $("#opcservevertagsubmit",iframeWin.document).trigger("click");//send data to serve
+                // $("#opcservevertagsubmit",iframeWin.document).trigger("click");//send data to serve
 
             }
             ,btn2: function(index, layero){
@@ -101,9 +104,12 @@ function modifyopcvertagwindows(element,root,tagid) {
                 // console.log(layero.find('iframe'))
 
                 let iframeWin = window[layero.find('iframe')[0]['name']];
+
+                var body = parent.layer.getChildFrame('body', index);
+                body.find("#opcservevertagsubmit").trigger('click');
                 // iframeWin.document.getElementById("opcservesubmit").click();
                 // console.log(iframeWin)
-                $("#opcservevertagsubmit",iframeWin.document).trigger("click");//send data to serve
+                // $("#opcservevertagsubmit",iframeWin.document).trigger("click");//send data to serve
 
             }
             ,btn2: function(index, layero){

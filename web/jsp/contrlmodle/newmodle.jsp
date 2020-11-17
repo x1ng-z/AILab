@@ -86,6 +86,20 @@
                 </select>
             </div>
         </div>
+
+
+        <div class="layui-inline">
+            <label class="layui-form-label">PV对Dmv作用分配方式</label>
+            <div class="layui-input-inline">
+                <select name="runstyle" lay-verify="required">
+                    <option value="">请选择分配方式</option>
+                        <option value="0">最小误差</option>
+                        <option value="1">手动分配</option>
+                </select>
+            </div>
+        </div>
+
+
     </div>
 
     <div class="layui-input-block">

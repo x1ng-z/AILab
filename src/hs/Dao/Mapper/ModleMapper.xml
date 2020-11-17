@@ -11,6 +11,7 @@
         <result property="timeserise_N" column="timeserise_N"/>
         <result property="controltime_M" column="controltime_M"/>
         <result property="modleEnable" column="modleEnable"/>
+        <result property="runstyle" column="runstyle"/>
 
         <collection property="modlePins" column="modleId" ofType="hs.Bean.ModlePin" select="findModlePins"/>
 
@@ -132,12 +133,12 @@
 
     <insert id="insertModle" parameterType="hs.Bean.ControlModle" useGeneratedKeys="true" keyColumn="modleId"
             keyProperty="modleId">
-        insert into modle(modleName, controlAPCOutCycle, predicttime_P, timeserise_N, controltime_M, modleEnable) values
-        (#{controlModle.modleName},#{controlModle.controlAPCOutCycle},#{controlModle.predicttime_P},#{controlModle.timeserise_N},#{controlModle.controltime_M},#{controlModle.modleEnable})
+        insert into modle(modleName, controlAPCOutCycle, predicttime_P, timeserise_N, controltime_M, modleEnable,runstyle) values
+        (#{controlModle.modleName},#{controlModle.controlAPCOutCycle},#{controlModle.predicttime_P},#{controlModle.timeserise_N},#{controlModle.controltime_M},#{controlModle.modleEnable},#{controlModle.runstyle})
     </insert>
 
     <update id="modifymodle">
-        update modle set modleName=#{controlModle.modleName}, controlAPCOutCycle=#{controlModle.controlAPCOutCycle}, predicttime_P=#{controlModle.predicttime_P}, timeserise_N=#{controlModle.timeserise_N}, controltime_M=#{controlModle.controltime_M}
+        update modle set modleName=#{controlModle.modleName}, controlAPCOutCycle=#{controlModle.controlAPCOutCycle}, predicttime_P=#{controlModle.predicttime_P}, timeserise_N=#{controlModle.timeserise_N}, controltime_M=#{controlModle.controltime_M},runstyle=#{controlModle.runstyle}
         where modleId=#{modleid}
     </update>
 
@@ -211,9 +212,9 @@
 
 
     <insert id="insertModleResps" useGeneratedKeys="true" keyColumn="modletagId" keyProperty="modletagId">
-        insert into modlerespon(refrencemodleId, stepRespJson, inputPins, outputPins) values
+        insert into modlerespon(refrencemodleId, stepRespJson, inputPins, outputPins,effectRatio) values
         <foreach collection="responTimeSerises" item="resp" separator=",">
-            (#{resp.refrencemodleId}, #{resp.stepRespJson}, #{resp.inputPins}, #{resp.outputPins})
+            (#{resp.refrencemodleId}, #{resp.stepRespJson}, #{resp.inputPins}, #{resp.outputPins},#{resp.effectRatio})
         </foreach>
     </insert>
 
@@ -221,14 +222,14 @@
 
 <!--    void insertModleResp(@Param("responTimeSerises") ResponTimeSerise responTimeSerise);-->
     <insert id="insertModleResp" useGeneratedKeys="true" keyColumn="modletagId" keyProperty="modletagId">
-        insert into modlerespon(refrencemodleId, stepRespJson, inputPins, outputPins) value
-        (#{responTimeSerises.refrencemodleId}, #{responTimeSerises.stepRespJson}, #{responTimeSerises.inputPins}, #{responTimeSerises.outputPins})
+        insert into modlerespon(refrencemodleId, stepRespJson, inputPins, outputPins,effectRatio) value
+        (#{responTimeSerises.refrencemodleId}, #{responTimeSerises.stepRespJson}, #{responTimeSerises.inputPins}, #{responTimeSerises.outputPins},#{responTimeSerises.effectRatio})
     </insert>
 
 
 <!--    void updateModleResp(@Param("responTimeSerises") ResponTimeSerise responTimeSerise)-->
     <update id="updateModleResp" parameterType="hs.Bean.ResponTimeSerise">
-        update modlerespon set refrencemodleId=#{responTimeSerises.refrencemodleId}, stepRespJson= #{responTimeSerises.stepRespJson}, inputPins=#{responTimeSerises.inputPins}, outputPins=#{responTimeSerises.outputPins} where modletagId=#{responTimeSerises.modletagId}
+        update modlerespon set refrencemodleId=#{responTimeSerises.refrencemodleId}, stepRespJson= #{responTimeSerises.stepRespJson}, inputPins=#{responTimeSerises.inputPins}, outputPins=#{responTimeSerises.outputPins},effectRatio=#{responTimeSerises.effectRatio} where modletagId=#{responTimeSerises.modletagId}
     </update>
 
     <delete id="deleteModleRespbymodleid">

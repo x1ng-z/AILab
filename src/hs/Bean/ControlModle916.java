@@ -13,6 +13,7 @@ import java.util.*;
  * @version 1.0
  * @date 2020/3/18 8:24
  */
+@Deprecated
 public class ControlModle916 implements Modle {
     public static Logger logger = Logger.getLogger(ModleController.class);
     /**

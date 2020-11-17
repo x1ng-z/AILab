@@ -54,6 +54,10 @@ public class testJson {
     public static void main(String[] args) {
 
 
+        JSONObject jsonObject=new JSONObject();
+
+        String s=jsonObject.getString("a");
+
         testtype.staticgetItem(new Color() {
             @Override
             public void drow() {

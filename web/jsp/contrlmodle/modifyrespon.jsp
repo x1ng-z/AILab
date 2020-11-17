@@ -82,7 +82,7 @@
                         <label class="layui-form-label">K</label>
                         <div class="layui-input-inline">
                             <input type="text" name="K" autocomplete="off" class="layui-input"
-                                   placeholder="K值" lay-verify="required" value="${K}">
+                                   placeholder="K值" lay-verify="required" value="${K}" onmousewheel='scrollFunc()'>
                         </div>
                     </div>
 
@@ -91,7 +91,7 @@
                         <label class="layui-form-label">T</label>
                         <div class="layui-input-inline">
                             <input type="text" name="T" autocomplete="off" class="layui-input"
-                                   placeholder="T值" lay-verify="required" value="${T}">
+                                   placeholder="T值" lay-verify="required" value="${T}" onmousewheel='scrollFunc()'>
                         </div>
                     </div>
 
@@ -99,7 +99,15 @@
                         <label class="layui-form-label">Tau</label>
                         <div class="layui-input-inline">
                             <input type="text" name="Tau" autocomplete="off" class="layui-input"
-                                   placeholder="Tau值" lay-verify="required" value="${Tau}">
+                                   placeholder="Tau值" lay-verify="required" value="${Tau}" onmousewheel='scrollFunc()'>
+                        </div>
+                    </div>
+
+                    <div class="layui-inline">
+                        <label class="layui-form-label">作用比例</label>
+                        <div class="layui-input-inline">
+                            <input type="text" name="effectRatio" autocomplete="off" class="layui-input"
+                                   placeholder="pv对mv的输出占比" lay-verify="required" value="${respontimeserise.effectRatio}" onmousewheel='scrollFunc()'>
                         </div>
                     </div>
 
@@ -125,6 +133,20 @@
 </body>
 
 <script>
+
+    function scrollFunc(evt) {
+        evt = evt || window.event;
+        if(evt.preventDefault) {
+            // Firefox
+            evt.preventDefault();
+            evt.stopPropagation();
+        } else {
+            // IE
+            evt.cancelBubble=true;
+            evt.returnValue = false;
+        }
+        return false;
+    }
 
     layui.use(['element', 'form', 'layer'], function () {
         var element = layui.element;

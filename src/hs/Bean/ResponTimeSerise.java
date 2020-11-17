@@ -14,7 +14,7 @@ public class ResponTimeSerise {
     private String stepRespJson;//响应的json
     private String inputPins;//引脚名称ff mv
     private String outputPins;//引脚名称pv
-
+    private float effectRatio;//作用比例
     /**
      *  * timeserise_N = 40;//响应序列长度
      *  * controlAPCOutCycle = 0;//控制输出间隔周期
@@ -112,5 +112,13 @@ public class ResponTimeSerise {
 
     public void setOutputPins(String outputPins) {
         this.outputPins = outputPins;
+    }
+
+    public float getEffectRatio() {
+        return effectRatio;
+    }
+
+    public void setEffectRatio(float effectRatio) {
+        this.effectRatio = effectRatio;
     }
 }

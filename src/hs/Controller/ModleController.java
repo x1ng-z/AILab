@@ -279,7 +279,7 @@ public class ModleController {
                     }
 
                     if (controlModle.getMaskMatrixRunnablePVUseMV()[indexEnablePV][indexEnableMV] == 1) {
-                        sdmvrowcontext.put(controlModle.getCategoryMVmodletag().get(indexmv).getModlePinName(), Tool.getSpecalScale(3, controlModle.getSimulatControlModle().getBackSimulateDmv()[indexEnablePV][indexEnableMV]));
+                        sdmvrowcontext.put(controlModle.getCategoryMVmodletag().get(indexmv).getModlePinName(), Tool.getSpecalScale(3, controlModle.getSimulatControlModle().getBacksimulatorDmvWrite()[indexEnablePV][indexEnableMV]));
                     }
                     ++indexEnableMV;
                 }

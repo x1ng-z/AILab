@@ -1,9 +1,11 @@
 package hs.Bean;
 
+import com.alibaba.fastjson.JSONObject;
 import hs.ApcAlgorithm.ExecutePythonBridge;
 import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -11,12 +13,53 @@ import java.util.List;
  * @version 1.0
  * @date 2020/8/7 13:34
  */
+
+/**拆分每个pv，并分配相应的mv、ff进行dmv的计算**/
 public class SimulatControlModle {
 
     public static Logger logger = Logger.getLogger(SimulatControlModle.class);
     private String simulatorbuilddir;
     private Integer modleid;
     private ControlModle controlModle;
+
+
+
+
+
+    /**模型真实运行状态*/
+
+
+    /**
+     * apc反馈的y0的预测值
+     */
+    private double[][] backsimulatorPVPrediction;//pv的预测曲线
+    /**
+     * apc反馈的pv的漏斗的上边界
+     */
+    private double[][] backsimulatorPVFunelUp;//PV的漏斗上限
+    /**
+     * apc反馈的pv的漏斗的下边界
+     */
+    private double[][] backsimulatorPVFunelDown;//PV的漏斗下限
+    /**
+     * apc反馈的dmv增量的预测值shape=(p,m)
+     */
+    private double[][] backsimulatorDmvWrite;
+    private double[] backsimulatorrawDmv;
+    private double[] backsimulatorrawDff;
+    /**
+     * apc反馈的y0与yreal的error预测值
+     */
+    private double[] backsimulatorPVPredictionError;//预测误差
+
+    /**
+     * 模型计算时候的前馈变换值dff shape=(p,num_ff)
+     */
+    private double[][] backDff;
+
+
+
+
 
     /**
      * 模型的标识token，用于apc仿真算法判别自己的算法是否已经过去，需要停止
@@ -124,7 +167,7 @@ public class SimulatControlModle {
      * 模型仿真计算出的dmv数据
      * shape=(num_of_pv,num_of_mv)
      */
-    private double[][] backSimulateDmv;
+//    private double[][] backSimulateDmv;
 
     /**
      * 引脚
@@ -210,6 +253,147 @@ public class SimulatControlModle {
 
 
     /**
+     * 2020.11.12需求版本更新函数，保持原有的数据以外，
+     * 将其归置到simulate上
+     * 1、添加原始dmvlimit结构数据
+     * 2、添加原始mv结构数据
+     * 3\添加mvfb原始结构
+     *获取原始结构的mv相关数据，用于模型预测曲线计算、mv输出前的校验以及最终mv的叠加
+     * */
+    public JSONObject getRealSimulateData() {
+
+        try {
+            /**
+             * y0(pv)
+             * limitU(mv)
+             * limitY()
+             * FF
+             * Wi(sp)
+             *
+             * */
+            JSONObject jsonObject = new JSONObject();
+            //sp
+            Double[] sp = new Double[simulateOutpoints_p];
+            int loop = 0;
+            for (ModlePin sppin : extendModleSPPins) {
+                sp[loop] = sppin.modleGetReal();
+                loop++;
+            }
+            jsonObject.put("wi", sp);
+
+            //pv
+            Double[] pv = new Double[simulateOutpoints_p];
+            loop = 0;
+            for (ModlePin pvpin : extendModlePVPins) {
+                /***
+                 * 是否有滤波器，有则使用滤波器的值，不然就使用实时数据
+                 * */
+                pv[loop++] = pvpin.modleGetReal();
+            }
+            jsonObject.put("y0", pv);
+
+
+            controlModle.getPVRealData(jsonObject);
+
+            //limitU输入限制
+            Double[][] limitU = new Double[simulateInputpoints_m][2];
+            Double[][] limitDU = new Double[simulateInputpoints_m][2];
+            loop = 0;
+            //U执行器当前给定
+            Double[] U = new Double[simulateInputpoints_m];
+            //U执行器当前反馈
+            Double[] UFB = new Double[simulateInputpoints_m];
+
+            for (ModlePin mvpin : extendModleMVPins) {
+                Double[] mvminmax = new Double[2];
+                ModlePin mvdown = mvpin.getDownLmt();
+                ModlePin mvup = mvpin.getUpLmt();
+
+                mvminmax[0] = mvdown.modleGetReal();
+
+                mvminmax[1] = mvup.modleGetReal();
+
+                //执行器限制
+                limitU[loop] = mvminmax;
+
+                Double[] dmvminmax = new Double[2];
+                dmvminmax[0] = mvpin.getDmvLow();
+                dmvminmax[1] = mvpin.getDmvHigh();
+                limitDU[loop] = dmvminmax;
+
+                //执行器给定
+                U[loop] = mvpin.modleGetReal();
+                UFB[loop] = mvpin.getFeedBack().modleGetReal();
+                loop++;
+
+            }
+            jsonObject.put("limitU", limitU);
+            jsonObject.put("limitDU", limitDU);
+            jsonObject.put("U", U);
+            jsonObject.put("UFB", UFB);
+
+            /**获取原始结构的mv相关数据，用于模型预测曲线计算、mv输出前的校验以及最终mv的叠加*/
+            controlModle.getMVRelationData(jsonObject);
+
+            //FF
+            int indexEnableFF = 0;
+            if (controlModle.getCategoryFFmodletag().size() != 0) {
+                Double[] ff = new Double[controlModle.getNumOfRunnableFFpins_vv()];
+                Double[] fflmt = new Double[controlModle.getNumOfRunnableFFpins_vv()];
+                for (int indexff = 0; indexff < controlModle.getCategoryFFmodletag().size(); indexff++) {
+                    //是否FF是否可运行
+                    if (controlModle.getMaskisRunnableFFMatrix()[indexff] == 0) {
+                        continue;
+                    }
+                    ff[indexEnableFF] = controlModle.getCategoryFFmodletag().get(indexff).modleGetReal();
+                    ModlePin ffuppin = controlModle.getCategoryFFmodletag().get(indexff).getUpLmt();
+                    ModlePin ffdownpin = controlModle.getCategoryFFmodletag().get(indexff).getDownLmt();
+
+                    /**
+                     *ff信号是否在置信区间内
+                     * */
+                    Double ffHigh = 0d;
+                    Double ffLow = 0d;
+
+                    ffHigh = ffuppin.modleGetReal();
+                    ffLow = ffdownpin.modleGetReal();
+
+                    if ((ffLow <= controlModle.getCategoryFFmodletag().get(indexff).modleGetReal()) && (ffHigh >= controlModle.getCategoryFFmodletag().get(indexff).modleGetReal())) {
+                        fflmt[indexEnableFF] = 1d;
+                    } else {
+                        fflmt[indexEnableFF] = 0d;
+                    }
+
+                    indexEnableFF++;
+                }
+
+                jsonObject.put("FF", ff);
+                jsonObject.put("FFLmt", fflmt);
+
+            }
+
+            jsonObject.put("enable", isIssimulation() ? 1 : 0);
+
+            /**
+             *死区时间和漏斗初始值
+             * */
+            jsonObject.put("deadZones", getSimulatedeadZones());
+            jsonObject.put("funelInitValues", getSimulatefunelinitvalues());
+            jsonObject.put("validekey", getSimulatevalidkey());
+
+
+
+
+            return jsonObject;
+
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+        }
+        return null;
+    }
+
+
+    /**
      * 获取前馈输出响应
      */
     private double[] getSpecialFORespon(String pvpinname, String ffpinname) {
@@ -234,6 +418,7 @@ public class SimulatControlModle {
         /***
          * 输入输出响应对应矩阵
          * init A matrix
+         * 数据填入方式是按照pv-mv映射矩阵的行顺序进行填入
          * */
         A_SimulatetimeseriseMatrix = new double[numOfIOMappingRelation][numOfIOMappingRelation][timeserise_N];
 
@@ -371,7 +556,24 @@ public class SimulatControlModle {
         simulateInputpoints_m=numOfIOMappingRelation;
         simulateFeedforwardpoints_v=controlModle.getNumOfRunnableFFpins_vv();
 
-        backSimulateDmv = new double[controlModle.getNumOfRunnablePVPins_pp()][controlModle.getNumOfRunnableMVpins_mm()];
+
+        backsimulatorPVPrediction = new double[controlModle.getNumOfRunnablePVPins_pp()][timeserise_N];//pv的预测曲线
+
+        backsimulatorPVFunelUp = new double[controlModle.getNumOfRunnablePVPins_pp()][timeserise_N];//PV的漏斗上曲线
+
+        backsimulatorPVFunelDown = new double[controlModle.getNumOfRunnablePVPins_pp()][timeserise_N];//漏斗下曲线
+
+        backsimulatorDmvWrite = new double[controlModle.getNumOfRunnablePVPins_pp()][controlModle.getNumOfRunnableMVpins_mm()];//MV写入值
+        backsimulatorrawDmv = new double[controlModle.getNumOfRunnableMVpins_mm()];
+        backsimulatorrawDff = new double[controlModle.getNumOfRunnableFFpins_vv()];
+
+        backsimulatorPVPredictionError = new double[controlModle.getNumOfRunnablePVPins_pp()];//预测误差
+
+        backDff = new double[controlModle.getNumOfRunnablePVPins_pp()][controlModle.getNumOfRunnableFFpins_vv()];//前馈变换值
+
+
+
+//        backSimulateDmv = new double[controlModle.getNumOfRunnablePVPins_pp()][controlModle.getNumOfRunnableMVpins_mm()];
         generateSimulatevalidkey();
         executePythonBridgeSimulate = new ExecutePythonBridge(simulatorbuilddir, "http://localhost:8080/AILab/pythonsimulate/modlebuild/" + modleid + ".do", modleid + "");
     }
@@ -581,24 +783,72 @@ public class SimulatControlModle {
         this.executePythonBridgeSimulate = executePythonBridgeSimulate;
     }
 
-    public double[][] getBackSimulateDmv() {
-        return backSimulateDmv;
-    }
+//    public double[][] getBackSimulateDmv() {
+//        return backSimulateDmv;
+//    }
 
     /**
      * 更新仿真器dmv值
      */
-    public boolean updateBackSimulateDmv(double[] simulateDmv) {
-        int indexmappingration = 0;
+//    public boolean updateBackSimulateComputeResult(double[] simulateDmv) {
+//        int indexmappingration = 0;
+//        try {
+//            for (int indexpv = 0; indexpv < controlModle.getNumOfRunnablePVPins_pp(); indexpv++) {
+//
+//                for (int indexmv = 0; indexmv < controlModle.getNumOfRunnableMVpins_mm(); indexmv++) {
+//                    if (controlModle.getMaskMatrixRunnablePVUseMV()[indexpv][indexmv] == 1) {
+//                        this.backSimulateDmv[indexpv][indexmv] = simulateDmv[indexmappingration];
+//                        ++indexmappingration;
+//                    }
+//                }
+//            }
+//        } catch (Exception e) {
+//            logger.error(e.getMessage(), e);
+//            return false;
+//        }
+//        return true;
+//    }
+
+
+    /**
+     * 更新模型计算后的数据
+     *
+     * @param funelupAnddown   尺寸：2XpN
+     *                         第0行存漏斗的上限；[0~N-1]第一个pv的，[N~2N-1]为第二个pv的漏斗上限
+     *                         第1行存漏斗的下限；
+     * @param backPVPrediction
+     */
+    public boolean updateModleComputeResult(double[] backPVPrediction, double[][] funelupAnddown, double[] backDmvWrite, double[] backPVPredictionError, double[] dff) {
+        /**
+         * 模型运算状态值
+         * */
         try {
+            for (int i = 0; i < controlModle.getNumOfRunnablePVPins_pp(); i++) {
+                this.backsimulatorPVPrediction[i] = Arrays.copyOfRange(backPVPrediction, 0 + timeserise_N * i, timeserise_N + timeserise_N * i);//pv的预测曲线
+                this.backsimulatorPVFunelUp[i] = Arrays.copyOfRange(funelupAnddown[0], 0 + timeserise_N * i, timeserise_N + timeserise_N * i);//PV的漏斗上限
+                this.backsimulatorPVFunelDown[i] = Arrays.copyOfRange(funelupAnddown[1], 0 + timeserise_N * i, timeserise_N + timeserise_N * i);//PV的漏斗下限
+            }
+
+            /**预测误差*/
+            this.backsimulatorPVPredictionError = backPVPredictionError;
+            this.backsimulatorrawDmv = backDmvWrite;
+            this.backsimulatorrawDff = dff;
             for (int indexpv = 0; indexpv < controlModle.getNumOfRunnablePVPins_pp(); indexpv++) {
 
+                /**dMV写入值*/
                 for (int indexmv = 0; indexmv < controlModle.getNumOfRunnableMVpins_mm(); indexmv++) {
                     if (controlModle.getMaskMatrixRunnablePVUseMV()[indexpv][indexmv] == 1) {
-                        this.backSimulateDmv[indexpv][indexmv] = simulateDmv[indexmappingration];
-                        ++indexmappingration;
+                        this.backsimulatorDmvWrite[indexpv][indexmv] = backDmvWrite[indexmv];
                     }
                 }
+
+                /**前馈增量*/
+                for (int indexff = 0; indexff < controlModle.getNumOfRunnableFFpins_vv(); indexff++) {
+                    if (controlModle.getMaskMatrixRunnablePVUseFF()[indexpv][indexff] == 1) {
+                        this.backDff[indexpv][indexff] = dff[indexff];
+                    }
+                }
+
             }
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
@@ -607,6 +857,37 @@ public class SimulatControlModle {
         return true;
     }
 
+    public double[][] getBacksimulatorPVPrediction() {
+        return backsimulatorPVPrediction;
+    }
+
+    public double[][] getBacksimulatorPVFunelUp() {
+        return backsimulatorPVFunelUp;
+    }
+
+    public double[][] getBacksimulatorPVFunelDown() {
+        return backsimulatorPVFunelDown;
+    }
+
+    public double[][] getBacksimulatorDmvWrite() {
+        return backsimulatorDmvWrite;
+    }
+
+    public double[] getBacksimulatorrawDmv() {
+        return backsimulatorrawDmv;
+    }
+
+    public double[] getBacksimulatorrawDff() {
+        return backsimulatorrawDff;
+    }
+
+    public double[] getBacksimulatorPVPredictionError() {
+        return backsimulatorPVPredictionError;
+    }
+
+    public double[][] getBackDff() {
+        return backDff;
+    }
 
     public void setControlModle(ControlModle controlModle) {
         this.controlModle = controlModle;

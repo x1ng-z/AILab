@@ -15,12 +15,11 @@ import java.util.*;
  */
 public class ControlModle implements Modle {
     public static Logger logger = Logger.getLogger(ModleController.class);
-
-
+    public static final Integer RUNSTYLEBYAUTO=0;//运行方式0-自动分配模式 1-手动分配模式
+    public static final Integer RUNSTYLEBYMANUL=1;//1-手动分配模式
     /**
      * 模型定义
      */
-
     private int modleId;//模型id主键
     private String modleName;//模型名称
     private Integer predicttime_P = 12;//预测时域
@@ -28,6 +27,7 @@ public class ControlModle implements Modle {
     private Integer timeserise_N = 40;//响应序列长度
     private Integer controlAPCOutCycle = 0;//控制周期
     private volatile int modleEnable = 0;//模块使能，用于设置算法是否运行，算法是否运行
+    private Integer runstyle=0;//运行方式0-自动分配模式 1-手动分配模式
     private List<ModlePin> modlePins;//引脚,from db
     private List<ResponTimeSerise> responTimeSerises;//响应 from db
 
@@ -159,9 +159,22 @@ public class ControlModle implements Modle {
     private int[][] maskBaseMapPvUseMvMatrix = null;
 
     /**
+     * 基本pv对mv的基本作用比例
+     * **/
+    private float[][] maskBaseMapPvEffectMvMatrix = null;
+
+
+
+    /**
      * 激活的pv引脚对应的mv
      */
     private int[][] maskMatrixRunnablePVUseMV = null;
+
+
+    /**
+     * 基本可运行的pv对mv的基本作用比例
+     * **/
+    private float[][] maskMatrixRunnablePvEffectMv = null;
 
 
     /**
@@ -252,7 +265,7 @@ public class ControlModle implements Modle {
 
     /**
      * 1、引脚注册进引脚的map中，key=pvn/mvn/spn等(n=1,2,3..8) value=pin
-     * 2\将引脚进行分类，按照顺序单独存储到各自类别的list，ex:categoryPVmodletag内存储pv的引脚
+     * 2将引脚进行分类，按照顺序单独存储到各自类别的list，ex:categoryPVmodletag内存储pv的引脚
      *
      * @return false 对应位号不完整
      */
@@ -373,12 +386,12 @@ public class ControlModle implements Modle {
 
 
     /**
-     * 2初始化maskRunnablePVMatrix  maskRunnableMVMatrix  maskRunnableFFMatrix
+     * 初始化maskRunnablePVMatrix  maskRunnableMVMatrix  maskRunnableFFMatrix maskBaseMapPvEffectMvMatrix
      */
     private void initRunnableMatrixAndBaseMapMatrix() {
         for (int indexpv = 0; indexpv < categoryPVmodletag.size(); ++indexpv) {
             /**pv引脚启用，并且参与本次控制*/
-            if (thisTimeRunnablePin(categoryPVmodletag.get(indexpv))) {
+            if (isThisTimeRunnablePin(categoryPVmodletag.get(indexpv))) {
                 maskisRunnablePVMatrix[indexpv] = 1;
             }
 
@@ -388,8 +401,9 @@ public class ControlModle implements Modle {
             for (int indexmv = 0; indexmv < categoryMVmodletag.size(); ++indexmv) {
                 ResponTimeSerise ismapping = isPVMappingMV(categoryPVmodletag.get(indexpv).getModlePinName(), categoryMVmodletag.get(indexmv).getModlePinName());
                 maskBaseMapPvUseMvMatrix[indexpv][indexmv] = (null != ismapping ? 1 : 0);
+                maskBaseMapPvEffectMvMatrix[indexpv][indexmv]=(null!=ismapping?ismapping.getEffectRatio():0f);
                 /**1是否有映射关系、2、pv是否启用 3mv是否启用*/
-                if ((null != ismapping) && thisTimeRunnablePin(categoryPVmodletag.get(indexpv)) && thisTimeRunnablePin(categoryMVmodletag.get(indexmv))) {
+                if ((null != ismapping) && isThisTimeRunnablePin(categoryPVmodletag.get(indexpv)) && isThisTimeRunnablePin(categoryMVmodletag.get(indexmv))) {
                     maskisRunnableMVMatrix[indexmv] = 1;
                 }
             }
@@ -400,7 +414,7 @@ public class ControlModle implements Modle {
             for (int indexff = 0; indexff < categoryFFmodletag.size(); ++indexff) {
                 ResponTimeSerise ismapping = isPVMappingFF(categoryPVmodletag.get(indexpv).getModlePinName(), categoryFFmodletag.get(indexff).getModlePinName());
                 maskBaseMapPvUseFfMatrix[indexpv][indexff] = (null != ismapping ? 1 : 0);
-                if ((null != ismapping) && thisTimeRunnablePin(categoryPVmodletag.get(indexpv)) && thisTimeRunnablePin(categoryFFmodletag.get(indexff))) {
+                if ((null != ismapping) && isThisTimeRunnablePin(categoryPVmodletag.get(indexpv)) && isThisTimeRunnablePin(categoryFFmodletag.get(indexff))) {
                     maskisRunnableFFMatrix[indexff] = 1;
                 }
             }
@@ -413,7 +427,7 @@ public class ControlModle implements Modle {
      * 2统计runnbale的pv的 runnbale mv的数量
      * 3统计参与runnbale的pv的runnbale ff的数量
      */
-    private void initRunnablePinNum() {
+    private void initStatisticRunnablePinNum() {
 
         /**统计runnbale的pv的mv的数量*/
         for (int pvi : maskisRunnablePVMatrix) {
@@ -499,7 +513,8 @@ public class ControlModle implements Modle {
                 ResponTimeSerise responTimeSerisePVMV = isPVMappingMV(runpvpin.getModlePinName(), runmvpin.getModlePinName());
                 if (responTimeSerisePVMV != null) {
                     A_RunnabletimeseriseMatrix[looppv][loopmv] = responTimeSerisePVMV.responOneTimeSeries(timeserise_N, controlAPCOutCycle);
-                    maskMatrixRunnablePVUseMV[looppv][looppv] = 1;
+                    maskMatrixRunnablePVUseMV[looppv][loopmv] = 1;
+                    maskMatrixRunnablePvEffectMv[looppv][loopmv]=responTimeSerisePVMV.getEffectRatio();
                 }
 
                 ++loopmv;
@@ -525,7 +540,7 @@ public class ControlModle implements Modle {
     }
 
 
-    private void initQMatrix() {
+    private void initRMatrix() {
         int indevEnableMV = 0;
         for (ModlePin runmv : getRunablePins(categoryMVmodletag, maskisRunnableMVMatrix)) {
             R[indevEnableMV] = runmv.getR();
@@ -536,8 +551,8 @@ public class ControlModle implements Modle {
 
     private void initFFparams() {
 
-        List<ModlePin> runablePVPins = getRunablePins(categoryPVmodletag, maskisRunnablePVMatrix);
-        List<ModlePin> runableFFPins = getRunablePins(categoryFFmodletag, maskisRunnableFFMatrix);
+        List<ModlePin> runablePVPins = getRunablePins(categoryPVmodletag, maskisRunnablePVMatrix);//获取可运行的pv引脚
+        List<ModlePin> runableFFPins = getRunablePins(categoryFFmodletag, maskisRunnableFFMatrix);//获取可运行的ff引脚
 
         int looppv = 0;
         for (ModlePin runpv : runablePVPins) {
@@ -901,7 +916,7 @@ public class ControlModle implements Modle {
     /**
      * 判断引脚是否启用，并且本次参与控制
      */
-    private boolean thisTimeRunnablePin(ModlePin pin) {
+    private boolean isThisTimeRunnablePin(ModlePin pin) {
         /**启用，并且本次参与控制*/
         if ((1 == pin.getPinEnable() && (pin.isThisTimeParticipate()))) {
             return true;
@@ -927,13 +942,24 @@ public class ControlModle implements Modle {
                 firstTimeRegiterPinsToOPCServe();
             }
 
-            /**新建仿真器*/
-            simulatControlModle = new SimulatControlModle(controltime_M, predicttime_P, timeserise_N, controlAPCOutCycle, simulatorbuilddir, modleId);
+            /**新建仿真器
+             * 吧仿真器之前运行状态记录下来
+             * */
+            if(simulatControlModle!=null){
+                boolean lasttimesimulatstatus=simulatControlModle.isIssimulation();
+                simulatControlModle = new SimulatControlModle(controltime_M, predicttime_P, timeserise_N, controlAPCOutCycle, simulatorbuilddir, modleId);
+                simulatControlModle.setIssimulation(lasttimesimulatstatus);
+            }else {
+                simulatControlModle = new SimulatControlModle(controltime_M, predicttime_P, timeserise_N, controlAPCOutCycle, simulatorbuilddir, modleId);
+            }
 
 
             /**init pvusemv and pvuseff matrix*/
             maskBaseMapPvUseMvMatrix = new int[categoryPVmodletag.size()][categoryMVmodletag.size()];
             maskBaseMapPvUseFfMatrix = new int[categoryPVmodletag.size()][categoryFFmodletag.size()];
+
+            /**pv对mv的作用关系*/
+            maskBaseMapPvEffectMvMatrix=new float[categoryPVmodletag.size()][categoryMVmodletag.size()];
 
             maskisRunnableMVMatrix = new int[categoryMVmodletag.size()];
             maskisRunnableFFMatrix = new int[categoryFFmodletag.size()];
@@ -944,7 +970,7 @@ public class ControlModle implements Modle {
             numOfRunnablePVPins_pp = 0;
             numOfRunnableMVpins_mm = 0;
             numOfRunnableFFpins_vv = 0;
-            initRunnablePinNum();
+            initStatisticRunnablePinNum();
 
             logger.debug("p="+numOfRunnablePVPins_pp+" ,m="+numOfRunnableMVpins_mm+" ,v="+numOfRunnableFFpins_vv);
 
@@ -953,6 +979,12 @@ public class ControlModle implements Modle {
              * init A matrix
              * */
             A_RunnabletimeseriseMatrix = new double[numOfRunnablePVPins_pp][numOfRunnableMVpins_mm][timeserise_N];
+
+
+            /**可运行的pv和mv的作用比例矩阵*/
+            maskMatrixRunnablePvEffectMv=new float[numOfRunnablePVPins_pp][numOfRunnableMVpins_mm];
+
+
             /***
              *1、fill respon into A matrix
              *2、and init matrixEnablePVUseMV
@@ -980,8 +1012,7 @@ public class ControlModle implements Modle {
 
             /**init R control zone params*/
             R = new Double[numOfRunnableMVpins_mm];//use for mv
-            initQMatrix();
-
+            initRMatrix();
 
             /***
              * 前馈输出对应矩阵
@@ -1027,8 +1058,6 @@ public class ControlModle implements Modle {
             simulatControlModle.setControlModle(this);
             simulatControlModle.build();
 
-
-
             executePythonBridge= new ExecutePythonBridge(
                     apcdir,
                     "http://localhost:8080/AILab/python/modlebuild/" + modleId + ".do", modleId + "");
@@ -1063,7 +1092,74 @@ public class ControlModle implements Modle {
         return result;
     }
 
-    public JSONObject getrealData() {
+
+    /**
+     *返回原始MV结构相关数据，包括mv上下限，dmv上下限，mv和mvfb当前数值
+     * */
+    public void getMVRelationData(JSONObject jsonObject){
+
+        /**limitU输入限制 mv上下限*/
+        Double[][] limitU = new Double[numOfRunnableMVpins_mm][2];
+        Double[][] limitDU = new Double[numOfRunnableMVpins_mm][2];
+        /**U执行器当前给定*/
+        Double[] U = new Double[numOfRunnableMVpins_mm];
+        /**U执行器当前反馈**/
+        Double[] UFB = new Double[numOfRunnableMVpins_mm];
+
+        int indexEnableMV = 0;
+        for (int indexmv = 0; indexmv < categoryMVmodletag.size(); ++indexmv) {
+            if (maskisRunnableMVMatrix[indexmv] == 0) {
+                continue;
+            }
+            Double[] mvminmax = new Double[2];
+            ModlePin mvdown = categoryMVmodletag.get(indexmv).getDownLmt();
+            ModlePin mvup = categoryMVmodletag.get(indexmv).getUpLmt();
+
+            mvminmax[0] = mvdown.modleGetReal();
+
+            mvminmax[1] = mvup.modleGetReal();
+
+            //执行器限制
+            limitU[indexEnableMV] = mvminmax;
+
+            Double[] dmvminmax = new Double[2];
+            dmvminmax[0] = categoryMVmodletag.get(indexmv).getDmvLow();
+            dmvminmax[1] = categoryMVmodletag.get(indexmv).getDmvHigh();
+            limitDU[indexEnableMV] = dmvminmax;
+
+            //执行器给定
+            U[indexEnableMV] = categoryMVmodletag.get(indexmv).modleGetReal();
+            UFB[indexEnableMV] = categoryMVmodletag.get(indexmv).getFeedBack().modleGetReal();
+            indexEnableMV++;
+
+        }
+        jsonObject.put("origionstructlimitmv", limitU);
+        jsonObject.put("origionstructlimitDmv", limitDU);
+        jsonObject.put("origionstructmv", U);
+        jsonObject.put("originstructmvfb", UFB);
+    }
+
+
+    public void getPVRealData(JSONObject jsonObject){
+        Double[] pv = new Double[numOfRunnablePVPins_pp];
+        int indexEnablePV = 0;
+        for (int indexpv = 0; indexpv < categoryPVmodletag.size(); ++indexpv) {
+            if (maskisRunnablePVMatrix[indexpv] == 0) {
+                continue;
+            }
+            /***
+             * 是否有滤波器，有则使用滤波器的值，不然就使用实时数据
+             * */
+            pv[indexEnablePV] = categoryPVmodletag.get(indexpv).modleGetReal();
+            ++indexEnablePV;
+        }
+        jsonObject.put("origiony0", pv);
+    }
+
+
+
+
+    public JSONObject getRealData() {
         try {
             /**
              * y0(pv)
@@ -1194,6 +1290,7 @@ public class ControlModle implements Modle {
     }
 
 
+    @Deprecated
     public JSONObject getrealSimulateData() {
 
         try {
@@ -1347,7 +1444,7 @@ public class ControlModle implements Modle {
      *                         第1行存漏斗的下限；
      * @param backPVPrediction
      */
-    public boolean updateModleReal(double[] backPVPrediction, double[][] funelupAnddown, double[] backDmvWrite, double[] backPVPredictionError, double[] dff) {
+    public boolean updateModleComputeResult(double[] backPVPrediction, double[][] funelupAnddown, double[] backDmvWrite, double[] backPVPredictionError, double[] dff) {
         /**
          * 模型运算状态值
          * */
@@ -1756,4 +1853,27 @@ public class ControlModle implements Modle {
         return stringmodlePinsMap;
     }
 
+    public Integer getRunstyle() {
+        return runstyle;
+    }
+
+    public void setRunstyle(Integer runstyle) {
+        this.runstyle = runstyle;
+    }
+
+    public float[][] getMaskBaseMapPvEffectMvMatrix() {
+        return maskBaseMapPvEffectMvMatrix;
+    }
+
+    public void setMaskBaseMapPvEffectMvMatrix(float[][] maskBaseMapPvEffectMvMatrix) {
+        this.maskBaseMapPvEffectMvMatrix = maskBaseMapPvEffectMvMatrix;
+    }
+
+    public float[][] getMaskMatrixRunnablePvEffectMv() {
+        return maskMatrixRunnablePvEffectMv;
+    }
+
+    public void setMaskMatrixRunnablePvEffectMv(float[][] maskMatrixRunnablePvEffectMv) {
+        this.maskMatrixRunnablePvEffectMv = maskMatrixRunnablePvEffectMv;
+    }
 }

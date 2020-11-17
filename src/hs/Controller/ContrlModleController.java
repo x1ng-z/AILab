@@ -78,14 +78,16 @@ public class ContrlModleController {
         int P = jsonmodlecontext.getInteger("P");
         int M = jsonmodlecontext.getInteger("M");
         int O = jsonmodlecontext.getInteger("O");
+
+        int runstyle=jsonmodlecontext.getInteger("runstyle");
+
         ControlModle controlModle = new ControlModle();
         controlModle.setModleName(modleName);
         controlModle.setTimeserise_N(N);
         controlModle.setPredicttime_P(P);
         controlModle.setControltime_M(M);
         controlModle.setControlAPCOutCycle(O);
-
-
+        controlModle.setRunstyle(runstyle);
         String autoTag = jsonmodlecontext.getString("autoTag");
         String autoresource = jsonmodlecontext.getString("autoresource");
         boolean isneedinsertautopin = false;
@@ -218,6 +220,7 @@ public class ContrlModleController {
         int M = jsonmodlecontext.getInteger("M");
         int O = jsonmodlecontext.getInteger("O");
         int modleId = jsonmodlecontext.getInteger("modleid");
+        int runstyle=jsonmodlecontext.getInteger("runstyle");
         ControlModle controlModle = new ControlModle();
         controlModle.setModleName(modleName);
         controlModle.setTimeserise_N(N);
@@ -225,6 +228,7 @@ public class ContrlModleController {
         controlModle.setControltime_M(M);
         controlModle.setControlAPCOutCycle(O);
         controlModle.setModleId(modleId);
+        controlModle.setRunstyle(runstyle);
 
 
         String autoTag = jsonmodlecontext.getString("autoTag");
@@ -320,6 +324,7 @@ public class ContrlModleController {
             pincontext.put("modlePinName", pin.getModlePinName());
             pincontext.put("modleOpcTag", pin.getModleOpcTag());
             pincontext.put("opcTagName", pin.getOpcTagName());
+            pincontext.put("Q",pin.getQ());
             datas.add(pincontext);
         }
         return Tool.sendLayuiPage(count, datas).toJSONString();
@@ -345,6 +350,7 @@ public class ContrlModleController {
             pincontext.put("K", jsonresp.getFloat("k"));
             pincontext.put("T", jsonresp.getFloat("t"));
             pincontext.put("Tau", jsonresp.getFloat("tao"));
+            pincontext.put("effectRatio", resp.getEffectRatio());
             datas.add(pincontext);
         }
         return Tool.sendLayuiPage(count, datas).toJSONString();
@@ -1229,6 +1235,7 @@ public class ContrlModleController {
         float K;
         float T;
         float Tau;
+        float effectRatio;
         ResponTimeSerise respontimeserise;
         JSONObject jsonres;
 
@@ -1240,6 +1247,7 @@ public class ContrlModleController {
             K = modlejsonObject.getFloat("K");
             T = modlejsonObject.getFloat("T");
             Tau = modlejsonObject.getFloat("Tau");
+            effectRatio = ((modlejsonObject.getString("effectRatio").equals(""))||(modlejsonObject.getString("effectRatio")==null))?1f:modlejsonObject.getFloat("effectRatio");
             respontimeserise = new ResponTimeSerise();
 
             respontimeserise.setInputPins(inputpinName);
@@ -1251,7 +1259,7 @@ public class ContrlModleController {
             jsonres.put("t", T);
             jsonres.put("tao", Tau);
             respontimeserise.setStepRespJson(jsonres.toJSONString());
-
+            respontimeserise.setEffectRatio(effectRatio);
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
             result.put("msg", "error");
@@ -2349,6 +2357,7 @@ public class ContrlModleController {
         float K;
         float T;
         float Tau;
+        float effectRatio;
         ResponTimeSerise respontimeserise;
         JSONObject jsonres;
 
@@ -2360,6 +2369,7 @@ public class ContrlModleController {
             K = modlejsonObject.getFloat("K");
             T = modlejsonObject.getFloat("T");
             Tau = modlejsonObject.getFloat("Tau");
+            effectRatio = ((modlejsonObject.getString("effectRatio").equals(""))||(modlejsonObject.getString("effectRatio")==null))?1f:modlejsonObject.getFloat("effectRatio");
             respontimeserise = new ResponTimeSerise();
 
             respontimeserise.setInputPins(inputpinName);
@@ -2371,6 +2381,7 @@ public class ContrlModleController {
             jsonres.put("t", T);
             jsonres.put("tao", Tau);
             respontimeserise.setStepRespJson(jsonres.toJSONString());
+            respontimeserise.setEffectRatio(effectRatio);
 
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
@@ -2624,10 +2635,19 @@ public class ContrlModleController {
 
             result.put("outSetp", controlModle.getControlAPCOutCycle());
             /****曲线***/
-            result.put("funelUp", controlModle.getBackPVFunelUp());
-            result.put("funelDwon", controlModle.getBackPVFunelDown());
+            if(controlModle.getRunstyle().equals(ControlModle.RUNSTYLEBYAUTO)){
+
+                result.put("funelUp", controlModle.getBackPVFunelUp());
+                result.put("funelDwon", controlModle.getBackPVFunelDown());
+                result.put("predict", controlModle.getBackPVPrediction());
+            }else {
+                result.put("funelUp", controlModle.getSimulatControlModle().getBacksimulatorPVFunelUp());
+                result.put("funelDwon", controlModle.getSimulatControlModle().getBacksimulatorPVFunelDown());
+                result.put("predict", controlModle.getSimulatControlModle().getBacksimulatorPVPrediction());
+            }
+
             result.put("funneltype", controlModle.getFunneltype());
-            result.put("predict", controlModle.getBackPVPrediction());
+
             int[] xaxis = new int[controlModle.getTimeserise_N()];
             for (int i = 0; i < controlModle.getTimeserise_N(); i++) {
                 xaxis[i] = i;
@@ -2685,8 +2705,12 @@ public class ContrlModleController {
 
                     modlereadDatarowcontext.put("pvValue", Tool.getSpecalScale(3, pv.modleGetReal()));
                     modlereadDatarowcontext.put("spValue", Tool.getSpecalScale(3, sp.modleGetReal()));
+                    if(controlModle.getRunstyle().equals(ControlModle.RUNSTYLEBYAUTO)){
+                        modlereadDatarowcontext.put("e", Tool.getSpecalScale(3, controlModle.getBackPVPredictionError()[indexEnablePV]));
+                    }else {
+                        modlereadDatarowcontext.put("e", Tool.getSpecalScale(3, controlModle.getSimulatControlModle().getBacksimulatorPVPredictionError()[indexEnablePV]));
 
-                    modlereadDatarowcontext.put("e", Tool.getSpecalScale(3, controlModle.getBackPVPredictionError()[indexEnablePV]));
+                    }
                     ++indexEnablePV;
 
                     modlereadDatarowcontext.put("shockpv", pv.getShockDetector() == null ? "" : Tool.getSpecalScale(3, pv.getShockDetector().getLowhzA()));
@@ -2706,7 +2730,7 @@ public class ContrlModleController {
                     modlereadDatarowcontext.put("mvUpLmt", Tool.getSpecalScale(3, mvUpLmt.modleGetReal()));
                     modlereadDatarowcontext.put("mvFeedBack", Tool.getSpecalScale(3, mvFeedBack.modleGetReal()));
 
-                    modlereadDatarowcontext.put("dmv", Tool.getSpecalScale(3, controlModle.getBackrawDmv()[indexEnableMV]));
+                    modlereadDatarowcontext.put("dmv", Tool.getSpecalScale(3, controlModle.getBackrawDmv()[indexEnableMV])+"|"+controlModle.getSimulatControlModle().getBacksimulatorrawDmv()[indexEnableMV]);
                     ++indexEnableMV;
 
                     modlereadDatarowcontext.put("shockmv", mv.getShockDetector() == null ? "" : Tool.getSpecalScale(3, mv.getShockDetector().getLowhzA()));
@@ -2733,7 +2757,7 @@ public class ContrlModleController {
                 for(ModlePin mvpin:mvpinsrunable){
                     /*是否有映射关系*/
                     if (controlModle.getMaskMatrixRunnablePVUseMV()[indexEnablePV][indexEnableMV] == 1) {
-                        sdmvrowcontext.put(mvpin.getModlePinName(), Tool.getSpecalScale(3, controlModle.getSimulatControlModle().getBackSimulateDmv()[indexEnablePV][indexEnableMV]));
+                        sdmvrowcontext.put(mvpin.getModlePinName(), Tool.getSpecalScale(3, controlModle.getSimulatControlModle().getBacksimulatorDmvWrite()[indexEnablePV][indexEnableMV]));
                     }
                     ++indexEnableMV;
                 }
@@ -2744,7 +2768,11 @@ public class ContrlModleController {
                     for(ModlePin ffpin:ffpinsrunable){
                         if (controlModle.getMaskMatrixRunnablePVUseFF()[indexEnablePV][indexEnableFF] == 1) {
                             /**dff*/
-                            ffrowcontext.put("d" + ffpin.getModlePinName(), Tool.getSpecalScale(3, controlModle.getBackDff()[indexEnablePV][indexEnableFF]));
+                            if(controlModle.getRunstyle().equals(ControlModle.RUNSTYLEBYAUTO)){
+                                ffrowcontext.put("d" + ffpin.getModlePinName(), Tool.getSpecalScale(3, controlModle.getBackDff()[indexEnablePV][indexEnableFF]));
+                            }else {
+                                ffrowcontext.put("d" + ffpin.getModlePinName(), Tool.getSpecalScale(3, controlModle.getSimulatControlModle().getBackDff()[indexEnablePV][indexEnableFF]));
+                            }
                             /**ff值*/
                             ffrowcontext.put(ffpin.getModlePinName(), Tool.getSpecalScale(3, ffpin.modleGetReal()));
                         }
