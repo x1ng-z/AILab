@@ -818,7 +818,7 @@ public class SimulatControlModle {
      *                         第1行存漏斗的下限；
      * @param backPVPrediction
      */
-    public boolean updateModleComputeResult(double[] backPVPrediction, double[][] funelupAnddown, double[] backDmvWrite, double[] backPVPredictionError, double[] dff) {
+    public boolean updateModleComputeResult(double[] backPVPrediction, double[][] funelupAnddown, double[] backWritedmv, double[] backdmv, double[] backPVPredictionError, double[] dff) {
         /**
          * 模型运算状态值
          * */
@@ -831,14 +831,16 @@ public class SimulatControlModle {
 
             /**预测误差*/
             this.backsimulatorPVPredictionError = backPVPredictionError;
-            this.backsimulatorrawDmv = backDmvWrite;
+            this.backsimulatorrawDmv = backWritedmv;
             this.backsimulatorrawDff = dff;
+            int indexmappingration = 0;
             for (int indexpv = 0; indexpv < controlModle.getNumOfRunnablePVPins_pp(); indexpv++) {
 
                 /**dMV写入值*/
                 for (int indexmv = 0; indexmv < controlModle.getNumOfRunnableMVpins_mm(); indexmv++) {
                     if (controlModle.getMaskMatrixRunnablePVUseMV()[indexpv][indexmv] == 1) {
-                        this.backsimulatorDmvWrite[indexpv][indexmv] = backDmvWrite[indexmv];
+                        this.backsimulatorDmvWrite[indexpv][indexmv] = backdmv[indexmappingration];
+                        indexmappingration++;
                     }
                 }
 

@@ -161,16 +161,20 @@ public class PythonSimulateController {
             JSONArray funelupAnddownJson = modlestatus.getJSONArray("funelupAnddown");
             JSONArray dmvJson = modlestatus.getJSONArray("dmv");
             JSONArray dffJson=modlestatus.getJSONArray("dff");
+            JSONArray writedmvJson=modlestatus.getJSONArray("writedmv");
+
 
             int p = controlModle.getNumOfRunnablePVPins_pp();
             int m = controlModle.getNumOfRunnableMVpins_mm();
+            int m_mapping=controlModle.getSimulatControlModle().getSimulateInputpoints_m();
             int v=controlModle.getNumOfRunnableFFpins_vv();
             int N = controlModle.getTimeserise_N();
 
             double[] predictpvArray = new double[p * N];
             double[][] funelupAnddownArray = new double[2][p * N];
             double[] eArray = new double[p];
-            double[] dmvArray = new double[m];
+            double[] dmvArray = new double[m_mapping];
+            double[] writedmvArray = new double[m];
 
             double[] dffArray=null;
             if(v!=0){
@@ -186,14 +190,23 @@ public class PythonSimulateController {
                 eArray[i] = eJson.getDouble(i);
             }
 
-            for (int i = 0; i < m; i++) {
+            for (int i = 0; i < m_mapping; i++) {
                 dmvArray[i] = dmvJson.getDouble(i);
             }
+
+            for (int i = 0; i < m; i++) {
+                writedmvArray[i]=writedmvJson.getDouble(i);
+            }
+
+
+
             for(int i=0;i<v;++i){
                 dffArray[i]=dffJson.getDouble(i);
             }
 
-            if (!controlModle.getSimulatControlModle().updateModleComputeResult(predictpvArray, funelupAnddownArray, dmvArray, eArray,dffArray)) {
+
+
+            if (!controlModle.getSimulatControlModle().updateModleComputeResult(predictpvArray, funelupAnddownArray,writedmvArray,dmvArray, eArray,dffArray)) {
                 return "false";
             }
 

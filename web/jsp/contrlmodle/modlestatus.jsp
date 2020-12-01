@@ -251,7 +251,7 @@
                 , {field: 'pvValue', title: '实际值', width: '8.3%'}
                 , {field: 'spValue', title: '目标值', width: '8.3%'}
                 , {field: 'e', title: '预测误差', width: '8.3%'}
-                , {field: 'dmv', title: 'dmv', width: '8.3%'}
+                , {field: 'dmv', title: 'dmv', width: '12%'}
                 , {field: 'mvvalue', title: '给定值', width: '8.3%'}
                 , {field: 'mvFeedBack', title: '反馈', width: '8.3%'}
                 , {field: 'mvDownLmt', title: '下限', width: '8.3%'}

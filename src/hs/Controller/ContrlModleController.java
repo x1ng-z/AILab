@@ -2730,7 +2730,7 @@ public class ContrlModleController {
                     modlereadDatarowcontext.put("mvUpLmt", Tool.getSpecalScale(3, mvUpLmt.modleGetReal()));
                     modlereadDatarowcontext.put("mvFeedBack", Tool.getSpecalScale(3, mvFeedBack.modleGetReal()));
 
-                    modlereadDatarowcontext.put("dmv", Tool.getSpecalScale(3, controlModle.getBackrawDmv()[indexEnableMV])+"|"+controlModle.getSimulatControlModle().getBacksimulatorrawDmv()[indexEnableMV]);
+                    modlereadDatarowcontext.put("dmv", Tool.getSpecalScale(3, controlModle.getBackrawDmv()[indexEnableMV])+"|"+Tool.getSpecalScale(3,controlModle.getSimulatControlModle().getBacksimulatorrawDmv()[indexEnableMV]));
                     ++indexEnableMV;
 
                     modlereadDatarowcontext.put("shockmv", mv.getShockDetector() == null ? "" : Tool.getSpecalScale(3, mv.getShockDetector().getLowhzA()));

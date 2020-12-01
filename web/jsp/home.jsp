@@ -28,11 +28,9 @@
 <%--</div>--%>
 
 <%--<c:import url="http://192.168.10.212:8080/Process/APC_System/APC_HNYZ.html"/><!--www.baidu.com/hourse.html-->--%>
-<%--<c:param name="subTitle" value="we take.."/>--%>
-<%--<c:out value="${data}"/>--%>
-
-
+<%--&lt;%&ndash;<c:param name="subTitle" value="we take.."/>&ndash;%&gt;--%>
+<%--&lt;%&ndash;<c:out value="${data}"/>&ndash;%&gt;--%>
 <%--</body>--%>
 <%--</html>--%>
 
-<%--<% response.sendRedirect("http://192.168.10.212:8080/APCSystem/APC_JTLZ.html");%>--%>
+<% response.sendRedirect("http://192.168.10.212:8080/APCSystem/APC_JTLZ.html");%>

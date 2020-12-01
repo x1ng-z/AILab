@@ -143,7 +143,7 @@ public class FilterService implements Runnable {
                     public void run() {
                         try {
                             Filter filter = filtTask.getFilter();
-                            logger.info("filtetaskpool size="+filtetaskpool.size());
+//                            logger.info("filtetaskpool size="+filtetaskpool.size());
                             if (filter instanceof FirstOrderLagFilter) {
                                 //一阶滤波
                                 FirstOrderLagFilter folf = (FirstOrderLagFilter) filter;

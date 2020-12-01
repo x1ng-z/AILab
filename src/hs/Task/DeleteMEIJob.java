@@ -91,7 +91,7 @@ public class DeleteMEIJob {
 //    }
 
 
-    @Scheduled(fixedRate = 1000 * 60 * 30,initialDelay = 3000)
+    @Scheduled(fixedRate = 1000 * 60 * 30,initialDelay = 1000 * 60 * 30)
     @Async
     public void deletmeitempdir() {
         try {
