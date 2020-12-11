@@ -14,7 +14,7 @@ import java.util.*;
  * @date 2020/3/18 8:24
  */
 public class ControlModle implements Modle {
-    public static Logger logger = Logger.getLogger(ModleController.class);
+    public static Logger logger = Logger.getLogger(ControlModle.class);
     public static final Integer RUNSTYLEBYAUTO=0;//运行方式0-自动分配模式 1-手动分配模式
     public static final Integer RUNSTYLEBYMANUL=1;//1-手动分配模式
     /**
